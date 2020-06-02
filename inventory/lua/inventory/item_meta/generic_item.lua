@@ -5,6 +5,8 @@ local inv = Inventory
 
 local it = Inventory.ItemObjects.Generic or Emitter:extend()
 it.ClassName = "Generic Item"
+it.IsItem = true
+
 Inventory.ItemObjects.Generic = it
 
 it.__tostring = function(self)
@@ -30,12 +32,11 @@ function it:Initialize(uid, iid)
 		errorf("Failed to find Base Item for Item: UID: %s, IID: %d", uid or "[none]", iid)
 	end
 
-	self.BaseItem = base
 end
 
 function it:SetOwner(ply)
 	self.Owner = ply
-	self.OwnerSID = ply:SteamID64()
+	self.OwnerUID = ply:SteamID64()
 end
 
 function it:Insert(invobj, cb)
@@ -60,12 +61,30 @@ ChainAccessor(it, "ItemID", "IID")
 BaseItemAccessor(it, "Name", "Name")
 BaseItemAccessor(it, "Name", "NiceName")
 
-ChainAccessor(it, "BaseItem", "Base")
-ChainAccessor(it, "BaseItem", "BaseItem")
+BaseItemAccessor(it, "Model", "Model")
+BaseItemAccessor(it, "FOV", "FOV")
+BaseItemAccessor(it, "CamOffset", "CamOffset")
+BaseItemAccessor(it, "LookAng", "LookAng")
+
+function it:GetBaseItem()
+	return Inventory.BaseItems[self.ItemID]
+end
+it.GetBase = it.GetBaseItem
+
 
 ChainAccessor(it, "Inventory", "Inventory")
 
-ChainAccessor(it, "Slot", "Slot")
+function it:SetSlot(slot)
+	self.Slot = slot
+	local inv = self:GetInventory()
+	if inv then
+		inv:SetSlot(self, slot)
+	end
+end
+
+function it:GetSlot()
+	return self.Slot
+end
 
 --[[
 	Creates a brand new item and waits until you stick it into SQL with all the stats necessary.

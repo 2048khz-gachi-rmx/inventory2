@@ -30,7 +30,7 @@ function InventoryDefine()
 
 		Panels = {},
 
-		Initted = EntityInitted or false,
+		Initted = (Inventory and Inventory.Initted) or false,
 
 		Log = function(str, ...)
 			MsgC(verygood, "[Inventory] ", color_white, str:format(...), "\n")
@@ -43,14 +43,12 @@ function InventoryDefine()
 		InDev = true
 	}
 	Inventory.Define = InventoryDefine
+
+	Emitter.Make(Inventory)
 end
 
 if not Inventory then InventoryDefine() end
-
-
-hook.Add("InitPostEntity", "Inventory", function()
-	Inventory.Initted = true
-end)
+Inventory.Define = InventoryDefine
 
 Items = Items
 
@@ -60,11 +58,11 @@ Items = Items
 local function ContinueLoading(db)
 	Inventory.Loading = true --prevent infinite looping in inventory/load.lua
 
+	FInc.Recursive("inventory/shared/*", _SH)
+
 	FInc.Recursive("inventory/inv_meta/*", _SH)
 	FInc.Recursive("inventory/base_items/*", _SH)
 	FInc.Recursive("inventory/item_meta/*", _SH)
-
-	FInc.Recursive("inventory/shared/*", _SH)
 
 	FInc.Recursive("inventory/server/*", _SV)
 	FInc.Recursive("inventory/client/*", _CL)
@@ -74,13 +72,9 @@ local function ContinueLoading(db)
 
 	Inventory.Loading = false
 
-	if Inventory.Initted then
-		hook.Run("InventoryReady")
-	else
-		hook.Add("InitPostEntity", "InventoryReady", function()
-			hook.Run("InventoryReady")
-		end)
-	end
+
+	hook.Run("InventoryReady")
+	Inventory.Initted = true
 
 	hook.Remove("InventoryMySQLConnected", "ProceedInclude")
 end
@@ -110,5 +104,5 @@ Inventory.Reload = LoadInventory
 if not existed then
 	hook.Add("PostGamemodeLoaded", "Inventory", LoadInventory)
 else
-	LoadInventory()
+	LoadInventory(true)
 end

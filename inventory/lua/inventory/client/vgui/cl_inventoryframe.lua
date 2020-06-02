@@ -19,7 +19,6 @@ function PANEL:Init()
 end
 										-- V it really do be like that
 function PANEL.OnItemAddedIntoSlot(iframe, self, slot, item)
-	print("got these:", self, slot, item)
 	self.Items[slot] = item
 end
 
@@ -29,6 +28,11 @@ end
 
 function PANEL:SetInventory(inv)
 	self.Inventory = inv
+	self:Emit("SetInventory", inv)
+end
+
+function PANEL:GetInventory()
+	return self.Inventory
 end
 
 function PANEL:AddItemSlot()
@@ -41,7 +45,7 @@ function PANEL:AddItemSlot()
 				8 + y * (iPan.SlotSize + iPan.SlotPadding))
 
 	self.Slots[i + 1] = it
-
+	it:SetSlot(i + 1)
 	it:On("ItemInserted", self.OnItemAddedIntoSlot, self)
 
 	return it
@@ -75,4 +79,4 @@ function PANEL:PostPaint()
 end
 
 
-vgui.Register("InventoryPanel", PANEL, "Panel")
+vgui.Register("InventoryPanel", PANEL, "DPanel")

@@ -8,6 +8,7 @@ function PLAYER:InitializeInventories()
         self.Inventory[k] = v:new(self)
     end
 
+    Inventory.Log("Initialized inventory for %q", self:Nick())
 end
 
 hook.Add("InventoryItemIDsReceived", "PlayerInitInventories", function()

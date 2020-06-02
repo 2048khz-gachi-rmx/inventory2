@@ -51,9 +51,9 @@ function iPan.CreateInventory(par, inv, multiple)
 
 		p:SetZPos(0)
 		p:Show()
-		p:PopIn(0.15, 0.05)
+		p:PopIn(0.2, 0)
 
-		local fromabove = p:NewAnimation(0.3, 0.08, 0.4)
+		local fromabove = p:NewAnimation(0.35, 0, 0.4)
 		local _, x = f:GetNavbarSize()
 		x = x + 8 --padding
 		local y = f.HeaderSize
@@ -85,7 +85,7 @@ function iPan.CreateInventory(par, inv, multiple)
 		end
 
 		table.InsertVararg(p.DisappearAnims,
-			p:PopOut(0.2, 0.1, function(_, self)
+			p:PopOut(0.1, 0.1, function(_, self)
 				self:Hide()
 			end),
 
@@ -105,17 +105,38 @@ function iPan.CreateInventory(par, inv, multiple)
 		p:SetInventory(inv)
 		f.InvPanel = p
 
+		local slots = {}
+		local uids = {}
+
+		local trackFunc = function(self, slotnum, it)
+
+			if uids[it:GetUID()] then --assume there can't be more than one instance of the same item within one inventory
+				uids[it:GetUID()]:SetItem(nil)
+			end
+
+			uids[it:GetUID()] = self
+		end
+
+		local unTrackFunc = function(self, it)
+			uids[it:GetUID()] = nil
+		end
+
 		if not noanim then p:PopIn(0.1, 0.05) end
 
-		
+
 		if inv.MaxItems then
 
 			for i=1, inv.MaxItems do
 				local slot = p:AddItemSlot()
+				slots[i] = slot
+
+				slot:On("ItemInserted", "TrackUIDs", trackFunc)
+				slot:On("ItemTakenOut", "UntrackUIDs", unTrackFunc)
 
 				local item = inv:GetItemInSlot(i)
 				if item then
 					slot:SetItem(item)
+					uids[item:GetUID()] = slot
 				end
 			end
 
@@ -126,6 +147,21 @@ function iPan.CreateInventory(par, inv, multiple)
 			end
 
 		end
+
+		Inventory:On("ItemMoved", p, function(_, inv, item)
+			if inv ~= p:GetInventory() then return end
+
+			local newslot = item:GetSlot()
+
+			if slots[newslot].Item ~= item then
+				local uid = item:GetUID()
+
+				local prev_slot = uids[uid]
+				if IsValid(prev_slot) and prev_slot.Item == item then prev_slot:SetItem(nil) end
+
+				slots[newslot]:SetItem(item)
+			end
+		end)
 
 		f:AppearInventory(p)
 		return p, true, true

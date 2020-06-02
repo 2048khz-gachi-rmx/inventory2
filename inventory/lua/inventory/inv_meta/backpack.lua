@@ -8,6 +8,14 @@ bp.SQLName = "ply_tempinv"
 bp.NetworkID = 1
 bp.MaxItems = 20
 
+function bp:__tostring()
+	return ("%s (owner: %s)"):format(
+		self.Name,
+		( IsValid(self.Owner) and tostring(self.Owner) .. ("[SID: %s] "):format(self.OwnerUID) ) 
+			or self.OwnerUID
+	)
+
+end
 function bp:OnExtend(new_inv)
 	new_inv.SQLName = false 	--set these yourself!!
 	new_inv.NetworkID = false
@@ -17,6 +25,7 @@ end
 function bp:Initialize(ply)
 	self.Items = {}
 	self.Slots = {}
+	self.Changes = {}
 
 	if ply then
 		self:SetOwner(ply)
@@ -26,7 +35,49 @@ end
 
 function bp:SetOwner(ply)
 	self.Owner = ply
-	self.OwnerSID = ply:SteamID64()
+	self.OwnerUID = ply:SteamID64()
+end
+
+function bp:GetOwner()
+	return self.Owner, self.OwnerUID
+end
+
+function bp:SetSlot(it, slot)   --this is basically an accessor func;
+								--it doesn't store the changes and doesn't check if an item exists there
+								--use this when moving items as it will also write down the change
+	for i=1, self.MaxItems do
+		if self.Slots[i] == it then
+			self.Slots[i] = nil
+			--not breaking. just in case there's more.
+		end
+	end
+
+	self.Slots[slot] = it
+
+	self:AddChange(it, INV_ITEM_MOVED)
+end
+
+function bp:DeleteItem(it)
+	local uid = (isnumber(it) and it) or it:GetUID()
+
+	local it = self:GetItems()[uid]
+	self:GetItems()[uid] = nil
+
+	self:AddChange(it, INV_ITEM_DELETED)
+	return it
+end
+
+function bp:MoveItem(it, slot)	--this is a utility function which swaps slots if an item exists and stores the slot change in sql
+	if self.MaxItems and slot > self.MaxItems then errorf("Attempted to move item out of inventory bounds (%d > %d)", slot, self.MaxItems) return end
+	local it2 = self:GetItemInSlot(slot)
+	local b4slot = it:GetSlot()
+
+	if it == it2 or it:GetSlot() == slot then return false end
+	
+	it:SetSlot(slot)
+	if it2 then it2:SetSlot(b4slot) end
+
+	if SERVER then Inventory.MySQL.SwitchSlots(it, it2) end
 end
 
 function bp:GetItemInSlot(slot)
@@ -53,27 +104,25 @@ function bp:GetFreeSlot()
 
 end
 
-function bp:SerializeItems(just_return)
-	local max_uid = 0
-	local max_id = 0
-	local amt = 0
+function bp:GetItem(uid)
+	return self:GetItems()[uid]
+end
 
-	for k,v in pairs(self:GetItems()) do
-		max_uid = math.max(max_uid, v:GetUID())
-		max_id = math.max(max_id, v:GetIID())
-		amt = amt + 1
+function bp:HasItem(it)
+	if IsItem(it) then 
+		return self:GetItem(it:GetUID())
+	else
+		return self:GetItem(it)
 	end
+end
 
-	local ns = Inventory.Networking.NetStack(max_uid, max_id)
+function bp:Reset()
+	table.Empty(self.Items)
+	table.Empty(self.Slots)
+end
 
-	ns:WriteUInt(self.NetworkID, 16)
-	ns:WriteUInt(amt, 16)
-
-	for k,v in pairs(self:GetItems()) do
-		v:Serialize(ns)
-	end
-
-	return ns
+function bp:HasAccess(ply, action)
+	return ply == self:GetOwner()
 end
 
 function bp:NewItem(iid, cb, slot)
@@ -92,14 +141,82 @@ function bp:NewItem(iid, cb, slot)
 	end
 end
 
+
+--[[------------------------------]]
+--	    Networking & shtuff
+--[[------------------------------]]
+
+function bp:SerializeItems(typ)
+	local max_uid = 0
+	local max_id = 0
+	local amt = 0
+
+	if typ == INVENTORY_NETWORK_FULLUPDATE then
+
+		for k,v in pairs(self:GetItems()) do
+			max_uid = math.max(max_uid, v:GetUID())
+			max_id = math.max(max_id, v:GetIID())
+			amt = amt + 1
+		end
+
+	end
+
+	local ns = Inventory.Networking.NetStack(max_uid, max_id)
+
+	ns:WriteUInt(self.NetworkID, 16).InventoryNID = true
+	ns:WriteUInt(amt, 16).ItemsAmount = true
+
+	if typ == INVENTORY_NETWORK_FULLUPDATE then
+		for k,v in pairs(self:GetItems()) do
+			v:Serialize(ns)
+		end
+	end
+
+	return ns
+end
+
+--takes: item or uid, INV_ITEM_DELETED or INV_ITEM_MOVED
+function bp:AddChange(it, what)
+	local uid = (isnumber(it) and it) or it:GetUID()
+	self.Changes[it] = what
+end
+
+function bp:WriteChanges(ns)
+	local dels, moves, allits = {}, {}, {}
+
+	local where = {
+		[INV_ITEM_DELETED] = dels,
+		[INV_ITEM_MOVED] = moves
+	}
+
+	for item, enum in pairs(self.Changes) do
+		if not where[enum] then errorf("Unknown change enum! %s: %q", item, enum) return end
+		where[enum][#where[enum] + 1] = item
+		allits[#allits + 1] = item
+	end
+
+	ns:Resize(allits)
+
+	ns:WriteUInt(#dels, 16).DeletionAmt = true
+	for k,v in ipairs(dels) do
+		ns:WriteUID(v)
+	end
+
+	ns:WriteUInt(#moves, 16)
+	for k,v in ipairs(moves) do
+		ns:WriteUID(v)
+		ns:WriteSlot(v)
+	end
+end
+
 function bp:Register()
 	hook.Run("InventoryTypeRegistered", self, self.Name)
 	Inventory.Networking.InventoryIDs[self.NetworkID] = self
 end
 
 ChainAccessor(bp, "Items", "Items")
-ChainAccessor(bp, "OwnerSID", "OwnerID")
-ChainAccessor(bp, "OwnerSID", "OwnerSID")
+ChainAccessor(bp, "OwnerUID", "OwnerID")
+ChainAccessor(bp, "OwnerUID", "OwnerUID")
 
 if not Inventory.BackpackRegistered then
 	hook.Add("OnInventoryLoad", "RegisterBackpack", function()

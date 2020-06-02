@@ -3,9 +3,11 @@ local ms = Inventory.MySQL
 
 local db = ms.DB
 
-local qerr = function(self, q, err)
+local qerr = function(self, err, q)
 	ms.LogError("\n	Query: '%s'\n	Error: '%s'\n 	Trace: %s", q, err, debug.traceback("", 2))
 end
+
+_G.IQError = qerr
 
 local log = ms.Log
 
@@ -45,6 +47,7 @@ selIDs.onSuccess = function(self, dat)
 	end
 
 	hook.Run("InventoryItemIDsReceived", ids, names)
+
 	Inventory.MySQL.IDsReceived = true
 end
 selIDs.onError = qerr
@@ -159,7 +162,7 @@ function ms.FetchPlayerItems(inv, ply)
 			local it = Inventory.Util.GetMeta(v.iid)
 			it = it:new(v.uid, v.iid)
 			it:SetOwner(ply)
-			print("Set slot", v.slotid)
+			print("Set slot", v.slotid, it, it.SetSlot)
 			it:SetSlot(v.slotid)
 			inv:AddItem(it)
 		end
@@ -167,4 +170,84 @@ function ms.FetchPlayerItems(inv, ply)
 	q.onError = qerr
 
 	q:start()
+end
+
+local setslot_query = "UPDATE %s SET slotid = %d WHERE uid = %s"
+function ms.SetSlot(it, inv)
+	local slot = (IsItem(it) and it:GetSlot()) or (isnumber(it) and it)
+
+	if not slot then errorf("Failed to get slot for item %s", it) return end
+
+	if not inv then inv = it:GetInventory() end
+	if not inv.SQLName then errorf("Failed to get SQLName for inventory %s", inv) return end
+
+	local q = setslot_query:format(inv.SQLName, slot, it:GetUID())
+
+	MySQLEmitter(ms.DB:query(q), true):Catch(qerr)
+
+end
+
+--local swapslots_query = ms.DB:prepare("CALL SwapItemSlots(?, ?, ?, ?)") --takes tablename, sid64, slot1 (number), slot2 (number)
+--^ this is too woke, do not use it
+
+
+--takes: tablename, swapping-uid, puid, slot1 (number - move from), slot2 (number - move to)
+
+local function swapSlots(tname, uid, sid, slot1, slot2)
+	local t = ms.DB:createTransaction()
+
+	local q1 = ("UPDATE %s SET slotid = NULL WHERE uid = %d"):format(tname, uid)
+	local q2 = ("UPDATE %s SET slotid = %d WHERE slotid = %d AND puid = %s"):format(tname, slot1, slot2, sid)
+	local q3 = ("UPDATE %s SET slotid = %d WHERE uid = %d"):format(tname, slot2, uid)
+
+	local qo1 = db:query(q1)
+	local qo2 = db:query(q2)
+	local qo3 = db:query(q3)
+
+	t:addQuery(qo1)
+	t:addQuery(qo2)
+	t:addQuery(qo3)
+
+	t.onError = IQError
+	t.onSuccess = 
+
+	MySQLEmitter:new(t, true):Then(function()
+		ms.Log("swapSlots transaction successful")
+	end, qerr)
+	
+	--t:start()
+end
+
+function ms.SwitchSlots(it1, it2, inv)
+	if not it2 then
+		ms.SetSlot(it1, inv)
+		return
+	end
+
+	if not inv and IsItem(it1) then
+		inv = it1:GetInventory()
+		if it2:GetInventory() ~= inv then
+			errorf("Inventory.MySQL.SwitchSlots: can't switch slots of two items in different inventories! (1: %s, 2: %s)", inv, it2:GetInventory())
+			return
+		end
+
+		if not IsInventory(inv) then
+			error("Inventory.MySQL.SwitchSlots: both items didn't have an inventory and none was provided!", 2)
+			return
+		end
+	end
+
+	local invname = inv.SQLName
+	if not invname then errorf("Inventory missing SQL name! %s", inv) return end
+
+	local slot1 = IsItem(it1) and it1:GetSlot() or it1
+	local slot2 = IsItem(it2) and it2:GetSlot() or it2
+	local _, puid = inv:GetOwner()
+
+	if isnumber(slot1) and isnumber(slot2) then
+		swapSlots(invname, it1:GetUID(), puid, slot1, slot2)
+	else
+		errorf("Inventory.MySQL.SwitchSlots: missing one of the slots for item1 or item2 (got: %s, %s)", slot1, slot2)
+	end
+
 end

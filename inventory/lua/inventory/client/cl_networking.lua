@@ -23,45 +23,83 @@ function nw.ReadItem(uid_sz, iid_sz, slot_sz)
     return item
 end
 
-function nw.ReadInventory(invtbl)
+function nw.ReadInventory(invtbl, typ)
     local max_uid, max_id = nw.ReadHeader()
     local invID = net.ReadUInt(16)
     local its = net.ReadUInt(16)
 
     log("CL-Networking: reading %d items for inventory %d", its, invID)
 
-    
     local inv = invtbl[invID] or errorf("Could not find Inventory with ID %d in that entity!!", invID)
-    print("inv is", inv, inv.Slots, inv.Items, inv.Owner)
+
     AAA = invtbl
     local slot_size = inv.MaxItems and bit.GetLen(inv.MaxItems)
 
-    for i2=1, its do
-        log("   reading item #%d", i2)
+    for i=1, its do
+        log("   reading item #%d", i)
         local it = nw.ReadItem(max_uid, max_id, slot_size)
         inv:AddItem(it)
         log("   successfully added item")
+        Inventory:Emit("ItemAdded", inv, it)
     end
 
-    print("\n")
+    if typ == INV_NETWORK_UPDATE then
+        local dels = net.ReadUInt(16)
+
+        log("CL-Networking: reading %d deletions", dels)
+
+        for i=1, dels do
+            local uid = net.ReadUInt(max_uid)
+            local del_it = inv:DeleteItem(uid)
+            log("   successfully deleted item")
+            Inventory:Emit("ItemRemoved", inv, del_it)
+        end
+
+        local moves = net.ReadUInt(16)
+
+        log("CL-Networking: reading %d moves", moves)
+
+        for i=1, moves do
+            local uid = net.ReadUInt(max_uid)
+            local slot = net.ReadUInt(bit.GetLen(inv.MaxItems))
+            local item = inv:GetItem(uid)
+            item:SetSlot(slot)
+            log("   successfully moved item %s into slot %s", uid, slot)
+            --Inventory:Emit("ItemChanged", inv, item)
+            Inventory:Emit("ItemMoved", inv, item)
+        end
+    end
+
 end
 
-
-
-function nw.ReadNet(len)
+function nw.ReadUpdate(len, type)
     local invs = net.ReadUInt(8) --amount of inventories
     local ent = net.ReadEntity()
-    
-    log("CL-NW: Received %d inventories for %s; packet length is %d", invs, ent, len)
+
+    log("CL-NW: Update: Received %d inventories for %s; packet length is %d", invs, ent, len)
 
     local invs_table = {} --map out all the entity's inventories into {[nwID] = obj} pairs
 
     for k,v in pairs(ent.Inventory) do
+
+        if type == INV_NETWORK_FULLUPDATE then
+            v:Reset()
+        end
+
         invs_table[v.NetworkID] = v
     end
 
     for i=1, invs do
-        nw.ReadInventory(invs_table)
+        nw.ReadInventory(invs_table, type)
+    end
+end
+
+
+function nw.ReadNet(len)
+    local type = net.ReadUInt(4) --type of networking (fullupdate? partial update?)
+
+    if type == INV_NETWORK_FULLUPDATE or type == INV_NETWORK_UPDATE then
+        nw.ReadUpdate(len, type)
     end
 
 end
@@ -77,7 +115,7 @@ function nw.ReadConstants()
     if comp then
         dat = util.Decompress(dat)
     end
-    print("deserializing", dat)
+
     dat = von.deserialize(dat)
 
     local conv = Inventory.IDConversion
@@ -93,3 +131,35 @@ end
 
 
 net.Receive("InventoryConstants", nw.ReadConstants)
+
+local invnet = netstack:extend()
+local log = Inventory.Log
+
+function invnet:WriteInventory(inv)
+    self:WriteEntity( (inv:GetOwner()) )
+    self:WriteUInt(inv.NetworkID, 16)
+
+    self.CurrentInventory = inv
+
+    return self
+end
+
+function invnet:WriteItem(it)
+    if not self.CurrentInventory or not self.CurrentInventory:HasItem(it) then 
+        errorf("Can't write an item if current inventory doesn't have it! (current inv: %s, tried to write: %s)", self.CurrentInventory, it) 
+        return
+    end
+
+    self:WriteUInt(it:GetUID(), 32)
+end
+
+function nw.Netstack()
+    return invnet:new()
+end
+
+function nw.PerformAction(enum, ns)
+    net.Start("Inventory")
+        net.WriteUInt(enum, 16)
+        net.WriteNetStack(ns)
+    net.SendToServer()
+end
