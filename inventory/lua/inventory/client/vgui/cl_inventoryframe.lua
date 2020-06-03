@@ -27,7 +27,16 @@ function PANEL:OnItemRemovedFromSlot(slot, item)
 end
 
 function PANEL:SetInventory(inv)
+	if self.Inventory then
+		self.Inventory:RemoveListener("Change", self)
+	end
+
 	self.Inventory = inv
+
+	inv:On("Change", self, function(...)
+		self:Emit("Change", ...)
+	end)
+
 	self:Emit("SetInventory", inv)
 end
 
@@ -47,6 +56,13 @@ function PANEL:AddItemSlot()
 	self.Slots[i + 1] = it
 	it:SetSlot(i + 1)
 	it:On("ItemInserted", self.OnItemAddedIntoSlot, self)
+
+	self:On("Change", it, function(self, inv, ...)
+		if inv:GetItemInSlot(i + 1) ~= it:GetItem() then
+			print("Changing", it, inv:GetItemInSlot(i + 1))
+			it:SetItem(inv:GetItemInSlot(it:GetSlot()))
+		end
+	end)
 
 	return it
 end

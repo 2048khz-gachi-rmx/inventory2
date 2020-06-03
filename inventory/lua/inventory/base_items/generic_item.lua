@@ -7,6 +7,8 @@ Inventory.BaseItemObjects.Generic = Base
 function Base:Initialize(name)
 	assert(isstring(name), "New base items _MUST_ have a name assigned to them!")
 
+	self.NetworkedVars = {}
+
 	self.ItemName = name
 	self:PullItemID()
 
@@ -40,6 +42,35 @@ function Base:PullItemID()
 		end
 	end
 
+end
+
+local types = {
+	Int = 2,
+	Float = 1,
+	Bool = 1,
+	Angle = 1,
+	Bit = 1,
+	Normal = 1,
+	UInt = 2,
+	Color = 1,
+	Double = 1,
+	Data = 2,
+	Entity = 1,
+	String = 1,
+
+	NetStack = true,
+	Any = true,
+}
+
+function Base:NetworkVar(net_typ, what, ...)
+	local typ = types[net_typ]
+	local given = select('#', ...)
+
+	if isnumber(typ) and given ~= typ - 1 then errorf("Mismatched amount of args provided (%d) vs. args needed (%d): %s", given, typ, ...) return end
+	if not isstring(what) and not isfunction(what) then errorf("NetworkVar accepts either a string (key in its' .Data table) or a function which determines how to network! Got %s instead", type(what)) return end
+
+	self.NetworkedVars[#self.NetworkedVars + 1] = {type = net_typ, what = what, args = {...}}
+	return self
 end
 
 ChainAccessor(Base, "Name", "Name")

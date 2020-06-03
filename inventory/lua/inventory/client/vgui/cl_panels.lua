@@ -102,6 +102,7 @@ function iPan.CreateInventory(par, inv, multiple)
 		end
 
 		local p = vgui.Create("InventoryPanel", f)
+		EEE = p
 		p:SetInventory(inv)
 		f.InvPanel = p
 
@@ -110,15 +111,16 @@ function iPan.CreateInventory(par, inv, multiple)
 
 		local trackFunc = function(self, slotnum, it)
 
-			if uids[it:GetUID()] then --assume there can't be more than one instance of the same item within one inventory
-				uids[it:GetUID()]:SetItem(nil)
-			end
+			--if uids[it:GetUID()] then --assume there can't be more than one instance of the same item within one inventory
+			--	uids[it:GetUID()]:SetItem(nil)
+			--end
 
 			uids[it:GetUID()] = self
+			PrintTable(uids)
 		end
 
 		local unTrackFunc = function(self, it)
-			uids[it:GetUID()] = nil
+			if uids[it:GetUID()] == self then uids[it:GetUID()] = nil end
 		end
 
 		if not noanim then p:PopIn(0.1, 0.05) end

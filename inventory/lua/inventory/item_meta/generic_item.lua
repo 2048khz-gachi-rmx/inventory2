@@ -26,6 +26,7 @@ function it:Initialize(uid, iid)
 	end
 
 	self.ItemUID = uid
+	self.Data = {}
 
 	local base = Inventory.BaseItems[iid]
 	if not base then
@@ -57,6 +58,7 @@ ChainAccessor(it, "ItemUID", "UID")
 
 ChainAccessor(it, "ItemID", "ItemID")
 ChainAccessor(it, "ItemID", "IID")
+ChainAccessor(it, "Known", "Known")
 
 BaseItemAccessor(it, "Name", "Name")
 BaseItemAccessor(it, "Name", "NiceName")
@@ -98,6 +100,28 @@ function Inventory.NewItem(iid, invobj, cb)
 	return item
 end
 
+function it:WriteNetworkedVars(ns)
+	local base = self:GetBaseItem()
+	for k,v in ipairs(base.NetworkedVars) do
+
+		--for every custom-encoded var, there is a bool written before the actual content
+		--was the data even written or nah? did it exist, or did the function return anything?
+		--if nah, the decoder will skip this particular var
+
+		if isfunction(v.type) then
+			local ret = v.type(self, true) --true means write, false means read
+			if not IsNetStack(ret) then ns:WriteBool(false) continue end
+
+			ns:WriteBool(true)
+			ret:MergeInto(ns)
+		else
+			if not self.Data[v.what] then ns:WriteBool(false) continue end
+
+			ns:WriteBool(true)
+			ns["Write" .. v.type] (ns, self.Data[v.what], unpack(v.args))
+		end
+	end
+end
 
 function it:Serialize(ns)
 	if not ns then
@@ -107,5 +131,22 @@ function it:Serialize(ns)
 	ns:WriteIDs(self)
 	ns:WriteSlot(self)
 
+	self:WriteNetworkedVars(ns)
 	return ns
+end
+
+function it:ReadNetworkedVars()
+	local base = self:GetBaseItem()
+
+	for k,v in ipairs(base.NetworkedVars) do
+		local read = net.ReadBool()
+		if not read then continue end
+
+		if isfunction(v.type) then
+			v.type(self, false)
+		else
+			self.Data[v.what] = net["Read" .. v.type] (unpack(v.args))
+		end
+	end
+
 end

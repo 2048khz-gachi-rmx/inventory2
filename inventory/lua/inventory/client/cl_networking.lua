@@ -10,14 +10,19 @@ function nw.ReadHeader()
     return max_uid, max_id
 end
 
-function nw.ReadItem(uid_sz, iid_sz, slot_sz)
+function nw.ReadItem(uid_sz, iid_sz, slot_sz, inventory)
     local uid, iid = net.ReadUInt(uid_sz), net.ReadUInt(iid_sz)
     local slot = slot_sz and net.ReadUInt(slot_sz)
 
     local meta = Inventory.Util.GetMeta(iid)
     local item = meta:new(uid, iid)
-
+    print("new item?", ("%p"):format(item))
     if slot then item:SetSlot(slot) end
+
+    inventory:AddItem(item)
+
+    item:ReadNetworkedVars()
+    --item:SetInventory(inventory)
 
     log("       Read item UID: %s; IID: %s; Slot: %s", uid, iid, slot)
     return item
@@ -37,8 +42,8 @@ function nw.ReadInventory(invtbl, typ)
 
     for i=1, its do
         log("   reading item #%d", i)
-        local it = nw.ReadItem(max_uid, max_id, slot_size)
-        inv:AddItem(it)
+        local it = nw.ReadItem(max_uid, max_id, slot_size, inv)
+        --inv:AddItem(it)
         log("   successfully added item")
         Inventory:Emit("ItemAdded", inv, it)
     end
@@ -62,14 +67,16 @@ function nw.ReadInventory(invtbl, typ)
         for i=1, moves do
             local uid = net.ReadUInt(max_uid)
             local slot = net.ReadUInt(bit.GetLen(inv.MaxItems))
+            log("   moving item %s into slot %s", uid, slot)
             local item = inv:GetItem(uid)
             item:SetSlot(slot)
-            log("   successfully moved item %s into slot %s", uid, slot)
+            --log("   successfully moved item %s into slot %s", uid, slot)
             --Inventory:Emit("ItemChanged", inv, item)
             Inventory:Emit("ItemMoved", inv, item)
         end
     end
 
+    inv:Emit("Change")
 end
 
 function nw.ReadUpdate(len, type)

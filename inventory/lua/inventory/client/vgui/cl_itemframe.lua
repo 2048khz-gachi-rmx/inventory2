@@ -92,6 +92,7 @@ function ITEM:Think()
 end
 
 function ITEM:SetItem(it)
+
 	self:SetEnabled(Either(it, true, false))
 
 	if it then
@@ -135,7 +136,7 @@ function ITEM:SetItem(it)
 
 	else
 		self:Emit("ItemTakenOut", self.Item)
-		self:SetCursor("none")
+		self:SetCursor("arrow")
 
 		self.Item = nil
 
@@ -144,6 +145,10 @@ function ITEM:SetItem(it)
 		self.ModelPanel = nil
 	end
 
+end
+
+function ITEM:GetItem()
+	return self.Item
 end
 
 function ITEM:PrePaint()
@@ -166,6 +171,8 @@ function Inventory.Panels.ItemDraw(self, w, h)
 	if self.Item then
 		draw.RoundedBox(rnd, 0, 0, w, h, Colors.LightGray)
 		draw.RoundedBox(rnd, 2, 2, w-4, h-4, Colors.Gray)
+
+		self.Item:GetBaseItem():Emit("Paint", self.Item, self, self.ModelPanel)
 	else
 		draw.RoundedBox(rnd, 0, 0, w, h, emptyCol)
 	end

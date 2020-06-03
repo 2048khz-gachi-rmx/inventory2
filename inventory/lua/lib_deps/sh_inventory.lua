@@ -102,7 +102,7 @@ Inventory.ReloadInventory = LoadInventory
 Inventory.Reload = LoadInventory
 
 if not existed then
-	hook.Add("PostGamemodeLoaded", "Inventory", LoadInventory)
+	hook.Add("InitPostEntity", "Inventory", LoadInventory)
 else
 	LoadInventory(true)
 end

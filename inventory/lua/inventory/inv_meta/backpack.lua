@@ -54,7 +54,7 @@ function bp:SetSlot(it, slot)   --this is basically an accessor func;
 
 	self.Slots[slot] = it
 
-	self:AddChange(it, INV_ITEM_MOVED)
+	if it:GetKnown() then self:AddChange(it, INV_ITEM_MOVED) end --if the player doesn't know about the item, don't replace the change
 end
 
 function bp:DeleteItem(it)
@@ -63,7 +63,7 @@ function bp:DeleteItem(it)
 	local it = self:GetItems()[uid]
 	self:GetItems()[uid] = nil
 
-	self:AddChange(it, INV_ITEM_DELETED)
+	if it:GetKnown() then self:AddChange(it, INV_ITEM_DELETED) else self:AddChange(it, nil) end --if the player doesn't know about the item, don't even tell him about the deletion
 	return it
 end
 
@@ -73,7 +73,7 @@ function bp:MoveItem(it, slot)	--this is a utility function which swaps slots if
 	local b4slot = it:GetSlot()
 
 	if it == it2 or it:GetSlot() == slot then return false end
-	
+
 	it:SetSlot(slot)
 	if it2 then it2:SetSlot(b4slot) end
 
@@ -88,6 +88,7 @@ function bp:AddItem(it)
 	if not self.Slots then print("WHAT!??!?!") return end
 	self.Items[it:GetUID()] = it
 	self.Slots[it:GetSlot()] = it
+	self:AddChange(it, INV_ITEM_ADDED)
 
 	it.Inventory = self
 
@@ -109,7 +110,7 @@ function bp:GetItem(uid)
 end
 
 function bp:HasItem(it)
-	if IsItem(it) then 
+	if IsItem(it) then
 		return self:GetItem(it:GetUID())
 	else
 		return self:GetItem(it)
@@ -136,8 +137,9 @@ function bp:NewItem(iid, cb, slot)
 
 	if it:GetUID() then
 		self:AddItem(it)
+		cb(it, slot)
 	else
-		it:On("AssignUID", function() self:AddItem(it) end)
+		it:On("AssignUID", function() self:AddItem(it) cb(it, slot) end)
 	end
 end
 
@@ -151,9 +153,17 @@ function bp:SerializeItems(typ)
 	local max_id = 0
 	local amt = 0
 
-	if typ == INVENTORY_NETWORK_FULLUPDATE then
+	if typ == INV_NETWORK_FULLUPDATE or typ == nil then
+		for k,v in pairs(self:GetItems()) do
+			max_uid = math.max(max_uid, v:GetUID())
+			max_id = math.max(max_id, v:GetIID())
+			amt = amt + 1
+		end
+
+	elseif typ == INV_NETWORK_UPDATE then
 
 		for k,v in pairs(self:GetItems()) do
+			if self.Changes[v] ~= INV_ITEM_ADDED then continue end
 			max_uid = math.max(max_uid, v:GetUID())
 			max_id = math.max(max_id, v:GetIID())
 			amt = amt + 1
@@ -161,23 +171,36 @@ function bp:SerializeItems(typ)
 
 	end
 
+	print("writing", amt, "items")
 	local ns = Inventory.Networking.NetStack(max_uid, max_id)
 
 	ns:WriteUInt(self.NetworkID, 16).InventoryNID = true
 	ns:WriteUInt(amt, 16).ItemsAmount = true
 
-	if typ == INVENTORY_NETWORK_FULLUPDATE then
+
+	if typ == INV_NETWORK_FULLUPDATE or typ == nil then
 		for k,v in pairs(self:GetItems()) do
 			v:Serialize(ns)
+			v:SetKnown(true)
 		end
+
+	elseif typ == INV_NETWORK_UPDATE then
+		for k,v in pairs(self:GetItems()) do
+			if self.Changes[v] ~= INV_ITEM_ADDED then continue end
+			v:Serialize(ns)
+			v:SetKnown(true)
+
+			self.Changes[v] = nil
+		end
+
 	end
+
 
 	return ns
 end
 
 --takes: item or uid, INV_ITEM_DELETED or INV_ITEM_MOVED
 function bp:AddChange(it, what)
-	local uid = (isnumber(it) and it) or it:GetUID()
 	self.Changes[it] = what
 end
 
@@ -186,11 +209,11 @@ function bp:WriteChanges(ns)
 
 	local where = {
 		[INV_ITEM_DELETED] = dels,
-		[INV_ITEM_MOVED] = moves
+		[INV_ITEM_MOVED] = moves,
 	}
 
 	for item, enum in pairs(self.Changes) do
-		if not where[enum] then errorf("Unknown change enum! %s: %q", item, enum) return end
+		if not where[enum] then printf("Unknown change enum in %s! Ignoring... (%s: %q)", self.Name, item, enum) continue end
 		where[enum][#where[enum] + 1] = item
 		allits[#allits + 1] = item
 	end
@@ -202,7 +225,8 @@ function bp:WriteChanges(ns)
 		ns:WriteUID(v)
 	end
 
-	ns:WriteUInt(#moves, 16)
+	ns:WriteUInt(#moves, 16).MovedAmt = true
+
 	for k,v in ipairs(moves) do
 		ns:WriteUID(v)
 		ns:WriteSlot(v)

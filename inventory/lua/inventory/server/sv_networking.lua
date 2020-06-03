@@ -22,7 +22,9 @@ local names = {
 	},
 	Slot = " - Item Slot",
 	InventoryNID = " - Inventory NetworkID",
-	ItemsAmount = " - Amount of Inventory Items"
+	ItemsAmount = " - Amount of Inventory Items",
+	DeletionAmt = " - Amount of deleted items",
+	MovedAmt = " - Amount of moved items"
 }
 
 local function getArgName(t)
@@ -207,7 +209,7 @@ function nw.SendNetStacks(nses, ply)
 
 	net.Start("Inventory")
 		for k,v in ipairs(nses) do
-			--print("Sent:", v)
+			print("Sent:", v)
 			net.WriteNetStack(v)
 		end
 	net.Send(ply)
@@ -224,9 +226,9 @@ function nw.WriteHeader(typ, invs, ply)
 end
 
 function nw.NetworkInventory(ply, inv, typ, just_return) --mark 'just_return' as true for this function to just return an invnet (netstack) object
-	if inv and not inv.NetworkID then errorf("Cannot send inventory %q as it doesn't have a network ID!", inv.Name) return end
+	if inv and IsInventory(inv) and not inv.NetworkID then errorf("Cannot send inventory %q as it doesn't have a network ID!", inv.Name) return end
 
-	if inv then
+	if IsInventory(inv) then
 
 		local ns = inv:SerializeItems(typ)
 		nw.CurrentInventory = ns
@@ -238,19 +240,27 @@ function nw.NetworkInventory(ply, inv, typ, just_return) --mark 'just_return' as
 		if just_return then
 			return ns
 		else 						--      V we're only networking 1 inventory
-			local st = {nw.WriteHeader(typ, 1, ply),    ns} --write the header first, then the actual contents
+			local st = {nw.WriteHeader(typ, 1, inv:GetOwner()),    ns} --write the header first, then the actual contents
 			nw.SendNetStacks(st, ply)
 		end
 
-	else --no inventory was specified; let's assume network the entire inventory of player
-		local stacks = {}
+	else --no inventory was specified;
+		 --either it was a table of multiple inventories
+		 --or we're networking to the player himself
 
-		for k,v in pairs(ply.Inventory) do --recursively network every inventory
+		local invs = (istable(inv) and inv) or ply.Inventory
+		local stacks = {}
+		local owner
+
+		for k,v in pairs(invs) do --recursively network every inventory
 			stacks[#stacks + 1] = nw.NetworkInventory(ply, v, typ, true)
+			local iown = v:GetOwner()
+			if owner and iown ~= owner then errorf("Cannot send multiple inventories with different owners in one net! (%s ~= %s)", owner, iown) return end
+			owner = iown
 			nw.CurrentInventory = nil
 		end
 
-		local header = nw.WriteHeader(typ, #stacks, ply)
+		local header = nw.WriteHeader(typ, #stacks, owner)
 		table.insert(stacks, 1, header)
 
 		if just_return then
@@ -290,6 +300,6 @@ end
 
 
 hook.Add("PlayerFullyLoaded", "InventoryNetwork", function(ply)
-	nw.NetworkInventory(ply)
 	nw.NetworkItemNames(ply)
+	nw.NetworkInventory(ply)
 end)
