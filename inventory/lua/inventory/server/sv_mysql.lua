@@ -7,18 +7,30 @@ local qerr = function(self, err, q)
 	ms.LogError("\n	Query: '%s'\n	Error: '%s'\n 	Trace: %s", q, err, debug.traceback("", 2))
 end
 
+local trerr = function(tr, err)
+	local qs = tr:getQueries()
+	local errs = {}
+	for k,v in ipairs(qs) do
+		local err = v:error()
+		errs[#errs + 1] = (#err > 1 and err) or "[no error]"
+	end
+	ms.LogError("\n	Transaction error: '%s'\n Errors: %s \n Trace: %s", err, table.concat(errs, ";\n"), debug.traceback("", 2))
+end
+
 _G.IQError = qerr
 
 local log = ms.Log
 
-local create_table_query = [[CREATE TABLE %s (
+local create_table_query = [[CREATE TABLE IF NOT EXISTS %s (
   `uid` INT NOT NULL,
   `puid` BIGINT UNSIGNED NULL,
   `slotid` MEDIUMINT UNSIGNED NULL,
   %s]] --[[additional columns support l8r]] .. [[
   PRIMARY KEY (`uid`),
-  UNIQUE INDEX `uid_UNIQUE` (`uid` ASC) VISIBLE,
-  UNIQUE INDEX `uq_slotid_puid` (`puid` ASC, `slotid` ASC) VISIBLE);]]
+  UNIQUE KEY `uid` (`uid`),
+  UNIQUE KEY `uq_slot_puid` (`puid`,`slotid`),
+  CONSTRAINT `uid` FOREIGN KEY (`uid`) REFERENCES `items` (`uid`) ON DELETE CASCADE
+)]]
 
 function ms.CreateInventoryTable(tbl_name)
 	local q = create_table_query:format(tbl_name, "")
@@ -32,6 +44,12 @@ function ms.CreateInventoryTable(tbl_name)
 
 	qobj:start()
 end
+
+hook.Add("InventoryTypeRegistered", "CreateInventoryTables", function(inv)
+	if not inv.SQLName then errorf("Inventory %s is missing an SQLName!", inv.Name) return end
+
+	ms.CreateInventoryTable(inv.SQLName)
+end)
 
 local conv = Inventory.IDConversion
 
@@ -101,7 +119,7 @@ function ms.NewItem(item, inv, ply, cb)
 
 	local invname = inv and (inv.SQLName or errorf("Inventory.MySQL.NewItem: No SQLName for inventory %s!", inv.Name))
 	local iid = item.ItemID or item.ItemName
-	print("e?", invname, iid)
+
 	if not invname then
 		if isstring(iid) then
 			newitem_name_query:setString(1, iid)
@@ -122,6 +140,7 @@ function ms.NewItem(item, inv, ply, cb)
 
 		qobj:setString(2, invname)
 		qobj:setString(3, sid)
+
 		local slot = item:GetSlot()
 		if not slot then
 			slot = inv:GetFreeSlot()
@@ -131,20 +150,41 @@ function ms.NewItem(item, inv, ply, cb)
 		end
 
 		qobj:setNumber(4, slot)
+
 	end
 
-	print("yeet skeet")
-	qobj.onSuccess = function(self, dat, e)
+	--[[qobj.onSuccess = function(self, dat, e)
 		local uid = dat[1].uid
 		cb(uid)
 	end
 
-	qobj.onError = qerr
+	qobj.onError = qerr]]
 
-	qobj:start()
+	local qem = MySQLEmitter(qobj, true):Catch(qerr)
 
-end														-- SQL inventory name | SteamID64 as an int
-														  --  V 			  V
+	qem:Once("Success", "AssignData", function()
+		local dat = item:GetPermaData()
+		if not table.IsEmpty(dat) then
+			ms.ItemWriteData(item, dat)
+		end
+	end)
+
+
+	return qem
+	--qobj:start()
+
+end
+
+local delete_query = ms.DB:prepare("DELETE FROM items WHERE uid = ?")
+
+function ms.DeleteItem(it)
+	delete_query:setNumber(1, (isnumber(it) and it) or it:GetUID())
+
+	return MySQLEmitter(delete_query, true)
+end
+
+ 																							 -- SQL inventory name | SteamID64 as an int
+																							    --  V 			 	 V
 local fetchitems_query 	= "SELECT its.iid, its.uid, its.data, inv.slotid FROM items its INNER JOIN %s inv ON puid = %s AND its.uid = inv.uid"
 
 --mysqloo is fucking autistic so this can't be used as a prepared query :/
@@ -158,15 +198,20 @@ function ms.FetchPlayerItems(inv, ply)
 
 	q.onSuccess = function(self, dat)
 		Inventory.Log("MySQL: Fetched info for %q's %q inventory; %d items", ply:Nick(), tname, #dat)
+
 		for k,v in ipairs(dat) do
 			local it = Inventory.Util.GetMeta(v.iid)
 			it = it:new(v.uid, v.iid)
+
 			it:SetOwner(ply)
-			print("Set slot", v.slotid, it, it.SetSlot)
 			it:SetSlot(v.slotid)
+			it:DeserializeData(v.data)
+
 			inv:AddItem(it)
 		end
+
 	end
+
 	q.onError = qerr
 
 	q:start()
@@ -197,8 +242,8 @@ local function swapSlots(tname, uid, sid, slot1, slot2)
 	local t = ms.DB:createTransaction()
 
 	local q1 = ("UPDATE %s SET slotid = NULL WHERE uid = %d"):format(tname, uid)
-	local q2 = ("UPDATE %s SET slotid = %d WHERE slotid = %d AND puid = %s"):format(tname, slot1, slot2, sid)
-	local q3 = ("UPDATE %s SET slotid = %d WHERE uid = %d"):format(tname, slot2, uid)
+	local q2 = ("UPDATE %s SET slotid = %d WHERE slotid = %d AND puid = %s"):format(tname, slot2, slot1, sid)
+	local q3 = ("UPDATE %s SET slotid = %d WHERE uid = %d"):format(tname, slot1, uid)
 
 	local qo1 = db:query(q1)
 	local qo2 = db:query(q2)
@@ -207,14 +252,9 @@ local function swapSlots(tname, uid, sid, slot1, slot2)
 	t:addQuery(qo1)
 	t:addQuery(qo2)
 	t:addQuery(qo3)
+	print(q1, "\n", q2, "\n", q3)
+	return MySQLEmitter:new(t, true):Catch(trerr)
 
-	t.onError = IQError
-	t.onSuccess = 
-
-	MySQLEmitter:new(t, true):Then(function()
-		ms.Log("swapSlots transaction successful")
-	end, qerr)
-	
 	--t:start()
 end
 
@@ -245,9 +285,43 @@ function ms.SwitchSlots(it1, it2, inv)
 	local _, puid = inv:GetOwner()
 
 	if isnumber(slot1) and isnumber(slot2) then
-		swapSlots(invname, it1:GetUID(), puid, slot1, slot2)
+		return swapSlots(invname, it1:GetUID(), puid, slot1, slot2)
 	else
 		errorf("Inventory.MySQL.SwitchSlots: missing one of the slots for item1 or item2 (got: %s, %s)", slot1, slot2)
 	end
 
+end
+
+
+local new_dat_query = ms.DB:prepare("UPDATE items SET data = ? WHERE uid = ?")
+
+-- COMPLETELY overrides item data with new key-values
+-- Accepts either a key-value as the second argument or automatically takes the item's .Data
+
+function ms.ItemWriteData(it, data)
+	data = data or it:GetData()
+	local json = util.TableToJSON(data)
+
+	new_dat_query:setString(1, json)
+	new_dat_query:setNumber(2, it:GetUID())
+
+	return MySQLEmitter(new_dat_query, true)
+end
+
+local patch_dat_query = ms.DB:prepare("UPDATE items SET data = JSON_MERGE_PATCH(IFNULL(data, '[]'), ?) WHERE uid = ?")
+
+-- Merge the SQL data with provided table of key-values (the table will be JSON'd)
+
+function ms.ItemSetData(it, t)
+	t = t or it:GetData()
+
+	local json = util.TableToJSON(t)
+	if not json then errorf("Failed to get JSON from arg: %s", t) return end --?
+
+	printf("ItemSetData: patching JSON %s", json)
+
+	patch_dat_query:setString(1, json)
+	patch_dat_query:setNumber(2, it:GetUID())
+
+	return MySQLEmitter(patch_dat_query, true)
 end

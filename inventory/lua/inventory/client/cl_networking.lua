@@ -14,9 +14,13 @@ function nw.ReadItem(uid_sz, iid_sz, slot_sz, inventory)
     local uid, iid = net.ReadUInt(uid_sz), net.ReadUInt(iid_sz)
     local slot = slot_sz and net.ReadUInt(slot_sz)
 
-    local meta = Inventory.Util.GetMeta(iid)
-    local item = meta:new(uid, iid)
-    print("new item?", ("%p"):format(item))
+    local item = inventory:HasItem(uid)
+
+    if not item then
+        local meta = Inventory.Util.GetMeta(iid)
+        item = meta:new(uid, iid)
+    end
+
     if slot then item:SetSlot(slot) end
 
     inventory:AddItem(item)
@@ -90,6 +94,7 @@ function nw.ReadUpdate(len, type)
     for k,v in pairs(ent.Inventory) do
 
         if type == INV_NETWORK_FULLUPDATE then
+            log("!!!!!DROPPING INVENTORY!!!!!")
             v:Reset()
         end
 
@@ -143,6 +148,7 @@ local invnet = netstack:extend()
 local log = Inventory.Log
 
 function invnet:WriteInventory(inv)
+    print('written inv', inv)
     self:WriteEntity( (inv:GetOwner()) )
     self:WriteUInt(inv.NetworkID, 16)
 
@@ -169,4 +175,11 @@ function nw.PerformAction(enum, ns)
         net.WriteUInt(enum, 16)
         net.WriteNetStack(ns)
     net.SendToServer()
+end
+
+function nw.DeleteItem(it)
+    local ns = Inventory.Networking.Netstack()
+    ns:WriteInventory(it:GetInventory())
+    ns:WriteItem(it)
+    Inventory.Networking.PerformAction(INV_ACTION_DELETE, ns)
 end

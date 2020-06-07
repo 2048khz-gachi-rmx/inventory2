@@ -33,7 +33,6 @@ function ITEM:DetourStuff() --eh
 		self:Emit("DragHoverEnd")
 	end
 
-
 end
 
 function ITEM:Init()
@@ -73,28 +72,68 @@ end
 ChainAccessor(ITEM, "Slot", "Slot")
 
 function ITEM:OnItemDrop(slot, it)
-	if not self:GetSlot() then errorf("This ItemFrame doesn't have a slot assigned to it! Did you forget to call :SetSlot()?") return end
-	if self.Item == it then return end
 
-	it:SetSlot(self:GetSlot()) --assume success
-	self:SetItem(it)
-
-	local ns = Inventory.Networking.Netstack()
-	ns:WriteInventory(it:GetInventory())
-	ns:WriteItem(it)
-	ns:WriteUInt(self:GetSlot(), 16)
-
-	Inventory.Networking.PerformAction(INV_ACTION_MOVE, ns)
 end
 
 function ITEM:Think()
 	self:Emit("Think")
 end
 
+function ITEM:OnCursorEntered()
+	self:Emit("Hover")
+end
+
+function ITEM:OpenOptions()
+	local it = self:GetItem(true)
+	if not it then return end --e?
+
+	local mn = vgui.Create("FMenu")
+	mn:SetPos(gui.MouseX() - 8, gui.MouseY() + 1)
+	mn:MoveBy(8, 0, 0.3, 0, 0.4)
+	mn:PopIn()
+	mn:Open()
+	mn.WOverride = 200
+
+	hook.Run("InventoryGetOptions", it, mn)
+end
+
+function ITEM:CreateModelPanel(it)
+	if not IsValid(self.ModelPanel) and it:GetModel() then
+		local mdl = vgui.Create("DModelPanel", self)
+		mdl.Item = it
+
+		mdl:SetMouseInputEnabled(false)
+		mdl:SetSize(self:GetWide() - self.Rounding*2, self:GetTall())
+		mdl:SetPos(self.Rounding, self.Rounding)
+		mdl:SetModel(it:GetModel())
+		local pnt = mdl.Paint
+
+		function mdl.Paint(me, w, h)
+
+			if self.PaintingDragging or self.TransparentModel then
+				render.OverrideAlphaWriteEnable( true, false )
+				render.OverrideBlend(true, BLEND_SRC_COLOR, BLEND_ZERO, BLENDFUNC_MAX, 0, 0, 5)
+			end
+
+			pnt(me, w, h)
+
+			if self.PaintingDragging or self.TransparentModel then
+				render.OverrideBlend(false)
+				render.OverrideAlphaWriteEnable( false )
+			end
+
+		end
+
+		self:On("BaseItemUpdate", mdl, BestGuess, mdl)
+		BestGuess(_, mdl)
+		self.ModelPanel = mdl
+	end
+end
+
 function ITEM:SetItem(it)
 
 	self:SetEnabled(Either(it, true, false))
-
+	if self.FakeItem then self:SetFakeItem(nil) end
 	if it then
 		self.Item = it
 		self:SetCursor("hand")
@@ -103,38 +142,10 @@ function ITEM:SetItem(it)
 
 		Inventory:On("BaseItemDefined", self, ItemFrameUpdate, self)
 
-		if not self.ModelPanel and it:GetModel() then
-			local mdl = vgui.Create("DModelPanel", self)
-			mdl.Item = it
+		self:CreateModelPanel(it)
 
-			mdl:SetMouseInputEnabled(false)
-			mdl:SetSize(self:GetWide() - self.Rounding*2, self:GetTall())
-			mdl:SetPos(self.Rounding, self.Rounding)
-			mdl:SetModel(it:GetModel())
-			local pnt = mdl.Paint
-
-			function mdl.Paint(me, w, h)
-
-				if self.PaintingDragging then 
-					render.OverrideAlphaWriteEnable( true, false )
-					render.OverrideBlend(true, BLEND_SRC_COLOR, BLEND_ZERO, BLENDFUNC_MAX, 0, 0, 5)
-				end
-
-				pnt(me, w, h)
-
-				if self.PaintingDragging then 
-					render.OverrideBlend(false)
-					render.OverrideAlphaWriteEnable( false )
-				end
-
-			end
-
-			self:On("BaseItemUpdate", mdl, BestGuess, mdl)
-			BestGuess(_, mdl)
-			self.ModelPanel = mdl
-		end
-
-	else
+		self.Item:GetBaseItem():Emit("SetInSlot", self.Item, self, self.ModelPanel)
+	elseif self.Item then
 		self:Emit("ItemTakenOut", self.Item)
 		self:SetCursor("arrow")
 
@@ -147,8 +158,20 @@ function ITEM:SetItem(it)
 
 end
 
-function ITEM:GetItem()
-	return self.Item
+
+function ITEM:GetItem(real)
+	return self.Item or (not real and self.FakeItem), (self.FakeItem ~= nil)
+end
+
+function ITEM:SetFakeItem(it)
+	self.FakeItem = it
+	if it ~= nil then
+		self:CreateModelPanel(it)
+	else
+		if not self.Item then
+			self.ModelPanel:Remove()
+		end
+	end
 end
 
 function ITEM:PrePaint()
@@ -168,11 +191,22 @@ local emptyCol = Color(30, 30, 30)
 function Inventory.Panels.ItemDraw(self, w, h)
 	local rnd = self.Rounding
 
-	if self.Item then
+	local it = self.Item or self.FakeItem
+	if self.FakeItem then
+		self:SetAlpha(120)
+		self.TransparentModel = true
+	else
+		self:SetAlpha(255)
+		self.TransparentModel = false
+	end
+
+	if it then
+		local base = it:GetBaseItem()
+
 		draw.RoundedBox(rnd, 0, 0, w, h, Colors.LightGray)
 		draw.RoundedBox(rnd, 2, 2, w-4, h-4, Colors.Gray)
 
-		self.Item:GetBaseItem():Emit("Paint", self.Item, self, self.ModelPanel)
+		base:Emit("Paint", self.Item, self, self.ModelPanel)
 	else
 		draw.RoundedBox(rnd, 0, 0, w, h, emptyCol)
 	end
@@ -187,7 +221,6 @@ end
 
 function ITEM:Draw(w, h)
 	Inventory.Panels.ItemDraw(self, w, h)
-	
 
 	--[[if self.Item then
 		local it = self.Item
@@ -212,6 +245,10 @@ function ITEM:DoClick()
 	print("e")
 end
 
+function ITEM:DoRightClick()
+	self:OpenOptions()
+end
+
 function ITEM:Paint(w, h)
 	self:PrePaint(w, h)
 	self:Draw(w, h)
@@ -219,8 +256,27 @@ function ITEM:Paint(w, h)
 	self:Emit("Paint", w, h)
 end
 
+function ITEM:GetAmount()
+	return (self.AmountOverride or self:GetItem():GetAmount())
+end
+
+local amtCol = Color(120, 120, 120)
+
 function ITEM:PaintOver(w, h)
-	--if self.Item then draw.SimpleText(self.Item:GetUID(), "OSB24", w/2, h/2, Colors.Red, 1, 1) end
+	local it = self.Item or self.FakeItem
+
+	if it then
+		draw.SimpleText(it:GetUID(), "OSB24", w/2, 0, Colors.DarkerRed, 1, 5)
+
+		if it:GetCountable() then
+			local amt = self:GetAmount()
+			if amt then
+				draw.SimpleText("x" .. amt, "MR18", w - 4, h, amtCol, 2, 4)
+			end
+		end
+
+	end
+
 	self:Emit("PaintOver", w, h)
 end
 vgui.Register("ItemFrame", ITEM, "DButton")

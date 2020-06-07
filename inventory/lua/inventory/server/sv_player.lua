@@ -9,6 +9,11 @@ function PLAYER:InitializeInventories()
     end
 
     Inventory.Log("Initialized inventory for %q", self:Nick())
+
+    if Inventory.InDev then
+        self.bp = self.Inventory.Backpack
+        self.its = self.Inventory.Backpack.Items
+    end
 end
 
 hook.Add("InventoryItemIDsReceived", "PlayerInitInventories", function()
@@ -17,4 +22,3 @@ hook.Add("InventoryItemIDsReceived", "PlayerInitInventories", function()
 	end)
 	UnionTable(player.GetAll()):InitializeInventories()
 end)
-

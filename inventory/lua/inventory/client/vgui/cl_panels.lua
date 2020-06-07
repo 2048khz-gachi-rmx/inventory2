@@ -34,12 +34,12 @@ function iPan.CreateInventory(par, inv, multiple)
 
 	function f:PostPaint(w, h)
 		--self:Mask(w, h)
-		draw.BeginMask(f.Mask, self, w, h)
-		draw.DrawOp()
+		--draw.BeginMask(f.Mask, self, w, h)
+		--draw.DrawOp()
 	end
 
 	f:On("PaintOver", function(w, h)
-		draw.FinishMask()
+		--draw.FinishMask()
 	end)
 
 	function f:AppearInventory(p)
@@ -115,11 +115,15 @@ function iPan.CreateInventory(par, inv, multiple)
 			--	uids[it:GetUID()]:SetItem(nil)
 			--end
 
+			if not it:GetUID() then return end --uh kay
+
 			uids[it:GetUID()] = self
-			PrintTable(uids)
+
 		end
 
 		local unTrackFunc = function(self, it)
+			if not it:GetUID() then return end --uh kay
+			
 			if uids[it:GetUID()] == self then uids[it:GetUID()] = nil end
 		end
 
@@ -190,9 +194,11 @@ function iPan.CreateInventory(par, inv, multiple)
 	return f
 end
 
-
-local f = iPan.CreateInventory()
-f:SetTall(320)
-f:MakePopup()
-f:Center()
-f:SelectTab("Backpack")
+hook.Add("PlayerButtonDown", "Inventory", function(p, k)
+	if k ~= KEY_F4 then return end
+	local f = iPan.CreateInventory()
+	f:SetTall(320)
+	f:MakePopup()
+	f:Center()
+	f:SelectTab("Backpack")
+end)

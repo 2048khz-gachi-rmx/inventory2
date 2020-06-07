@@ -28,6 +28,8 @@ local names = {
 }
 
 local function getArgName(t)
+	if t.PacketName then return t.PacketName end
+
 	for k,v in pairs(names) do
 		if t[k] then
 			if istable(v) then
@@ -218,7 +220,7 @@ end
 function nw.WriteHeader(typ, invs, ply)
 	local header = netstack:new()
 
-	header:WriteUInt(typ or INV_NETWORK_FULLUPDATE, 4).NetworkType = true
+	header:WriteUInt(typ, 4).NetworkType = true
 	header:WriteUInt(invs, 8).InventoryAmt = true        --write amount of inventories we networked
 	header:WriteEntity(ply).InventoryOwner = true             --write the player whose inventories we're networking
 
@@ -227,6 +229,7 @@ end
 
 function nw.NetworkInventory(ply, inv, typ, just_return) --mark 'just_return' as true for this function to just return an invnet (netstack) object
 	if inv and IsInventory(inv) and not inv.NetworkID then errorf("Cannot send inventory %q as it doesn't have a network ID!", inv.Name) return end
+	if typ == nil then typ = INV_NETWORK_FULLUPDATE end
 
 	if IsInventory(inv) then
 
@@ -240,6 +243,7 @@ function nw.NetworkInventory(ply, inv, typ, just_return) --mark 'just_return' as
 		if just_return then
 			return ns
 		else 						--      V we're only networking 1 inventory
+			print("networkInventory: type is", typ)
 			local st = {nw.WriteHeader(typ, 1, inv:GetOwner()),    ns} --write the header first, then the actual contents
 			nw.SendNetStacks(st, ply)
 		end
@@ -260,6 +264,7 @@ function nw.NetworkInventory(ply, inv, typ, just_return) --mark 'just_return' as
 			nw.CurrentInventory = nil
 		end
 
+		print("networkInventory: type is", typ)
 		local header = nw.WriteHeader(typ, #stacks, owner)
 		table.insert(stacks, 1, header)
 
@@ -293,7 +298,7 @@ function nw.ReadItem(inv)
 	local uid = net.ReadUInt(32)
 
 	local it = inv:GetItem(uid)
-	if not it then return false, ("didn't find item UID %d in %q"):format(uid, inv) end 
+	if not it then return false, ("didn't find item UID %d in %s"):format(uid, inv) end 
 
 	return it
 end

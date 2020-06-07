@@ -57,13 +57,41 @@ function bp:SetSlot(it, slot)   --this is basically an accessor func;
 	if it:GetKnown() then self:AddChange(it, INV_ITEM_MOVED) end --if the player doesn't know about the item, don't replace the change
 end
 
+function bp:RemoveItem(it)
+	local uid = ToUID(it)
+
+	local its, slots = self:GetItems(), self:GetSlots()
+
+	local foundit = its[uid]
+	if not foundit then errorf("Tried to remove an item which didn't exist in the inventory in the first place!\nInventory: %s\nItem: %s\n", self, it) return end
+
+	its[uid] = nil
+
+	if foundit:GetSlot() then
+		slots[foundit:GetSlot()] = nil
+	else
+
+		for i=1, self.MaxItems do
+			if self.Slots[i] == foundit then
+				self.Slots[i] = nil
+			end
+		end
+
+	end
+
+	if foundit:GetKnown() then self:AddChange(foundit, INV_ITEM_DELETED) else print("item wasn't even known!!!", foundit:GetUID()) self:AddChange(foundit, nil) end
+
+	return foundit
+end
+
 function bp:DeleteItem(it)
 	local uid = (isnumber(it) and it) or it:GetUID()
 
-	local it = self:GetItems()[uid]
-	self:GetItems()[uid] = nil
+	local it = self:RemoveItem(it)
 
 	if it:GetKnown() then self:AddChange(it, INV_ITEM_DELETED) else self:AddChange(it, nil) end --if the player doesn't know about the item, don't even tell him about the deletion
+	if SERVER then Inventory.MySQL.DeleteItem(it) end
+
 	return it
 end
 
@@ -71,13 +99,13 @@ function bp:MoveItem(it, slot)	--this is a utility function which swaps slots if
 	if self.MaxItems and slot > self.MaxItems then errorf("Attempted to move item out of inventory bounds (%d > %d)", slot, self.MaxItems) return end
 	local it2 = self:GetItemInSlot(slot)
 	local b4slot = it:GetSlot()
-
+	print("bp:MoveItem: moved src:", b4slot, it:GetUID(), " into", slot)
 	if it == it2 or it:GetSlot() == slot then return false end
 
 	it:SetSlot(slot)
 	if it2 then it2:SetSlot(b4slot) end
 
-	if SERVER then Inventory.MySQL.SwitchSlots(it, it2) end
+	if SERVER then return Inventory.MySQL.SwitchSlots(it, it2) end
 end
 
 function bp:GetItemInSlot(slot)
@@ -126,111 +154,9 @@ function bp:HasAccess(ply, action)
 	return ply == self:GetOwner()
 end
 
-function bp:NewItem(iid, cb, slot)
-
-	slot = slot or self:GetFreeSlot()
-	if not slot or slot > self.MaxItems then errorf("Didn't find a slot where to put the item or it was above MaxItems! (%s > %d)", slot, self.MaxItems) return end
-
-	local it = Inventory.NewItem(iid, self, cb)
-	it:SetSlot(slot)
-	it:Insert(self)
-
-	if it:GetUID() then
-		self:AddItem(it)
-		cb(it, slot)
-	else
-		it:On("AssignUID", function() self:AddItem(it) cb(it, slot) end)
-	end
-end
-
-
---[[------------------------------]]
---	    Networking & shtuff
---[[------------------------------]]
-
-function bp:SerializeItems(typ)
-	local max_uid = 0
-	local max_id = 0
-	local amt = 0
-
-	if typ == INV_NETWORK_FULLUPDATE or typ == nil then
-		for k,v in pairs(self:GetItems()) do
-			max_uid = math.max(max_uid, v:GetUID())
-			max_id = math.max(max_id, v:GetIID())
-			amt = amt + 1
-		end
-
-	elseif typ == INV_NETWORK_UPDATE then
-
-		for k,v in pairs(self:GetItems()) do
-			if self.Changes[v] ~= INV_ITEM_ADDED then continue end
-			max_uid = math.max(max_uid, v:GetUID())
-			max_id = math.max(max_id, v:GetIID())
-			amt = amt + 1
-		end
-
-	end
-
-	print("writing", amt, "items")
-	local ns = Inventory.Networking.NetStack(max_uid, max_id)
-
-	ns:WriteUInt(self.NetworkID, 16).InventoryNID = true
-	ns:WriteUInt(amt, 16).ItemsAmount = true
-
-
-	if typ == INV_NETWORK_FULLUPDATE or typ == nil then
-		for k,v in pairs(self:GetItems()) do
-			v:Serialize(ns)
-			v:SetKnown(true)
-		end
-
-	elseif typ == INV_NETWORK_UPDATE then
-		for k,v in pairs(self:GetItems()) do
-			if self.Changes[v] ~= INV_ITEM_ADDED then continue end
-			v:Serialize(ns)
-			v:SetKnown(true)
-
-			self.Changes[v] = nil
-		end
-
-	end
-
-
-	return ns
-end
-
 --takes: item or uid, INV_ITEM_DELETED or INV_ITEM_MOVED
-function bp:AddChange(it, what)
+function bp:AddChange(it, what, nonetwork)
 	self.Changes[it] = what
-end
-
-function bp:WriteChanges(ns)
-	local dels, moves, allits = {}, {}, {}
-
-	local where = {
-		[INV_ITEM_DELETED] = dels,
-		[INV_ITEM_MOVED] = moves,
-	}
-
-	for item, enum in pairs(self.Changes) do
-		if not where[enum] then printf("Unknown change enum in %s! Ignoring... (%s: %q)", self.Name, item, enum) continue end
-		where[enum][#where[enum] + 1] = item
-		allits[#allits + 1] = item
-	end
-
-	ns:Resize(allits)
-
-	ns:WriteUInt(#dels, 16).DeletionAmt = true
-	for k,v in ipairs(dels) do
-		ns:WriteUID(v)
-	end
-
-	ns:WriteUInt(#moves, 16).MovedAmt = true
-
-	for k,v in ipairs(moves) do
-		ns:WriteUID(v)
-		ns:WriteSlot(v)
-	end
 end
 
 function bp:Register()
@@ -239,15 +165,25 @@ function bp:Register()
 end
 
 ChainAccessor(bp, "Items", "Items")
+ChainAccessor(bp, "Slots", "Slots")
 ChainAccessor(bp, "OwnerUID", "OwnerID")
 ChainAccessor(bp, "OwnerUID", "OwnerUID")
 
 if not Inventory.BackpackRegistered then
+
 	hook.Add("OnInventoryLoad", "RegisterBackpack", function()
+		if SERVER then include("inventory/inv_meta/backpack_sv_extension.lua") end
 		bp:Register()
+
 		Inventory.BackpackRegistered = true
 	end)
+
 	Inventory.BackpackRegistered = true
 else
+
+	if SERVER then include("inventory/inv_meta/backpack_sv_extension.lua") end
 	bp:Register()
+
 end
+
+

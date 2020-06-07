@@ -1,38 +1,27 @@
-if Inventory.Loading then return end --no infinite loops today sir
+function Inventory.GetClass(name)
+	name = name:PatternSafe()
+	local obj
 
-Inventory.MySQL = Inventory.MySQL or {}
-
-local verygood = Color(50, 150, 250)
-local verybad = Color(240, 70, 70)
-
-Inventory.MySQL.Log = function(str, ...)
-	MsgC(verygood, "[Inventory SQL] ", color_white, str:format(...), "\n")
-end
-
-Inventory.MySQL.LogError = function(str, ...)
-	MsgC(verygood, "[Inventory SQL ", verybad, "ERROR!", verygood, "] ", color_white, str:format(...), "\n")
-end
-
-local ms = Inventory.MySQL
-if not mysqloo then require("mysqloo") end
-
-if not (ms.DB and ms.DB:status() == 0) then
-
-	ms.INFO = {"127.0.0.1", "root", "31415", "inventory"}
-
-	ms.DB = mysqloo.connect(unpack(ms.INFO))
-
-	ms.DB.onConnected = function(self)
-		hook.Run("InventoryMySQLConnected", self)
+	for k,v in pairs(Inventory.BaseItemObjects) do
+		if v.FileName:match(name .. "[%.lua]*$") then obj = v break end
 	end
 
-	ms.DB.onConnectionFailed = function(self)
-		ms.LogError("CONNECTION TO MYSQL DATABASE FAILED!!!")
-		--hook.Run("InventoryMySQLConnected", self)
+	if obj then
+		return obj
+	else
+
+		FInc.Recursive("inventory/base_items/*", _SH, nil, function(path)
+			local fn = path:match(name .. "[%.lua]*$")
+			if not fn then return false end --returning false stops the inclusion
+		end)
+
 	end
+end
 
-	ms.DB:connect()
+function Inventory.RegisterBaseItem(name, obj)
+	local path = debug.getinfo(2).source
+	local fn = path:match("[^/]+$")
 
-else
-	hook.Run("InventoryMySQLConnected", ms.DB)
+	Inventory.BaseItemObjects[name] = obj
+	obj.FileName = fn
 end
