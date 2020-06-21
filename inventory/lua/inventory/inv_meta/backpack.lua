@@ -33,6 +33,10 @@ function bp:Initialize(ply)
 	end
 end
 
+function bp:LoadItems()
+	if SERVER then Inventory.MySQL.FetchPlayerItems(self, self:GetOwner()) else error("This function isn't meant to be run clientside...") end
+end
+
 function bp:SetOwner(ply)
 	self.Owner = ply
 	self.OwnerUID = ply:SteamID64()
@@ -114,6 +118,10 @@ end
 
 function bp:AddItem(it)
 	if not self.Slots then print("WHAT!??!?!") return end
+
+	local can = self:Emit("CanAddItem", it, it:GetUID())
+	if can == false then return false end
+
 	self.Items[it:GetUID()] = it
 	self.Slots[it:GetSlot()] = it
 	self:AddChange(it, INV_ITEM_ADDED)
@@ -159,9 +167,11 @@ function bp:AddChange(it, what, nonetwork)
 	self.Changes[it] = what
 end
 
-function bp:Register()
+function bp:Register(addstack)
 	hook.Run("InventoryTypeRegistered", self, self.Name)
 	Inventory.Networking.InventoryIDs[self.NetworkID] = self
+
+	Inventory.RegisterClass(self.Name, self, Inventory.Inventories, (addstack or 0) + 1)
 end
 
 ChainAccessor(bp, "Items", "Items")
@@ -169,21 +179,5 @@ ChainAccessor(bp, "Slots", "Slots")
 ChainAccessor(bp, "OwnerUID", "OwnerID")
 ChainAccessor(bp, "OwnerUID", "OwnerUID")
 
-if not Inventory.BackpackRegistered then
-
-	hook.Add("OnInventoryLoad", "RegisterBackpack", function()
-		if SERVER then include("inventory/inv_meta/backpack_sv_extension.lua") end
-		bp:Register()
-
-		Inventory.BackpackRegistered = true
-	end)
-
-	Inventory.BackpackRegistered = true
-else
-
-	if SERVER then include("inventory/inv_meta/backpack_sv_extension.lua") end
-	bp:Register()
-
-end
-
-
+if SERVER then include("inventory/inv_meta/backpack_sv_extension.lua") end
+bp:Register()

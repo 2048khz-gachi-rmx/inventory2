@@ -40,6 +40,8 @@ function InventoryDefine()
 			MsgC(verygood, "[Inventory ", verybad, "ERROR!", verygood, "] ", color_white, str:format(...), "\n")
 		end,
 
+		Included = {},
+
 		InDev = true
 	}
 
@@ -64,6 +66,8 @@ local function shouldIncludeItem(path)
 	if is_sv then cl = false end
 	if ext then cl = 1 sv = false end --extensions get included manually
 
+	if Inventory.Included[path] then print("not reincluding", path) return false, false end --something before us already included it, don't include again
+	print("including", path)
 	return cl, sv
 end
 
@@ -95,7 +99,7 @@ local function ContinueLoading(db)
 	hook.Remove("InventoryMySQLConnected", "ProceedInclude")
 end
 
-local LoadInventory
+local LoadInventory --pre-definition
 
 function LoadInventory(force)
 
@@ -104,6 +108,8 @@ function LoadInventory(force)
 		Inventory.ReloadInventory = LoadInventory
 		Inventory.Reload = LoadInventory
 	end
+
+	Inventory.Included = {}
 
 	include("inventory/load.lua")
 	AddCSLuaFile("inventory/load.lua")

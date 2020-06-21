@@ -3,6 +3,10 @@ local bp = Inventory.Inventories.Backpack
 function bp:NewItem(iid, cb, slot, dat)
 	cb = cb or BlankFunc
 
+	local can = self:Emit("CanCreateItem", iid, dat, slot)
+	print("new item emitted, result is", can)
+	if can == false then return false end
+
 	slot = slot or self:GetFreeSlot()
 	if not slot or slot > self.MaxItems then errorf("Didn't find a slot where to put the item or it was above MaxItems! (%s > %d)", slot, self.MaxItems) return end
 

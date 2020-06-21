@@ -29,7 +29,7 @@ local create_table_query = [[CREATE TABLE IF NOT EXISTS %s (
   PRIMARY KEY (`uid`),
   UNIQUE KEY `uid` (`uid`),
   UNIQUE KEY `uq_slot_puid` (`puid`,`slotid`),
-  CONSTRAINT `uid` FOREIGN KEY (`uid`) REFERENCES `items` (`uid`) ON DELETE CASCADE
+  CONSTRAINT `uid_autodel` FOREIGN KEY (`uid`) REFERENCES `items` (`uid`) ON DELETE CASCADE
 )]]
 
 function ms.CreateInventoryTable(tbl_name)
@@ -64,6 +64,7 @@ selIDs.onSuccess = function(self, dat)
 		names[v.name] = v.id
 	end
 
+	Inventory:Emit("ItemIDsReceived", ids, names)
 	hook.Run("InventoryItemIDsReceived", ids, names)
 
 	Inventory.MySQL.IDsReceived = true
@@ -74,13 +75,12 @@ selIDs:start()
 
 local assign_query = ms.DB:prepare("SELECT GetBaseItemID(?) AS id;")
 
--- ... provided for easy chaining
+-- 'arg' provided for easy chaining
 -- e.g. ms.AssignItemID(it.Name, it.SetUID, it)
-		-->
+-- 			is basically
 -- 		ms.AssignItemID(it.Name, function(uid) it:SetUID(uid) end)
 
-function ms.AssignItemID(name, cb, ...)
-	local arg = ...
+function ms.AssignItemID(name, cb, arg)
 	local id_exists = conv.ToID[name]
 
 	if id_exists then
@@ -97,6 +97,8 @@ function ms.AssignItemID(name, cb, ...)
 		local id = dat[1].id
 					--V stfu
 		if cb then cb(arg or id, arg and id or nil) end
+		Inventory:Emit("ItemIDAssigned", name, id)
+		hook.Run("InventoryItemIDAssigned", name, id)
 	end
 
 	qobj.onError = qerr

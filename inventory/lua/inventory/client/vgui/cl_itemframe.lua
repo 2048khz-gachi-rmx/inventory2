@@ -279,4 +279,7 @@ function ITEM:PaintOver(w, h)
 
 	self:Emit("PaintOver", w, h)
 end
+
+ChainAccessor(ITEM, "MainFrame", "MainFrame")
+
 vgui.Register("ItemFrame", ITEM, "DButton")

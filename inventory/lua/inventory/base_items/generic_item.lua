@@ -1,6 +1,12 @@
 --?
-
+print("loaded generic item")
 local Base = Inventory.BaseItemObjects.Generic or Emitter:callable()
+Base.BaseName = "Generic"
+
+function Base:OnExtend(new, name)
+	if not isstring(name) then error("Base item extensiosns _MUST_ have a name assigned to them!") return end
+	self.BaseName = name
+end
 
 function Base:Initialize(name)
 	assert(isstring(name), "New base items _MUST_ have a name assigned to them!")
@@ -144,7 +150,17 @@ function Base:On(...) --convert :On() into a chainable function
 	return self
 end
 
-Inventory.RegisterBaseItem("Generic", Base)
+function Base:Register(addstack)
+	print("registering", self.BaseName)
+	Inventory.RegisterClass(self.BaseName, self, Inventory.BaseItemObjects, (addstack or 0) + 1)
+end
+print("base created; registering")
+Base:Register()
+--Inventory.RegisterClass("Generic", Base, Inventory.BaseItemObjects)
+
+
+
+
 
 
 local its = muldim()
@@ -163,10 +179,9 @@ Inventory:On("BaseItemInit", "EmitRegister", function(self, bi)
 end)
 
 
-
+--todo: stick this somewhere else
 hook.Add("InventoryGetOptions", "DeletableOption", function(it, mn)
-	print("added")
-	if not it:GetDeletable() then print("nvm") return end
+	if not it:GetDeletable() then return end
 
 	local opt = mn:AddOption("Delete Item")
 	opt.HovMult = 1.15

@@ -164,10 +164,14 @@ function invnet:WriteSlot(it)
 	end
 end
 
-function nw.NetworkItemNames(ply)
+print("inventory networking loading")
+
+--provide ids as a table of {[itemID] = "itemName"} to only network that
+
+function nw.NetworkItemNames(ply, ids)
 	log("Netwokring constants for %s", ply)
 
-	local dat = von.serialize(Inventory.IDConversion.ToName)
+	local dat = von.serialize(ids or Inventory.IDConversion.ToName)
 	local comp = util.Compress(dat)
 	local needs_comp = false
 
@@ -185,6 +189,9 @@ function nw.NetworkItemNames(ply)
 	log("SV-NW: Sent inventory constants to %s", IsPlayer(ply) and ply:Nick() or (#ply .. " players"))
 end
 
+Inventory:On("ItemIDAssigned", function(inv, name, id)
+	print("ItemID assigned", name, id)
+end)
 timer.Simple(0.3, function()
 	if Inventory.MySQL.IDsReceived then
 		nw.NetworkItemNames(player.GetAll())

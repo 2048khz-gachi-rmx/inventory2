@@ -13,6 +13,8 @@ function PLAYER:InitializeInventories()
     if Inventory.InDev then
         self.bp = self.Inventory.Backpack
         self.its = self.Inventory.Backpack.Items
+        self.invun = UnionTable(self.Inventory)
+        self.inv = self.Inventory
     end
 end
 

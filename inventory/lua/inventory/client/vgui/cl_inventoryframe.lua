@@ -5,7 +5,7 @@ function PANEL:Init()
 	local scr = vgui.Create("FScrollPanel", self)
 	scr:Dock(FILL)
 	scr:DockMargin(0, 32, 0, 0)
-	
+
 	scr.GradBorder = true
 	scr:GetCanvas():AddDockPadding(0, 8, 0, 8)
 
@@ -23,6 +23,15 @@ function PANEL:Think()
 		self.IsWheelHeld = input.IsMouseDown(MOUSE_MIDDLE)
 	end
 end
+
+function PANEL:SetFull(b)
+	self.FullInventory = (b==nil and true) or b
+end
+
+function PANEL:GetFull()
+	return self.FullInventory
+end
+ChainAccessor(PANEL, "MainFrame", "MainFrame")
 										-- V it really do be like that
 function PANEL.OnItemAddedIntoSlot(iframe, self, slot, item)
 	self.Items[slot] = item
@@ -43,6 +52,7 @@ function PANEL:SetInventory(inv)
 		self:Emit("Change", ...)
 	end)
 
+	inv:Emit("OpenFrame", self:GetMainFrame(), self)
 	self:Emit("SetInventory", inv)
 end
 
@@ -264,6 +274,7 @@ function PANEL:AddItemSlot()
 
 	self.Slots[i + 1] = it
 	it:SetSlot(i + 1)
+	it:SetMainFrame(self:GetMainFrame())
 	it:On("ItemInserted", self.OnItemAddedIntoSlot, self)
 
 	self:On("Change", it, function(self, inv, ...)
