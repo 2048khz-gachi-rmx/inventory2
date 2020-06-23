@@ -29,7 +29,7 @@ local create_table_query = [[CREATE TABLE IF NOT EXISTS %s (
   PRIMARY KEY (`uid`),
   UNIQUE KEY `uid` (`uid`),
   UNIQUE KEY `uq_slot_puid` (`puid`,`slotid`),
-  CONSTRAINT `uid_autodel` FOREIGN KEY (`uid`) REFERENCES `items` (`uid`) ON DELETE CASCADE
+  CONSTRAINT FOREIGN KEY (`uid`) REFERENCES `items` (`uid`) ON DELETE CASCADE
 )]]
 
 function ms.CreateInventoryTable(tbl_name)
@@ -209,7 +209,7 @@ function ms.FetchPlayerItems(inv, ply)
 			it:SetSlot(v.slotid)
 			it:DeserializeData(v.data)
 
-			inv:AddItem(it)
+			inv:AddItem(it, true)
 		end
 
 	end

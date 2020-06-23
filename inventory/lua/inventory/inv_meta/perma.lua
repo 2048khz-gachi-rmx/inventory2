@@ -5,7 +5,7 @@ if not bp then error("Something went wrong while loading Permanent inventory: ba
 local prm = Inventory.Inventories.Permanent or bp:extend()
 
 prm.SQLName = "ply_permainv"
-prm.NetworkID = 2
+prm.NetworkID = 3
 prm.Name = "Permanent"
 prm.MaxItems = 50
 
@@ -39,13 +39,15 @@ prm:On("OpenFrame", "OpenInventoryCharacter", function(self, main, invpnl)
 
 end)
 
-prm:On("CanAddItem", function()
+prm:On("CanAddItem", "EquippableOnly", function(self, it)
     return false
 end)
 
-prm:On("CanCreateItem", function(iid, dat, slot)
-    return false
+prm:On("CanCreateItem", "EquippableOnly", function(self, iid, dat, slot)
+	local base = Inventory.Util.GetBaseMeta(iid)
+	print("returning", base.IsEquippable, base.ClassName, "EEEE")
+	_AAA = base
+    return base.IsEquippable
 end)
 
 prm:Register()
-

@@ -18,12 +18,13 @@ function nw.ReadItem(uid_sz, iid_sz, slot_sz, inventory)
 
     if not item then
         local meta = Inventory.Util.GetMeta(iid)
+        print(iid, meta)
         item = meta:new(uid, iid)
     end
 
     if slot then item:SetSlot(slot) end
 
-    inventory:AddItem(item)
+    inventory:AddItem(item, true)
 
     item:ReadNetworkedVars()
     --item:SetInventory(inventory)
@@ -127,7 +128,7 @@ function nw.ReadConstants()
     if comp then
         dat = util.Decompress(dat)
     end
-
+    print("Received:", dat)
     dat = von.deserialize(dat)
 
     local conv = Inventory.IDConversion
@@ -137,6 +138,7 @@ function nw.ReadConstants()
         conv.ToID[iname] = iid
     end
 
+    PrintTable(conv)
     hook.Run("InventoryIDReceived", conv.ToName, conv.ToID)
     log("CL-NW: Received & parsed inventory constants")
 end

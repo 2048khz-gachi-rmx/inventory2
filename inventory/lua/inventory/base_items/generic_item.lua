@@ -1,13 +1,32 @@
 --?
-print("loaded generic item")
+print("generic included")
 local Base = Inventory.BaseItemObjects.Generic or Emitter:callable()
 Base.BaseName = "Generic"
+Base.ItemClass = "Generic"
+Base.ShouldSpin = true
+Base.Extensions = Base.Extensions or {}
 
-function Base:OnExtend(new, name)
+--Extend = a new class is being extended from base (e.g. 'Equipment' from 'Generic')
+function Base:OnExtend(new, name, class)
 	if not isstring(name) then error("Base item extensiosns _MUST_ have a name assigned to them!") return end
-	self.BaseName = name
+
+	local old = Inventory.BaseItemObjects[name]
+	if old then
+		-- existed before, so carry over the "Extensions" table
+		new.Extensions = old.Extensions
+	else
+		new.Extensions = {} --didn't exist before, reset the extensions table so we don't inherit it
+	end
+	new.FileName, new.FilePath = false, false
+	new.BaseName = name
+	new.ItemClass = class
+
+	--if name ~= self.BaseName then
+		self.Extensions[name] = new
+	--end
 end
 
+--Initialize = a BaseItem instance is being constructed (e.g. 'Watermelon' from 'Generic')
 function Base:Initialize(name)
 	assert(isstring(name), "New base items _MUST_ have a name assigned to them!")
 
@@ -17,6 +36,10 @@ function Base:Initialize(name)
 	self.Deletable = true
 
 	self.ItemName = name
+
+	self.BaseName = self.BaseName -- stop __indexes and make it show up when rawprinting the item
+	self.ItemClass = self.ItemClass
+
 	self:PullItemID()
 
 	Inventory.BaseItems[self.ItemName] = self
@@ -42,6 +65,7 @@ function Base:PullItemID()
 
 		if not exists_id then
 			hook.Once("InventoryIDReceived", "BaseItemAssign" .. self.ItemName, function(toname, toid)
+				print("ItemName is", self.ItemName, toid[self.ItemName])
 				self:SetID(toid[self.ItemName])
 			end)
 		else
@@ -87,9 +111,10 @@ end
 ChainAccessor(Base, "Name", "Name")
 ChainAccessor(Base, "Model", "Model")
 
-ChainAccessor(Base, "CamOffset", "CamOffset")
+ChainAccessor(Base, "CamPos", "CamPos")
 ChainAccessor(Base, "FOV", "FOV")
 ChainAccessor(Base, "LookAng", "LookAng")
+ChainAccessor(Base, "ShouldSpin", "ShouldSpin")
 
 function Base:SetCountable(b)
 
@@ -151,11 +176,28 @@ function Base:On(...) --convert :On() into a chainable function
 end
 
 function Base:Register(addstack)
-	print("registering", self.BaseName)
+	local old = Inventory.BaseItemObjects[self.BaseName]
+
 	Inventory.RegisterClass(self.BaseName, self, Inventory.BaseItemObjects, (addstack or 0) + 1)
+
+	if old then
+		-- we existed before registering, that means the script
+		-- that registered this file got updated, so also update everyone 
+		-- that depended on this class
+
+		for k,v in pairs(self.Extensions) do
+			local fp, fn = rawget(v, "FilePath"), rawget(v, "FileName") --don't inherit those to avoid infinite loops
+
+			if k == self.BaseName then errorf("Infinite inclusion loop averted: %q is equal to %q", k, self.BaseName) return end
+			if not v.FilePath or not v.FileName then errorf("What the fuck hello", k) return end
+
+			Inventory.IncludeClass(fp, fn)
+		end
+	end
+
 end
-print("base created; registering")
-Base:Register()
+
+Base:Register(-1)
 --Inventory.RegisterClass("Generic", Base, Inventory.BaseItemObjects)
 
 

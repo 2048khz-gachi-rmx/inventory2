@@ -62,6 +62,8 @@ function bp:SetSlot(it, slot)   --this is basically an accessor func;
 end
 
 function bp:RemoveItem(it)
+	--just removes an item from itself and networks the change
+
 	local uid = ToUID(it)
 
 	local its, slots = self:GetItems(), self:GetSlots()
@@ -83,17 +85,18 @@ function bp:RemoveItem(it)
 
 	end
 
-	if foundit:GetKnown() then self:AddChange(foundit, INV_ITEM_DELETED) else print("item wasn't even known!!!", foundit:GetUID()) self:AddChange(foundit, nil) end
+	--if the player doesn't know about the item, don't even tell him about the deletion
+	if foundit:GetKnown() then self:AddChange(foundit, INV_ITEM_DELETED) else self:AddChange(foundit, nil) end
 
 	return foundit
 end
 
 function bp:DeleteItem(it)
+	--actually completely deletes an item, both from the backpack and from MySQL completely
 	local uid = (isnumber(it) and it) or it:GetUID()
 
 	local it = self:RemoveItem(it)
 
-	if it:GetKnown() then self:AddChange(it, INV_ITEM_DELETED) else self:AddChange(it, nil) end --if the player doesn't know about the item, don't even tell him about the deletion
 	if SERVER then Inventory.MySQL.DeleteItem(it) end
 
 	return it
@@ -116,11 +119,13 @@ function bp:GetItemInSlot(slot)
 	return self.Slots[slot]
 end
 
-function bp:AddItem(it)
+function bp:AddItem(it, ignore_emitter)
 	if not self.Slots then print("WHAT!??!?!") return end
 
-	local can = self:Emit("CanAddItem", it, it:GetUID())
-	if can == false then return false end
+	if not ignore_emitter then
+		local can = self:Emit("CanAddItem", it, it:GetUID())
+		if can == false then return false end
+	end
 
 	self.Items[it:GetUID()] = it
 	self.Slots[it:GetSlot()] = it

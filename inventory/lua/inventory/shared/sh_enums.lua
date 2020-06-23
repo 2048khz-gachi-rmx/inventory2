@@ -43,3 +43,38 @@ Inventory.RequiresNetwork = {
 	[INV_ITEM_ADDED] = true,
 	[INV_ITEM_DATACHANGED] = true,
 }
+
+
+--[[------------------------------]]
+
+--	  		  Equipment
+
+--[[------------------------------]]
+
+--[[
+	Slot: {
+		slot = "internal_name",
+		name = "Fancy Name",
+		type = "Weapon", -- optional; what baseitems can possibly go there
+							if you set type 'weapon' then 'equipment' can't go there, and vice versa
+		id = 1, --number
+		side = LEFT / RIGHT -- to which side the equipment button will stick?
+							-- this isn't docking; calculations are custom
+	}
+]]
+Inventory.EquipmentSlots = {
+	{slot = "head", name = "Head", type = "Equipment", side = LEFT},
+	{slot = "body", name = "Body", type = "Equipment", side = LEFT},
+	{slot = "legs", name = "Legs", type = "Equipment", side = LEFT},
+	{slot = "primary", name = "Primary", type = "Weapon", side = RIGHT},
+	{slot = "secondary", name = "Secondary", type = "Weapon", side = RIGHT},
+}
+
+--basically backwards; ["head"] = 1, ...
+--also assigns 'id' key
+Inventory.EquipmentIDs = {}
+
+for k,v in ipairs(Inventory.EquipmentSlots) do
+	Inventory.EquipmentIDs[v.slot] = v
+	v.id = k
+end

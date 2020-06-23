@@ -28,7 +28,7 @@ function it:Serialize(ns, typ)
 	if not ns then
 		ns = Inventory.Networking.NetStack()
 	end
-	print("serializing with type", typ)
+
 	ns:WriteIDs(self)
 	ns:WriteSlot(self)
 

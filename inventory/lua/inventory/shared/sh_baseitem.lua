@@ -4,8 +4,21 @@ function ToUID(it)
 	return (isnumber(it) and it) or (IsItem(it) and it:GetUID()) or errorf("ToUID: expected number or item as arg #1, got %s instead", type(it))
 end
 
+function Inventory.Util.GetBaseMeta(iid)
+	local base = Inventory.BaseItems[iid]
+	if not base then print("no base") return false end
+
+	local class = base.BaseName
+	if not class then print("no base name") return false end
+
+    return Inventory.BaseItemObjects[class]
+end
+
 function Inventory.Util.GetMeta(iid)
-    return Inventory.ItemObjects.Generic
+	local base = Inventory.Util.GetBaseMeta(iid)
+	if not base then return false end
+
+	return Inventory.ItemObjects[base.ItemClass]
 end
 
 function Inventory.Util.GetBase(id)

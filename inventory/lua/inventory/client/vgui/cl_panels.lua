@@ -41,6 +41,8 @@ function iPan.CreateInventory(par, inv, multiple)
 
 	if multi_invs and inv then
 		for k,v in pairs(inv) do
+			if v:Emit("CanOpen") == false then continue end --uhkay
+			
 			local tab = f:AddTab(v.Name, f.OnSelectTab, f.OnDeselectTab)
 			tab:SetTall(50)
 			tab.Inventory = v

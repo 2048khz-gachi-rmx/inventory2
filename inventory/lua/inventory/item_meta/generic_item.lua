@@ -1,13 +1,18 @@
 --don't construct item objects directly; use Inventory.NewItem instead
 
 local it = Inventory.ItemObjects.Generic or Emitter:extend()
-it.ClassName = "Generic Item"
+it.ClassName = "Generic"
 it.IsItem = true
 
 Inventory.ItemObjects.Generic = it
 
 it.__tostring = function(self)
 	return ("%s '%s' | ItemID: %s, ItemUID: %s"):format(self.ClassName or "Missing class!", self.ItemName or "Missing ItemName!", self.ItemID or "Missing ItemID!", self.ItemUID or "Unassigned ItemUID")
+end
+
+function it:OnExtend(new, name)
+	if not isstring(name) then error("ItemClass extensiosns _MUST_ have a name assigned to them!") return end
+	new.ClassName = name
 end
 
 function it:Initialize(uid, iid)
@@ -85,11 +90,15 @@ BaseItemAccessor(it, "Deletable", "Deletable")
 
 BaseItemAccessor(it, "Model", "Model")
 BaseItemAccessor(it, "FOV", "FOV")
-BaseItemAccessor(it, "CamOffset", "CamOffset")
+BaseItemAccessor(it, "CamPos", "CamPos")
 BaseItemAccessor(it, "LookAng", "LookAng")
+BaseItemAccessor(it, "ShouldSpin", "ShouldSpin")
 
 BaseItemAccessor(it, "Countable", "Countable")
 BaseItemAccessor(it, "MaxStack", "MaxStack")
+
+BaseItemAccessor(it, "Equippable", "Equippable")
+
 
 function it:GetBaseItem()
 	return Inventory.BaseItems[self.ItemID]
@@ -126,5 +135,14 @@ function it:ReadNetworkedVars()
 	end
 
 end
+
+
+function it:Register(addstack)
+	hook.Run("ItemClassRegistered", self, self.ClassName)
+	print("Registering", self.ClassName)
+	Inventory.RegisterClass(self.ClassName, self, Inventory.ItemObjects, (addstack or 0) + 1)
+end
+
+it:Register()
 
 if SERVER then include("generic_item_sv_extension.lua") end

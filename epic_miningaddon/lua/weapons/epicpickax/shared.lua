@@ -38,7 +38,7 @@ local function CheckOre(ply)
 
 	local tr = ply:GetEyeTrace()
 
-	if not IsValid(tr.Entity) or not tr.Entity.IsOre or tr.Fraction > 256/32768 then 
+	if not IsValid(tr.Entity) or not tr.Entity.IsOre or tr.Fraction > 256/32768 then
 	return false end --geteyetrace is 32768 units
 
 	return tr.Entity
@@ -47,36 +47,35 @@ function SWEP:Initialize()
 	self:SetHoldType( "ar2" )
 end
 function SWEP:PrimaryAttack()
-	if not IsFirstTimePredicted() then 
+	if not IsFirstTimePredicted() then
 
-		self:SendWeaponAnim(ACT_VM_PRIMARYATTACK) 
+		self:SendWeaponAnim(ACT_VM_PRIMARYATTACK)
 		self.Owner:SetAnimation(PLAYER_ATTACK1)
 
-		self:SetNextPrimaryFire(CurTime() + self.Primary.Delay) 
+		self:SetNextPrimaryFire(CurTime() + self.Primary.Delay)
 	return end
 
 
 	self:SetNextPrimaryFire(CurTime() + self.Primary.Delay)
 
 	local ow = (CLIENT and LocalPlayer()) or self:GetOwner()
-	if not IsValid(ow) then return end 
+	if not IsValid(ow) then return end
 
  	local ore = CheckOre(ow)
- 	if not ore then return end 
+ 	if not ore then return end
 
 
-	if SERVER then 
-		self:SendWeaponAnim(ACT_VM_PRIMARYATTACK) 
+	if SERVER then
+		self:SendWeaponAnim(ACT_VM_PRIMARYATTACK)
 		self.Owner:SetAnimation(PLAYER_ATTACK1)
-		
+
 		self:SVPrimaryAttack(ow, ore)
 
-	else 
+	else
 
 		self:CLPrimaryAttack()
 
 	end
-
 
 end
 

@@ -64,10 +64,14 @@ local function shouldIncludeItem(path)
 	local cl, sv = true, true
 
 	if is_sv then cl = false end
-	if ext then cl = 1 sv = false end --extensions get included manually
 
-	if Inventory.Included[path] then print("not reincluding", path) return false, false end --something before us already included it, don't include again
-	print("including", path)
+	if ext then --extensions get included manually
+		cl = (not is_sv and 1) or false 
+		sv = false
+	end 
+
+	if Inventory.Included[path] then return false, false end --something before us already included it, don't include again
+	print("including", path, cl, sv)
 	return cl, sv
 end
 
@@ -123,8 +127,12 @@ function LoadInventory(force)
 
 end
 
-Inventory.ReloadInventory = LoadInventory
-Inventory.Reload = LoadInventory
+local function reload()
+	return LoadInventory(true)
+end
+
+Inventory.ReloadInventory = reload
+Inventory.Reload = reload
 
 if not existed then
 	hook.Add("InitPostEntity", "Inventory", LoadInventory)

@@ -4,7 +4,6 @@ function bp:NewItem(iid, cb, slot, dat)
 	cb = cb or BlankFunc
 
 	local can = self:Emit("CanCreateItem", iid, dat, slot)
-	print("new item emitted, result is", can)
 	if can == false then return false end
 
 	slot = slot or self:GetFreeSlot()
@@ -17,7 +16,7 @@ function bp:NewItem(iid, cb, slot, dat)
 		for k,v in ipairs(its) do
 			v:Insert(self)
 			v:Once("AssignUID", function()
-				self:AddItem(v)
+				self:AddItem(v, true)
 			end)
 			self:AddChange(v, INV_ITEM_ADDED)
 		end
@@ -31,13 +30,13 @@ function bp:NewItem(iid, cb, slot, dat)
 	it:Insert(self)
 
 	if it:GetUID() then
-		self:AddItem(it)
+		self:AddItem(it, true)
 		cb(it, slot)
 		error("INSTANT FIRE???")
 	else
 
 		it:Once("AssignUID", function()
-			self:AddItem(it)
+			self:AddItem(it, true)
 			cb(it, slot)
 		end)
 
@@ -109,7 +108,6 @@ function bp:SerializeItems(typ)
 
 	if typ == INV_NETWORK_FULLUPDATE then
 		for k,v in pairs(self:GetItems()) do
-			print("Serializing", v:GetUID(), "because fullupdate")
 			v:Serialize(ns, typ)
 			v:SetKnown(true)
 		end
@@ -117,7 +115,6 @@ function bp:SerializeItems(typ)
 	elseif typ == INV_NETWORK_UPDATE then
 		for k,v in pairs(self:GetItems()) do
 			if not Inventory.RequiresNetwork[self.Changes[v]] then continue end
-			print("Serializing", v:GetUID(), "because change requires network (" .. self.Changes[v] .. ")")
 			v:Serialize(ns, typ)
 			v:SetKnown(true)
 

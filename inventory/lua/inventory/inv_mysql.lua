@@ -17,22 +17,18 @@ local ms = Inventory.MySQL
 if not mysqloo then require("mysqloo") end
 
 if not (ms.DB and ms.DB:status() == 0) then
-	print("connecting to mysql")
 	ms.INFO = {"127.0.0.1", "root", "31415", "inventory"}
 
 	ms.DB = mysqloo.connect(unpack(ms.INFO))
-	print('db initted')
+
 	ms.DB.onConnected = function(self)
-		print('connected!!!')
 		hook.Run("InventoryMySQLConnected", self)
-		print("ran hook okkk")
 	end
 
 	ms.DB.onConnectionFailed = function(self)
 		ms.LogError("CONNECTION TO MYSQL DATABASE FAILED!!!")
-		--hook.Run("InventoryMySQLConnected", self)
 	end
-	print("beginning connect")
+	
 	ms.DB:connect()
 
 else

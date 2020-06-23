@@ -168,8 +168,10 @@ print("inventory networking loading")
 
 --provide ids as a table of {[itemID] = "itemName"} to only network that
 
+local newItems = {}
+
 function nw.NetworkItemNames(ply, ids)
-	log("Netwokring constants for %s", ply)
+	log("Networking constants for %s", ply)
 
 	local dat = von.serialize(ids or Inventory.IDConversion.ToName)
 	local comp = util.Compress(dat)
@@ -187,11 +189,10 @@ function nw.NetworkItemNames(ply, ids)
 	net.Send(ply)
 
 	log("SV-NW: Sent inventory constants to %s", IsPlayer(ply) and ply:Nick() or (#ply .. " players"))
+
+	table.Empty(newItems)
 end
 
-Inventory:On("ItemIDAssigned", function(inv, name, id)
-	print("ItemID assigned", name, id)
-end)
 timer.Simple(0.3, function()
 	if Inventory.MySQL.IDsReceived then
 		nw.NetworkItemNames(player.GetAll())
@@ -201,6 +202,17 @@ timer.Simple(0.3, function()
 			nw.NetworkItemNames(player.GetAll())
 		end)
 	end
+
+	--add the event listener only after all the ID's were networked
+	Inventory:On("ItemIDAssigned", "NetworkConstants", function(inv, name, id)
+		newItems[id] = name
+
+		timer.Create("InventoryNetworkConstants", 0.2, 1, function() -- give a time window to register all items to send them all off at once
+			nw.NetworkItemNames(player.GetAll(), newItems)
+			table.Empty(newItems)
+		end)
+
+	end)
 end)
 
 function nw.NetStack(uid, iid)
@@ -218,7 +230,6 @@ function nw.SendNetStacks(nses, ply)
 
 	net.Start("Inventory")
 		for k,v in ipairs(nses) do
-			print("Sent:", v)
 			net.WriteNetStack(v)
 		end
 	net.Send(ply)

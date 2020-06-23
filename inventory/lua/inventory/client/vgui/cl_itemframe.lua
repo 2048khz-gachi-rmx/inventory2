@@ -14,10 +14,20 @@ local function BestGuess(_, mdl, ...) --taken from BestGuessLayout
 	ent:SetAngles( ang )
 
 	if ( tab ) then
-		mdl:SetCamPos( tab.origin + (item:GetCamOffset() or 0) )
+		local orig = tab.origin
+		local pos = item:GetCamPos()
+
+		if pos then
+			orig:Set(pos)
+		end
+
+		mdl:SetCamPos( orig )
 		mdl:SetFOV( item:GetFOV() or tab.fov )
 		mdl:SetLookAng( item:GetLookAng() or tab.angles )
+
 	end
+
+	mdl.Spin = item:GetShouldSpin()
 end
 
 function ItemFrameUpdate(inv, pnl, it)
@@ -47,6 +57,7 @@ function ITEM:Init()
 	self:Receiver("Item", function(self, tbl, drop)
 		if not drop then
 			self.DropHovered = true
+			self:Emit("ItemHover", tbl[1], tbl[1].Item)
 			return
 		end
 
@@ -64,12 +75,32 @@ function ITEM:Init()
 
 	self:On("Drop", "ItemDrop", self.OnItemDrop)
 
+	self:On("ItemInserted", "Alpha", function(self, slot, item)
+		self:SetAlpha(255)
+		self.TransparentModel = false
+	end)
+
+	self:On("FakeItem", "Alpha", function(self)
+		self:SetAlpha(120)
+		self.TransparentModel = true
+	end)
+
 	self.Rounding = 4
 
 	self:DetourStuff()
 end
 
 ChainAccessor(ITEM, "Slot", "Slot")
+
+function ITEM:OnDragStart()
+	self:Emit("DragStart")
+	hook.Run("InventoryItemDragStart", self, self:GetItem(true))
+end
+
+function ITEM:OnDragStop()
+	self:Emit("DragStop")
+	hook.Run("InventoryItemDragStop", self, self:GetItem(true))
+end
 
 function ITEM:OnItemDrop(slot, it)
 
@@ -106,6 +137,8 @@ function ITEM:CreateModelPanel(it)
 		mdl:SetSize(self:GetWide() - self.Rounding*2, self:GetTall())
 		mdl:SetPos(self.Rounding, self.Rounding)
 		mdl:SetModel(it:GetModel())
+		mdl.Spin = true
+
 		local pnt = mdl.Paint
 
 		function mdl.Paint(me, w, h)
@@ -124,6 +157,12 @@ function ITEM:CreateModelPanel(it)
 
 		end
 
+		local spin = mdl.LayoutEntity
+		function mdl:LayoutEntity(...)
+			if not self.Spin then return end
+			spin(self, ...)
+		end
+
 		self:On("BaseItemUpdate", mdl, BestGuess, mdl)
 		BestGuess(_, mdl)
 		self.ModelPanel = mdl
@@ -138,13 +177,16 @@ function ITEM:SetItem(it)
 		self.Item = it
 		self:SetCursor("hand")
 
-		self:Emit("ItemInserted", it:GetSlot(), it)
+		self:Emit("ItemInserted", it:GetSlot(), it, true)
 
 		Inventory:On("BaseItemDefined", self, ItemFrameUpdate, self)
 
 		self:CreateModelPanel(it)
 
 		self.Item:GetBaseItem():Emit("SetInSlot", self.Item, self, self.ModelPanel)
+
+		self:Emit("Item", it, true)
+
 	elseif self.Item then
 		self:Emit("ItemTakenOut", self.Item)
 		self:SetCursor("arrow")
@@ -165,6 +207,7 @@ end
 
 function ITEM:SetFakeItem(it)
 	self.FakeItem = it
+	self:Emit("FakeItem", it)
 	if it ~= nil then
 		self:CreateModelPanel(it)
 	else
@@ -183,7 +226,7 @@ local hovCol = Color(130, 130, 130)
 
 function ITEM:MaskHoverGrad(w, h)
 	draw.RoundedPolyBox(self.Rounding - 2, 0, 0, w, h, color_black)
-	surface.SetDrawColor(hovCol) --sets the color for the gradient border
+	surface.SetDrawColor(self.HoverGradientColor or hovCol) --sets the color for the gradient border
 end
 
 local emptyCol = Color(30, 30, 30)
@@ -192,23 +235,24 @@ function Inventory.Panels.ItemDraw(self, w, h)
 	local rnd = self.Rounding
 
 	local it = self.Item or self.FakeItem
-	if self.FakeItem then
-		self:SetAlpha(120)
-		self.TransparentModel = true
-	else
-		self:SetAlpha(255)
-		self.TransparentModel = false
-	end
 
 	if it then
 		local base = it:GetBaseItem()
 
-		draw.RoundedBox(rnd, 0, 0, w, h, Colors.LightGray)
+		draw.RoundedBox(rnd, 0, 0, w, h, it.BorderColor or Colors.LightGray)
 		draw.RoundedBox(rnd, 2, 2, w-4, h-4, Colors.Gray)
 
 		base:Emit("Paint", self.Item, self, self.ModelPanel)
 	else
-		draw.RoundedBox(rnd, 0, 0, w, h, emptyCol)
+		local x, y, w, h = 0, 0, w, h
+
+		if self.Border then
+			draw.RoundedBox(rnd, 0, 0, w, h, self.Border.col or emptyCol)
+			x, y = self.Border.w or 2, self.Border.h or 2
+			w, h = w - x*2, h - y*2
+		end
+
+		draw.RoundedBox(rnd, x, y, w, h, emptyCol)
 	end
 
 	if self.DropFrac > 0 then
