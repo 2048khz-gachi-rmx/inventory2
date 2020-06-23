@@ -7,18 +7,23 @@ local function load()
 	local function readInv(ply, act, ignoreaccess)
 		local inv, err = nw.ReadInventory()
 		if not inv then errorf("Failed to read inventory from %s: %q", ply, err) return end
-		if not ignoreaccess and not inv:HasAccess(ply, acr) then errorf("Failed permission check from %s on inventory %q", ply, inv) return end
+		if not ignoreaccess and not inv:HasAccess(ply, act) then errorf("Failed permission check from %s on inventory %q", ply, inv) return end
 
 		return inv
 	end
-
+	
 	local function readItem(inv, act, ...)
 		local it, err = nw.ReadItem(inv)
 		if not it then errorf("Failed to read item from %s: %q", ply, err) return end
 
 		return it
 	end
+	
+
 	nw.Actions = nw.Actions or {}
+
+	nw.Actions.readInv = readInv
+	nw.Actions.readItem = readItem
 
 	nw.Actions[INV_ACTION_DELETE] = function(ply)
 		local inv = readInv(ply, "Delete")
@@ -93,6 +98,13 @@ local function load()
 		return true
 	end
 
+	nw.Actions[INV_ACTION_CROSSINV] = function(ply)
+		local inv = readInv(ply, "CrossInventoryFrom")
+		local it = readItem(inv, "CrossInventory")
+		local invto = readInv(ply, "CrossInventoryReceiver")
+
+	end
+
 	net.Receive("Inventory", function(len, ply)
 		local act = net.ReadUInt(16)
 		if not nw.Actions[act] then errorf("Failed to find action for enum %d from player %s", act, ply) return end
@@ -103,6 +115,7 @@ local function load()
 		end
 	end)
 
+	hook.Run("InventoryActionsLoaded", nw.Actions)
 end
 
 

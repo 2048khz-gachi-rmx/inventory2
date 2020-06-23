@@ -44,15 +44,39 @@ function bp:NewItem(iid, cb, slot, dat)
 
 end
 
+
+
+function bp:CrossInventoryMove(it, inv2, slot)
+	if it:GetInventory() ~= self then errorf("Can't move an item from an inventory which it doesn't belong to! (item) %q vs %q (self)", it:GetInventory(), self) return end
+
+	local slot = slot or inv2:GetFreeSlot()
+	if not slot then print("Can't cross-inventory-move cuz no slot", slot) return end
+
+	if false then --DEBUG: disabled
+		local can = inv2:Emit("CanAddItem", it, it:GetUID())
+		if can == false then return false end
+	end
+
+	local em = Inventory.MySQL.SetInventory(it, inv2, slot)
+
+	self:RemoveItem(it)
+	inv2:AddItem(it, true)
+
+end
+
 --for adding an existing both in-game and in-sql item, use bp:AddItem(item)
-
-
 --takes an existing item and inserts it into the inventory as well as mysql
 
 function bp:InsertItem(it, slot, cb)
 	cb = cb or BlankFunc
 
-	if slot then it:SetSlot(slot) end
+	if not slot then
+		slot = self:GetFreeSlot()
+		if not slot then print("Can't insert", it, "into", self, "cuz no slots") return false end
+	end
+
+	it:SetSlot(slot)
+
 	local sqlemit = it:Insert(self)
 
 	if it:GetUID() then

@@ -88,6 +88,12 @@ end
 function PANEL.EquipItem(slot, self, itemfr, item)
 	if not canEquip(slot, item) then return end
 	print("Equipping", item)
+
+	local ns = Inventory.Networking.Netstack()
+	ns:WriteInventory(item:GetInventory())
+	ns:WriteItem(item)
+
+	Inventory.Networking.PerformAction(INV_ACTION_EQUIP, ns)
 end
 
 function PANEL:HighlightFit(btn, itemfr, item)

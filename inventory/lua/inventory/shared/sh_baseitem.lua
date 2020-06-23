@@ -51,9 +51,9 @@ IsItem = Inventory.Util.IsItem
 function BaseItemAccessor(it, varname, getname)
 	it["Get" .. getname] = function(self)
 		local base = self:GetBaseItem()
-		if not base then errorf("Item %s didn't have a base item!", it) end
+		if not base then errorf("Item %s didn't have a base item!", it) return end
 
-		return base and base[varname]
+		return base[varname]
 	end
 end
 

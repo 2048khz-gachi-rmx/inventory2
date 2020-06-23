@@ -12,6 +12,9 @@ BaseItemAccessor(gen, "IsEquippable", "Equippable")
 
 BaseItemAccessor(eq, "EquipSlot", "EquipSlot")
 
+function eq:Equip(ply)
+	print("Equipped", self, " but serverside")
+end
 
 
 eq:Register()

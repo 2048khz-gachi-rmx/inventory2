@@ -7,6 +7,7 @@ bp.Name = "Backpack"
 bp.SQLName = "ply_tempinv"
 bp.NetworkID = 1
 bp.MaxItems = 20
+bp.UseSlots = true
 
 function bp:__tostring()
 	return ("%s (owner: %s)"):format(
@@ -164,6 +165,9 @@ function bp:Reset()
 end
 
 function bp:HasAccess(ply, action)
+	local allow = self:Emit("Can" .. action, ply)
+	if allow == false then return false end
+
 	return ply == self:GetOwner()
 end
 

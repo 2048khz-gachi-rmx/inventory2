@@ -21,19 +21,100 @@ _G.IQError = qerr
 
 local log = ms.Log
 
-local create_table_query = [[CREATE TABLE IF NOT EXISTS %s (
+local create_table_query = [[
+CREATE TABLE IF NOT EXISTS %s (
   `uid` INT NOT NULL,
   `puid` BIGINT UNSIGNED NULL,
-  `slotid` MEDIUMINT UNSIGNED NULL,
-  %s]] --[[additional columns support l8r]] .. [[
+%s]] --[[if the inventory uses slots, this will be '`slotid` MEDIUMINT UNSIGNED NULL,']] .. [[
+%s]] --[[additional columns]] .. [[
   PRIMARY KEY (`uid`),
   UNIQUE KEY `uid` (`uid`),
-  UNIQUE KEY `uq_slot_puid` (`puid`,`slotid`),
+  %s]] --[[constraints n' other stuff]] .. [[
   CONSTRAINT FOREIGN KEY (`uid`) REFERENCES `items` (`uid`) ON DELETE CASCADE
-)]]
+)
+]]
 
-function ms.CreateInventoryTable(tbl_name)
-	local q = create_table_query:format(tbl_name, "")
+local slot_str = "`slotid` MEDIUMINT UNSIGNED NULL,"
+local slot_constr = "UNIQUE KEY `uq_slot_puid` (`puid`,`slotid`),"
+
+--tbl_name: mandatory, table name to create in MySQL
+--use_slots: false to not create `slotid` column, optional
+--more_columns: table of columns or a string, optional (see below for table structure)
+--more_constraints: string of additional constraints to add, optional
+
+--[[
+column = {
+	name = "slotid",
+	type = "TEXT",
+	attr = "NOT NULL", --additional attributes such as UNSIGNED or w/e
+
+	unique = {"puid", "uid"} 	to create (`slotid`, `puid`, `uid`)
+								OR: [unique = "puid"] to create (`slotid`, `puid`)
+}
+]]
+
+function ms.CreateInventoryTable(tbl_name, use_slots, more_columns, more_constraints)
+	local more = ""
+	local constraints = ""
+
+	if istable(more_columns) then
+
+		local str = "`%s` %s,"
+
+		for k,v in ipairs(more_columns) do
+			local name, typ, attr = v.name, v.type, v.attr
+			local uq = v.unique
+
+			if attr then typ = typ .. " " .. attr end
+
+			local qname = ("`%s`"):format(name)
+
+			--`name` TYPE (MORE ATTRIBUTES?)
+			local str = str:format(name, typ) .. "\n"
+
+
+			if uq then --add a constraint to the end
+
+				--unique constraints can be with the column itself and with others(to form unique pairs)
+				--provide a table like {"puid", "slotid"} to form a unique pair
+				--or anything else to just make the var itself unique
+
+				--`pair` is the columns in [UNIQUE KEY `` (...)]
+
+				local pair = ""
+
+				if istable(uq) then
+					pair = qname .. (#uq > 0 and "," or "")
+					for k, col in ipairs(uq) do
+						pair = pair .. ("`%s`"):format(col)
+						if uq[k + 1] then
+							pair = pair .. ","
+						end
+					end
+
+				elseif isstring(uq) then
+					 		--V ourselves
+								--  V the string
+					pair = ("`%s`, `%s`"):format(name, uq)
+				elseif isbool(uq) then
+					pair = qname
+				end
+
+				constraints = constraints .. ("UNIQUE KEY `uq_%s` (%s),\n"):format(k, pair)
+			end
+
+			more = more .. str
+		end
+	end
+
+	use_slots = (use_slots ~= false)
+
+	local q = create_table_query:format(tbl_name, 
+		use_slots and slot_str or "", 
+		more, 
+		(use_slots and slot_constr or "") .. constraints .. (more_constraints or "")
+		)
+
 	local qobj = ms.DB:query(q)
 
 	qobj.onSuccess = function()
@@ -48,7 +129,7 @@ end
 hook.Add("InventoryTypeRegistered", "CreateInventoryTables", function(inv)
 	if not inv.SQLName then errorf("Inventory %s is missing an SQLName!", inv.Name) return end
 
-	ms.CreateInventoryTable(inv.SQLName)
+	ms.CreateInventoryTable(inv.SQLName, inv.UseSlots, inv.SQLColumns, inv.SQLConstraints)
 end)
 
 local conv = Inventory.IDConversion
@@ -105,8 +186,6 @@ function ms.AssignItemID(name, cb, arg)
 
 	qobj:start()
 end
-
-
 
 
 local newitem_name_query 	= ms.DB:prepare("SELECT InsertByItemName(?) AS uid LIMIT 1;")
@@ -185,6 +264,45 @@ function ms.DeleteItem(it)
 	return MySQLEmitter(delete_query, true)
 end
 
+--accepts dat, where:
+--[[
+	{
+		column_name = "value",
+		...
+	}
+]]
+function ms.SetInventory(it, inv, slot, dat)
+	local t = ms.DB:createTransaction()
+
+	local q1
+	if it:GetInventory() then
+		q1 = ("DELETE FROM %s WHERE uid = %s"):format(it:GetInventory().SQLName, it:GetUID())
+	end
+
+	local columns, values = inv.UseSlots and ", slotid" or "", (slot and ", " .. slot) or (inv.UseSlots and "NULL") or ""
+
+	if dat then
+		--we have more args on the way, add commas
+		columns, values = columns .. ",", values .. ","
+		for k,v in ipairs(dat) do
+			columns = columns .. k
+			values = values .. ms.DB:escape(v)
+		end
+	end
+
+	local puid = mysqloo.quote(ms.DB, inv:GetOwner():SteamID64())
+	local q2 = ("INSERT IGNORE INTO %s (uid, puid%s) VALUES (%s, %s%s)"):format(inv.SQLName, columns, it:GetUID(), puid, values )
+
+	local qo1 = db:query(q1)
+	local qo2 = db:query(q2)
+
+	t:addQuery(qo1)
+	t:addQuery(qo2)
+
+	return MySQLEmitter:new(t, true):Catch(trerr)
+end
+
+
  																							 -- SQL inventory name | SteamID64 as an int
 																							    --  V 			 	 V
 local fetchitems_query 	= "SELECT its.iid, its.uid, its.data, inv.slotid FROM items its INNER JOIN %s inv ON puid = %s AND its.uid = inv.uid"
@@ -243,9 +361,9 @@ end
 local function swapSlots(tname, uid, sid, slot1, slot2)
 	local t = ms.DB:createTransaction()
 
-	local q1 = ("UPDATE %s SET slotid = NULL WHERE uid = %d"):format(tname, uid)
-	local q2 = ("UPDATE %s SET slotid = %d WHERE slotid = %d AND puid = %s"):format(tname, slot2, slot1, sid)
-	local q3 = ("UPDATE %s SET slotid = %d WHERE uid = %d"):format(tname, slot1, uid)
+	local q1 = ("UPDATE %s SET slotid = NULL WHERE uid = %s"):format(tname, uid)
+	local q2 = ("UPDATE %s SET slotid = %s WHERE slotid = %d AND puid = %s"):format(tname, slot2, slot1, sid)
+	local q3 = ("UPDATE %s SET slotid = %s WHERE uid = %s"):format(tname, slot1, uid)
 
 	local qo1 = db:query(q1)
 	local qo2 = db:query(q2)
