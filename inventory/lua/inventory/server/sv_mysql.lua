@@ -296,6 +296,7 @@ function ms.SetInventory(it, inv, slot, dat)
 	local qo1 = db:query(q1)
 	local qo2 = db:query(q2)
 
+	print(q1, q2)
 	t:addQuery(qo1)
 	t:addQuery(qo2)
 

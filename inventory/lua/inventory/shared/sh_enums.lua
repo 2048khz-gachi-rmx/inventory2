@@ -18,8 +18,9 @@ INV_ACTION_USE = 1
 INV_ACTION_SPLIT = 2
 INV_ACTION_MERGE = 3
 INV_ACTION_DELETE = 4
-INV_ACTION_CROSSINV = 5 --cross-inventory move, not implemented YET
-INV_ACTION_EQUIP = 6 
+INV_ACTION_CROSSINV_MOVE = 5 -- cross-inventory move, not implemented YET
+INV_ACTION_CROSSINV_SPLIT = 6 -- also not implemented
+INV_ACTION_EQUIP = 7 
 
 --[[------------------------------]]
 

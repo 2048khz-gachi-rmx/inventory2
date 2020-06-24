@@ -159,8 +159,8 @@ function invnet:WriteInventory(inv)
     return self
 end
 
-function invnet:WriteItem(it)
-    if not self.CurrentInventory or not self.CurrentInventory:HasItem(it) then 
+function invnet:WriteItem(it, ignore)
+    if not self.CurrentInventory or not self.CurrentInventory:HasItem(it) and not ignore then 
         errorf("Can't write an item if current inventory doesn't have it! (current inv: %s, tried to write: %s)", self.CurrentInventory, it) 
         return
     end

@@ -87,6 +87,8 @@ function ITEM:Init()
 
 	self.Rounding = 4
 
+	self.BorderColor = Colors.LightGray:Copy()
+
 	self:DetourStuff()
 end
 
@@ -169,11 +171,27 @@ function ITEM:CreateModelPanel(it)
 	end
 end
 
+function ITEM:SetInventoryFrame(it)
+	self.InventoryFrame = it
+	self.Inventory = it:GetInventory()
+end
+
+function ITEM:GetInventory()
+	return self.Inventory
+end
+
+function ITEM:GetInventoryFrame()
+	return self.InventoryFrame
+end
+
 function ITEM:SetItem(it)
 
 	self:SetEnabled(Either(it, true, false))
 	if self.FakeItem then self:SetFakeItem(nil) end
 	if it then
+		self.BorderColor = it.BorderColor and it.BorderColor:Copy() or Colors.LightGray
+		self.FakeBorderColor = nil
+
 		self.Item = it
 		self:SetCursor("hand")
 
@@ -237,9 +255,23 @@ function Inventory.Panels.ItemDraw(self, w, h)
 	local it = self.Item or self.FakeItem
 
 	if it then
+
 		local base = it:GetBaseItem()
 
-		draw.RoundedBox(rnd, 0, 0, w, h, it.BorderColor or Colors.LightGray)
+		self.FakeBorderColor = self.FakeBorderColor or self.BorderColor:Copy()
+
+		local col = self.FakeBorderColor
+		local realcol = self.BorderColor
+		local ch, cs, cv = ColorToHSV(realcol)
+
+		self:To("BorderLight", self:IsHovered() and 1 or 0, 0.2, 0, 0.2)
+
+		local add_val = self.BorderLight or 0
+
+		draw.ColorModHSV(col, ch, cs, cv + add_val / 15)
+
+		--print(cv + add_val / 10, col)
+		draw.RoundedBox(rnd, 0, 0, w, h, col)
 		draw.RoundedBox(rnd, 2, 2, w-4, h-4, Colors.Gray)
 
 		base:Emit("Paint", self.Item, self, self.ModelPanel)

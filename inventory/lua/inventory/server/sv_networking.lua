@@ -261,8 +261,7 @@ function nw.NetworkInventory(ply, inv, typ, just_return) --mark 'just_return' as
 		if just_return then
 			return ns
 		else 						--      V we're only networking 1 inventory
-			print("networkInventory: type is", typ)
-			local st = {nw.WriteHeader(typ, 1, inv:GetOwner()),    ns} --write the header first, then the actual contents
+			local st = {nw.WriteHeader(typ, 1, inv:GetOwner()), ns} --write the header first, then the actual contents
 			nw.SendNetStacks(st, ply)
 		end
 

@@ -61,20 +61,34 @@ function PANEL:GetInventory()
 end
 
 function PANEL:MoveItem(rec, drop, item)
+	local crossinv = rec:GetInventory() ~= item:GetInventory()
+
 	if not rec:GetSlot() then errorf("This ItemFrame doesn't have a slot assigned to it! Did you forget to call :SetSlot()?") return end
 	if rec.Item == item then return end
 
-	item:SetSlot(rec:GetSlot()) --assume success
+	local crossinv = rec:GetInventory() ~= item:GetInventory()
+
+	
 	local recItem = rec:GetItem(true)
 	rec:SetItem(item)
 	drop:SetItem(recItem)
 
 	local ns = Inventory.Networking.Netstack()
+
 	ns:WriteInventory(item:GetInventory())
 	ns:WriteItem(item)
+	if crossinv then ns:WriteInventory(rec:GetInventory()) end
+
 	ns:WriteUInt(rec:GetSlot(), 16)
 
-	Inventory.Networking.PerformAction(INV_ACTION_MOVE, ns)
+	if crossinv then
+		item:Delete() --remove self from old inv
+		rec:GetInventory():AddItem(item) --add self to new inv
+	end
+
+	item:SetSlot(rec:GetSlot()) --assume success
+
+	Inventory.Networking.PerformAction(crossinv and INV_ACTION_CROSSINV_MOVE or INV_ACTION_MOVE, ns)
 end
 
 function PANEL:CreateSplitSelection(rec, drop, item)
@@ -82,6 +96,8 @@ function PANEL:CreateSplitSelection(rec, drop, item)
 		self.SplitCloud.BoundTo:SetFakeItem(nil)
 		self.SplitCloud:Remove()
 	end
+
+	local crossinv = rec:GetInventory() ~= item:GetInventory()
 
 	local cl = vgui.Create("DPanel", rec:GetParent())
 	self.SplitCloud = cl
@@ -139,6 +155,8 @@ function PANEL:CreateSplitSelection(rec, drop, item)
 end
 
 function PANEL:SplitItem(rec, drop, item)
+
+	local crossinv = rec:GetInventory() ~= item:GetInventory()
 
 	if self.IsWheelHeld then
 		local amt = math.floor(item:GetAmount() / 2)
@@ -273,6 +291,7 @@ function PANEL:AddItemSlot()
 				8 + y * (iPan.SlotSize + iPan.SlotPadding))
 
 	self.Slots[i + 1] = it
+	it:SetInventoryFrame(self)
 	it:SetSlot(i + 1)
 	it:SetMainFrame(self:GetMainFrame())
 	it:On("ItemInserted", self.OnItemAddedIntoSlot, self)

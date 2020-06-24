@@ -48,8 +48,8 @@ function bp:GetOwner()
 end
 
 function bp:SetSlot(it, slot)   --this is basically an accessor func;
-								--it doesn't store the changes and doesn't check if an item exists there
-								--use this when moving items as it will also write down the change
+								--it doesn't store the slot change in SQL and doesn't check if an item exists there
+								--use this when moving items as it will also write down the change, use :MoveItem() when moving items within one inventory
 	for i=1, self.MaxItems do
 		if self.Slots[i] == it then
 			self.Slots[i] = nil
@@ -135,6 +135,7 @@ function bp:AddItem(it, ignore_emitter)
 	it.Inventory = self
 
 	self:Emit("AddItem", it, it:GetUID())
+	return it:GetSlot()
 end
 
 function bp:GetFreeSlot()

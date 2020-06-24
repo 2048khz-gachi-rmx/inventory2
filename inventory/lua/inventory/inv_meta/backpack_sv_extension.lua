@@ -52,16 +52,25 @@ function bp:CrossInventoryMove(it, inv2, slot)
 	local slot = slot or inv2:GetFreeSlot()
 	if not slot then print("Can't cross-inventory-move cuz no slot", slot) return end
 
-	if false then --DEBUG: disabled
-		local can = inv2:Emit("CanAddItem", it, it:GetUID())
-		if can == false then return false end
-	end
+	--check if inv2 can accept cross-inventory item
+	local can = inv2:Emit("CanMoveTo", it, self)
+	if can == false then return false end
+
+	--check if inv1 can give out the item
+	local can = self:Emit("CanMoveFrom", it, inv2)
+	if can == false then return false end
+
+	--check if inv2 can add an item to itself
+	local can = inv2:Emit("CanAddItem", it, it:GetUID())
+	if can == false then return false end
+
 
 	local em = Inventory.MySQL.SetInventory(it, inv2, slot)
 
 	self:RemoveItem(it)
 	inv2:AddItem(it, true)
 
+	return em
 end
 
 --for adding an existing both in-game and in-sql item, use bp:AddItem(item)

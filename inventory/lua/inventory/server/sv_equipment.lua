@@ -6,11 +6,21 @@ local function load(act)
 
 	act[INV_ACTION_EQUIP] = function(ply)
 		local inv = act.readInv(ply, "Equip")
-		local it = act.readItem(inv, "Equip")
-		print("Received equip request from", ply, inv, it)
-		if it:Emit("CanEquip", ply) == false then print("cant equip :(") return false end
-		print("equipping :)")
-		it:Equip(ply)
+		local it = act.readItem(ply, inv, "Equip")
+		local slot = net.ReadUInt(8)
+
+		local slotName = Inventory.EquipmentSlots[slot]
+		_REC = it
+		print("aeiou", it, slotName, slot)
+		local can, why = it:Emit("CanEquip", ply, slotName)
+		if can == false then print("cant equip :(", why) return false end
+
+		local em = it:Equip(ply, slot)
+		em:Then(function()
+			if IsValid(ply) then
+				ply:NetworkInventory({inv, ply.Inventory.Character})
+			end
+		end)
 	end
 end
 

@@ -87,13 +87,17 @@ end
 							-- V bruh
 function PANEL.EquipItem(slot, self, itemfr, item)
 	if not canEquip(slot, item) then return end
-	print("Equipping", item)
 
 	local ns = Inventory.Networking.Netstack()
 	ns:WriteInventory(item:GetInventory())
 	ns:WriteItem(item)
-
+	ns:WriteUInt(slot.ID, 8)
 	Inventory.Networking.PerformAction(INV_ACTION_EQUIP, ns)
+
+	slot:SetItem(item)
+	self:GetInventory():AddItem(item)
+	item:SetSlot(slot.ID)
+	itemfr:SetItem(nil)
 end
 
 function PANEL:HighlightFit(btn, itemfr, item)
@@ -107,6 +111,10 @@ function PANEL:HighlightFit(btn, itemfr, item)
 	btn.HoverGradientColor = Colors.Money
 end
 
+function PANEL:GetInventory()
+	return LocalPlayer().Inventory.Character
+end
+
 function PANEL:DehighlightFit(btn, itemfr, item)
 	btn.HoverGradientColor = nil
 	btn:AlphaTo(255, 0.1, 0)
@@ -117,6 +125,7 @@ end
 
 local function CreateSlots(self, tbl)
 	local frac = 1 / #tbl
+	local char = LocalPlayer().Inventory.Character
 
 	local curryHighlight = function(btn, ...)
 		self:HighlightFit(btn, ...)
@@ -134,6 +143,7 @@ local function CreateSlots(self, tbl)
 
 		local btn = vgui.Create("ItemFrame", self)
 		btn:SetSize(eqBtnSize, eqBtnSize)
+		btn:SetInventoryFrame(self)
 		btn.Rounding = 4
 		btn.Border = {col = Colors.LightGray}
 		btn.YFrac = frac * (k - 0.5)
@@ -146,6 +156,9 @@ local function CreateSlots(self, tbl)
 		btn:On("Paint", "PaintSlotName", PaintSlotName)
 		btn:On("Drop", "EquipItem", self.EquipItem, self)
 
+		if char.Slots[nwid] then
+			btn:SetItem(char.Slots[nwid])
+		end
 		hook.Add("InventoryItemDragStart", btn, curryHighlight)
 		hook.Add("InventoryItemDragStop", btn, curryDehighlight)
 

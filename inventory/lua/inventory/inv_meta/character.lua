@@ -19,13 +19,57 @@ char.SQLColumns = {
 	}
 }
 
-char:On("CanOpen", function()
+char:On("CanOpen", "NoOpen", function()
 	return false
 end)
 
+char:On("CanAddItem", "ManualOnly", function(self, it)
+    return self.Allowed[it:GetUID()] -- you can only add items here through the :Equip() method
+end)
 
-function char:Equip(it)
+char:On("CanMoveItem", "FittingOnly", function(self, it, slot)
+	print("char can move item?", it, slot)
 
+	local can, why = Inventory.CanEquipInSlot(it, slot)
+	if can == false then return can, why end
+end)
+
+char:On("CanCreateItem", "ManualOnly", function(self, iid, dat, slot)
+    return false
+end)
+
+function char:Initialize()
+	self.Slots = {}
+	self.Allowed = {}
+end
+
+function char:Unequip(slot, inv)
+	if not inv then error("Unequip where dude") return end
+
+	local it = self.Slots[slot]
+	if not IsItem(it) then error("What are you unequipping dude") return end
+
+	self.Allowed[it:GetUID()] = nil
+
+	self:CrossInventoryMove(it, inv)
+end
+
+function char:Equip(it, slot)
+	print("Equip: received", self, it, slot)
+	if IsItem(self.Slots[slot]) then
+		local ok = self:Unequip(slot, it:GetInventory()) --switch items places
+		if ok == false then return end
+	end
+
+	self.Allowed[it:GetUID()] = true
+
+	local inv = it:GetInventory()
+	local mem = inv:CrossInventoryMove(it, self, slot)
+
+	it:SetSlot(slot)
+	self.Slots[slot] = it
+	self:AddChange(it, INV_ITEM_ADDED)
+	return mem
 end
 
 char:Register()

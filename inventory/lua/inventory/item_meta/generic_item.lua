@@ -97,8 +97,6 @@ BaseItemAccessor(it, "ShouldSpin", "ShouldSpin")
 BaseItemAccessor(it, "Countable", "Countable")
 BaseItemAccessor(it, "MaxStack", "MaxStack")
 
-BaseItemAccessor(it, "Equippable", "Equippable")
-
 
 function it:GetBaseItem()
 	return Inventory.BaseItems[self.ItemID]
