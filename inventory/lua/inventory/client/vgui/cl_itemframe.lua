@@ -114,6 +114,31 @@ end
 
 function ITEM:OnCursorEntered()
 	self:Emit("Hover")
+
+	local it = self:GetItem(true)
+	if not it then return end
+
+	local cl = (IsValid(self.Cloud) and self.Cloud) or vgui.Create("ItemCloud", self)
+	cl:Popup()
+	cl:SetSize(self:GetSize())
+	local existed = self.Cloud == cl
+
+	cl:SetRelPos(self:GetWide() / 2, -4)
+
+	if not existed then
+		cl:SetItem(it)
+	end
+
+	self.Cloud = cl
+end
+
+function ITEM:OnCursorExited()
+	self:Emit("Unhover")
+
+	local cl = IsValid(self.Cloud) and self.Cloud
+	if not cl then return end
+
+	cl:Popup(false)
 end
 
 function ITEM:OpenOptions()

@@ -8,13 +8,26 @@ function wep:Equip(ply, slot)
 	local mem = eq.Equip(self, ply, slot)
 
 	ply:Give(self:GetWeaponClass())
-	print("weapon: equipping too")
-
 
 	return mem
 end
 
 local allowed = table.KeysToValues({"primary", "secondary", "utility"})
+
+wep:On("GenerateText", "Uses", function(self, cloud, mup)
+	cloud:AddFormattedText("woah now this one is rly good!!!", Colors.Money)
+
+	local p2 = mup:AddPiece()
+	p2:SetFont("OSB20")
+
+	p2:AddTag(MarkupTags("color", 150, 60, 200))
+	local rand = function() return math.Rand(-0.55, 0.55) end
+
+	local trind = p2:AddTag(MarkupTags("chartranslate", rand, rand))
+
+	p2:AddText("[Menacing]")
+	p2:EndTag(trind)
+end)
 
 wep:On("CanEquip", "WeaponCanEquip", function(self, ply, slot)
 	local slotName = slot.slot
