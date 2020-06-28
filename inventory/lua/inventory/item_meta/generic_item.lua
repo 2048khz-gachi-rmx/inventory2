@@ -143,4 +143,8 @@ end
 
 it:Register()
 
-if SERVER then include("generic_item_sv_extension.lua") else include("generic_item_cl_extension") end
+if SERVER then
+	include("generic_item_sv_extension.lua")
+else
+	include("generic_item_cl_extension.lua")
+end
