@@ -81,7 +81,6 @@ local function load()
 			end)
 		end)
 
-		print("split:", it, where, amt)
 		return false, inv
 	end
 
@@ -91,6 +90,8 @@ local function load()
 		local it2 = readItem(ply, inv, "Merge") --to stack OUT OF
 		local want_amt = math.max(net.ReadUInt(32), 1)
 
+		if it == it2 then return end --no
+		
 		local amt = it:CanStack(it2)
 		if not amt then return end
 

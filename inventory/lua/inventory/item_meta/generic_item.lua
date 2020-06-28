@@ -50,6 +50,7 @@ end
 
 function it:CanStack(it2)
 	if not equalData(self.Data, it2.Data) then return false end
+	if self:GetItemID() ~= it2:GetItemID() then return false end
 	if self:GetAmount() == self:GetMaxStack() then return false end
 
 	return math.min(self:GetMaxStack() - self:GetAmount(), it2:GetAmount())
@@ -76,6 +77,7 @@ ChainAccessor(it, "Known", "Known")
 function it:GetData() --only a getter
 	return self.Data
 end
+
 it.GetPermaData = it.GetData
 
 DataAccessor(it, "Amount", "Amount", function(it, amt)
