@@ -9,11 +9,16 @@ function it:GenerateText(cloud)
 	local mup = vgui.Create("MarkupText", cloud)
 	mup:SetPaintedManually(true)
 
-	cloud:AddPanel(mup)
 	self:Emit("GenerateText", cloud, mup)
 
-	mup:InvalidateLayout(true)
-	mup.X = 8
+	if #mup:GetPieces() < 1 then
+		mup:Remove()
+	else
+		cloud:AddPanel(mup)
+		mup:InvalidateLayout(true)
+		mup.X = 8
+	end
+
 	local len = #cloud.DoneText
 
 	if len > 0 then --some texts were added
@@ -25,5 +30,4 @@ end
 
 it:On("GenerateText", 1, function(self, cloud)
 	cloud.MaxW = 250
-	cloud:AddFormattedText("this is a generic item's GenerateText & there's nothing special about it")
 end)
