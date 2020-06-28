@@ -70,6 +70,12 @@ function bp:CrossInventoryMove(it, inv2, slot)
 	self:RemoveItem(it)
 	inv2:AddItem(it, true)
 
+	--has it moved successfully 100%?
+	if inv2.Changes[it] == INV_ITEM_ADDED then
+		self:AddChange(it, INV_ITEM_CROSSMOVED)
+		inv2.Changes[it] = nil
+	end
+
 	return em
 end
 
@@ -161,10 +167,12 @@ function bp:SerializeItems(typ)
 end
 function bp:WriteChanges(ns)
 	local dels, moves, allits = {}, {}, {}
+	local crossmove = {}
 
 	local where = {
 		[INV_ITEM_DELETED] = dels,
 		[INV_ITEM_MOVED] = moves,
+		[INV_ITEM_CROSSMOVED] = crossmove,
 	}
 
 	for item, enum in pairs(self.Changes) do
@@ -177,15 +185,36 @@ function bp:WriteChanges(ns)
 
 	ns:Resize(allits)
 
-	ns:WriteUInt(#dels, 16).DeletionAmt = true
-	for k,v in ipairs(dels) do
-		ns:WriteUID(v)
+	local hasdels = #dels > 0
+	ns:WriteBool(hasdels).HasDeleted = true
+
+	if hasdels then
+		ns:WriteUInt(#dels, 16).DeletionAmt = true
+		for k,v in ipairs(dels) do
+			ns:WriteUID(v)
+		end
 	end
 
-	ns:WriteUInt(#moves, 16).MovedAmt = true
+	local hasmoves = #moves > 0
 
-	for k,v in ipairs(moves) do
-		ns:WriteUID(v)
-		ns:WriteSlot(v)
+	ns:WriteBool(hasmoves).HasMoved = true
+
+	if hasmoves then
+		ns:WriteUInt(#moves, 16).MovedAmt = true
+		for k,v in ipairs(moves) do
+			ns:WriteUID(v)
+			ns:WriteSlot(v)
+		end
+	end
+
+	local hascrossmoves = #crossmove > 0
+
+	ns:WriteBool(hascrossmoves).HasCrossMoved = true
+	if hascrossmoves then
+		ns:WriteUInt(#crossmove, 16).CrossMovedAmt = true
+		for k,v in ipairs(crossmove) do
+			ns:WriteUID(v)
+			ns:WriteInventory(v:GetInventory())
+		end
 	end
 end

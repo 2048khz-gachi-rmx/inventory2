@@ -50,6 +50,7 @@ end
 function bp:SetSlot(it, slot)   --this is basically an accessor func;
 								--it doesn't store the slot change in SQL and doesn't check if an item exists there
 								--use this when moving items as it will also write down the change, use :MoveItem() when moving items within one inventory
+								--item:SetSlot() is preferred
 	for i=1, self.MaxItems do
 		if self.Slots[i] == it then
 			self.Slots[i] = nil
@@ -60,6 +61,14 @@ function bp:SetSlot(it, slot)   --this is basically an accessor func;
 	self.Slots[slot] = it
 
 	if it:GetKnown() then self:AddChange(it, INV_ITEM_MOVED) end --if the player doesn't know about the item, don't replace the change
+end
+
+if CLIENT then
+	function bp:CrossInventoryMove(it, inv2, slot)
+		self:RemoveItem(it)
+		inv2:AddItem(it)
+		if slot then it:SetSlot(slot) end
+	end
 end
 
 function bp:RemoveItem(it)
@@ -173,7 +182,7 @@ function bp:HasAccess(ply, action)
 end
 
 --takes: item or uid, INV_ITEM_DELETED or INV_ITEM_MOVED
-function bp:AddChange(it, what, nonetwork)
+function bp:AddChange(it, what)
 	self.Changes[it] = what
 end
 

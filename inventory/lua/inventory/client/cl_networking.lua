@@ -33,7 +33,7 @@ function nw.ReadItem(uid_sz, iid_sz, slot_sz, inventory)
     return item
 end
 
-function nw.ReadInventory(invtbl, typ)
+function nw.ReadInventoryContents(invtbl, typ)
     local max_uid, max_id = nw.ReadHeader()
     local invID = net.ReadUInt(16)
     local its = net.ReadUInt(16)
@@ -54,31 +54,62 @@ function nw.ReadInventory(invtbl, typ)
     end
 
     if typ == INV_NETWORK_UPDATE then
-        local dels = net.ReadUInt(16)
 
-        log("CL-Networking: reading %d deletions", dels)
+        -- Read deletions
+        if net.ReadBool() then
+            local dels = net.ReadUInt(16)
 
-        for i=1, dels do
-            local uid = net.ReadUInt(max_uid)
-            local del_it = inv:DeleteItem(uid)
-            log("   successfully deleted item")
-            Inventory:Emit("ItemRemoved", inv, del_it)
+            log("CL-Networking: reading %d deletions", dels)
+
+            for i=1, dels do
+                local uid = net.ReadUInt(max_uid)
+                local del_it = inv:DeleteItem(uid)
+                log("   successfully deleted item")
+                Inventory:Emit("ItemRemoved", inv, del_it)
+            end
         end
+        log("finished with deletions")
+        -- Read slot moves
 
-        local moves = net.ReadUInt(16)
+        if net.ReadBool() then
+            local moves = net.ReadUInt(16)
 
-        log("CL-Networking: reading %d moves", moves)
+            log("CL-Networking: reading %d moves", moves)
 
-        for i=1, moves do
-            local uid = net.ReadUInt(max_uid)
-            local slot = net.ReadUInt(bit.GetLen(inv.MaxItems))
-            log("   moving item %s into slot %s", uid, slot)
-            local item = inv:GetItem(uid)
-            item:SetSlot(slot)
-            --log("   successfully moved item %s into slot %s", uid, slot)
-            --Inventory:Emit("ItemChanged", inv, item)
-            Inventory:Emit("ItemMoved", inv, item)
+            for i=1, moves do
+                local uid = net.ReadUInt(max_uid)
+                local slot = net.ReadUInt(bit.GetLen(inv.MaxItems))
+                log("   moving item %s into slot %s", uid, slot)
+                local item = inv:GetItem(uid)
+                item:SetSlot(slot)
+                --log("   successfully moved item %s into slot %s", uid, slot)
+                --Inventory:Emit("ItemChanged", inv, item)
+                Inventory:Emit("ItemMoved", inv, item)
+            end
         end
+        log("finished with slot moves")
+        -- Read inventory moves
+
+        if net.ReadBool() then
+            local moves = net.ReadUInt(16)
+
+            log("CL-Networking: reading %d moves", moves)
+
+            for i=1, moves do
+                local uid = net.ReadUInt(max_uid)
+                local where = net.ReadUInt(8)
+                local newinv = invtbl[where]
+                log("   moving item %s into inventory %s", uid, inv)
+                local item = inv:GetItem(uid)
+
+                if item then
+                    --if there was no item that means we already predicted the removal somewhere
+                    inv:RemoveItem(item)
+                    item:SetInventory(newinv)
+                end
+            end
+        end
+        log("finished with moves")
     end
 
     inv:Emit("Change")
@@ -103,7 +134,7 @@ function nw.ReadUpdate(len, type)
     end
 
     for i=1, invs do
-        nw.ReadInventory(invs_table, type)
+        nw.ReadInventoryContents(invs_table, type)
     end
 end
 
