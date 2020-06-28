@@ -6,6 +6,8 @@ Base.ItemClass = "Generic"
 Base.ShouldSpin = true
 Base.Extensions = Base.Extensions or {}
 
+Base.NetworkedVars = {}
+
 --Extend = a new class is being extended from base (e.g. 'Equipment' from 'Generic')
 function Base:OnExtend(new, name, class)
 	if not isstring(name) then error("Base item extensiosns _MUST_ have a name assigned to them!") return end
@@ -31,6 +33,12 @@ function Base:Initialize(name)
 	assert(isstring(name), "New base items _MUST_ have a name assigned to them!")
 
 	self.NetworkedVars = {}
+
+	local base = self.__instance
+	for k,v in ipairs(base.NetworkedVars) do
+		self.NetworkedVars[k] = v
+	end
+
 	self.DefaultData = {}
 
 	self.Deletable = true
@@ -103,8 +111,10 @@ function Base:NetworkVar(net_typ, what, ...)
 
 	if isnumber(typ) and given ~= typ - 1 then errorf("Mismatched amount of args provided (%d) vs. args needed (%d): %s", given, typ, ...) return end
 	if not isstring(what) and not isfunction(what) then errorf("NetworkVar accepts either a string (key in its' .Data table) or a function which determines how to network! Got %s instead", type(what)) return end
+	if self.NetworkedVars[what] then return end
 
 	self.NetworkedVars[#self.NetworkedVars + 1] = {type = net_typ, what = what, args = {...}}
+	self.NetworkedVars[what] = net_typ
 	return self
 end
 
