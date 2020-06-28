@@ -1,3 +1,4 @@
+if CLIENT then error("HOW") end
 local bp = Inventory.Inventories.Backpack
 
 function bp:NewItem(iid, cb, slot, dat)
