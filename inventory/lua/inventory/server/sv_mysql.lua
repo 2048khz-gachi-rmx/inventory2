@@ -178,6 +178,10 @@ function ms.AssignItemID(name, cb, arg)
 		local id = dat[1].id
 					--V stfu
 		if cb then cb(arg or id, arg and id or nil) end
+
+		conv.ToID[name] = id
+		conv.ToName[id] = name
+
 		Inventory:Emit("ItemIDAssigned", name, id)
 		hook.Run("InventoryItemIDAssigned", name, id)
 	end

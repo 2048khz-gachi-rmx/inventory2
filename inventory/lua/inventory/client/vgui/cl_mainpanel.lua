@@ -202,9 +202,10 @@ function f:AreaChanged(x, y, w, h)
 		mx = self.AreaMovingX
 		my = self.AreaMovingY
 		self.AreaAnim:Stop()
-	else 
+	else
 		mx, my = self:GetPos()
 	end
+
 	self.ohGodWhyWhat = ((self.ohGodWhyWhat or 0) + 1) % 2  --AHAHAHHAHAHAHH FUCK SUBPIXEL SHIT ADUIASDIUASBDOCUINASUODCINASIOC
 	self.AreaMovingX = mx - math[self.ohGodWhyWhat == 1 and "floor" or "ceil"](dx/2)
 	self.AreaMovingY = my

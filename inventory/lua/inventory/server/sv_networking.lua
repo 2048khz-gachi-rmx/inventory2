@@ -177,7 +177,6 @@ function invnet:WriteInventory(inv)
 
 	self:WriteUInt(id, 8).InventoryNID = true
 end
-print("inventory networking loading")
 
 --provide ids as a table of {[itemID] = "itemName"} to only network that
 
@@ -243,7 +242,6 @@ function nw.SendNetStacks(nses, ply)
 
 	net.Start("Inventory")
 		for k,v in ipairs(nses) do
-			print("Sending:", v)
 			net.WriteNetStack(v)
 		end
 	net.Send(ply)
@@ -297,7 +295,6 @@ function nw.NetworkInventory(ply, inv, typ, just_return) --mark 'just_return' as
 			nw.CurrentInventory = nil
 		end
 
-		print("networkInventory: type is", typ)
 		local header = nw.WriteHeader(typ, #stacks, owner)
 		table.insert(stacks, 1, header)
 
