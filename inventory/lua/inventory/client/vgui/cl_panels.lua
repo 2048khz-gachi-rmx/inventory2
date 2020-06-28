@@ -28,7 +28,7 @@ function iPan.CreateInventory(par, inv, multiple)
 
 	f.Inventory = inv
 
-	hook.Add("PostRenderVGUI", f, function()
+	--[[hook.Add("PostRenderVGUI", f, function()
 		local x, y, w, h = f:GetArea()
 		surface.SetDrawColor(Colors.Red)
 		surface.DrawOutlinedRect(x, y, w, h)
@@ -37,12 +37,12 @@ function iPan.CreateInventory(par, inv, multiple)
 		surface.DrawRect(x + w/2 - 1, y + h/2 - 1, 2, 2)
 		surface.SetDrawColor(0, 0, 255)
 		surface.DrawRect(ScrW() / 2, ScrH() / 2, 3, 3)
-	end)
+	end)]]
 
 	if multi_invs and inv then
 		for k,v in pairs(inv) do
 			if v:Emit("CanOpen") == false then continue end --uhkay
-			
+
 			local tab = f:AddTab(v.Name, f.OnSelectTab, f.OnDeselectTab)
 			tab:SetTall(50)
 			tab.Inventory = v

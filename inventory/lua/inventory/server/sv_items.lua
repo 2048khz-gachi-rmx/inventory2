@@ -22,6 +22,10 @@ function Inventory.NewItem(iid, invobj, dat)
 
 	item.Data = def
 
+	item:Once("AssignUID", "EmitCreatedNew", function()
+		item:Emit("CreatedNew")
+	end)
+
 	return item
 end
 

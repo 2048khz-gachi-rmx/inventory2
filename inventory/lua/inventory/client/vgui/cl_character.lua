@@ -95,8 +95,12 @@ function PANEL.EquipItem(slot, self, itemfr, item)
 	Inventory.Networking.PerformAction(INV_ACTION_EQUIP, ns)
 
 	slot:SetItem(item)
+	local inv = item:GetInventory()
+	print("Item:", item)
+	inv:CrossInventoryMove(item, self:GetInventory(), slot.ID)
+	--[[inv:RemoveItem(item)
 	self:GetInventory():AddItem(item)
-	item:SetSlot(slot.ID)
+	item:SetSlot(slot.ID)]]
 	itemfr:SetItem(nil)
 end
 
