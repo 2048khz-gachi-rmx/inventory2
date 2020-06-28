@@ -159,12 +159,10 @@ function nw.ReadConstants()
     if comp then
         dat = util.Decompress(dat)
     end
-    print("Received:", dat)
     dat = von.deserialize(dat)
-
     local conv = Inventory.IDConversion
 
-    for iid, iname in ipairs(dat) do
+    for iid, iname in pairs(dat) do
         conv.ToName[iid] = iname
         conv.ToID[iname] = iid
     end
