@@ -17,7 +17,7 @@ end
 function Inventory.Util.GetMeta(iid)
 	local base = Inventory.Util.GetBaseMeta(iid)
 	if not base then return false end
-	print(base, iid, base.ItemClass)
+
 	return Inventory.ItemObjects[base.ItemClass]
 end
 

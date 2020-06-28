@@ -23,8 +23,15 @@ local names = {
 	Slot = " - Item Slot",
 	InventoryNID = " - Inventory NetworkID",
 	ItemsAmount = " - Amount of Inventory Items",
+
+	HasDeleted = " - Has Deleted items",
 	DeletionAmt = " - Amount of deleted items",
-	MovedAmt = " - Amount of moved items"
+
+	HasMoved = " - Has Moved items",
+	MovedAmt = " - Amount of moved items",
+
+	HasCrossMoved = " - Has cross-inventory moved items",
+	CrossMovedAmt = " - Amount of cross-inventory moved items"
 }
 
 local function getArgName(t)
@@ -164,6 +171,12 @@ function invnet:WriteSlot(it)
 	end
 end
 
+function invnet:WriteInventory(inv)
+	local id = inv.NetworkID
+	if not id then errorf("Inventory %s doesn't have an NetworkID!", inv) return end
+
+	self:WriteUInt(id, 8).InventoryNID = true
+end
 print("inventory networking loading")
 
 --provide ids as a table of {[itemID] = "itemName"} to only network that
@@ -230,6 +243,7 @@ function nw.SendNetStacks(nses, ply)
 
 	net.Start("Inventory")
 		for k,v in ipairs(nses) do
+			print("Sending:", v)
 			net.WriteNetStack(v)
 		end
 	net.Send(ply)
@@ -270,6 +284,8 @@ function nw.NetworkInventory(ply, inv, typ, just_return) --mark 'just_return' as
 		 --or we're networking to the player himself
 
 		local invs = (istable(inv) and inv) or ply.Inventory
+		if istable(inv) then typ = INV_NETWORK_UPDATE end --if we were given just a few inventories then it's most likely it's just an update
+
 		local stacks = {}
 		local owner
 
