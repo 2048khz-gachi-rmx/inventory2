@@ -3,26 +3,48 @@ include("shared.lua")
 local me = {}
 
 function ENT:Initialize()
-	me[self] = {}
-	local me = me[self]
-	me.UsedRN = false 
-	me.WasUsed = false
-	me.CurBops = 0
-	me.LastBops = 0
+	if self:GetResources() > 0 then --bweh
+		print("called UpdateOres from initialize:", self:GetResources())
+		self:UpdateOres(nil, "from init; none", self:GetResources())
+	end
+
+
+end
+
+
+function ENT:UpdateOres(_, old, new)
+	print("-----\nself:", self, "\nold:", old, "\nnew:", new)
+	print(self.What, self:GetClass(), self.IsOre, self:GetPos())
+	if new ~= 0 and (new < 500 or new > 1000) then
+		error("bad")
+	end
+
+	if true then return end
+	--[[if new:sub(1, 1) ~= "{" then
+		-- https://discordapp.com/channels/565105920414318602/589120351238225940/727586576552558683
+		-- in the gmod discord
+
+		print("if you see this, blame the gmod devs")
+		return
+	end]]
+
+	local rec = von.deserialize(new)
+	local ores = {}
+	local fullamt = 0
+	for k,v in ipairs(rec) do
+		local id = v[1]
+		local amt = v[2]
+
+		local base = Inventory.Util.GetBase(id)
+		fullamt = fullamt + amt * base:GetCost()
+		ores[base:GetItemName()] = {ore = base, amt = amt}
+	end
+
+	self.Ores = ores
+	self.TotalAmount = fullamt
 end
 
 function ENT:Draw()
 	self:DrawModel()
-
-	local me = me[self]
-	if not me then self:Initialize() return end
-
-	local Pos = self:GetPos() + self:GetAngles():Up()*60
-	local Ang = Angle(0, LocalPlayer():EyeAngles().y - 90, 90)
-	me.LastBops = me.CurBops
-	me.CurBops = self:GetBops()
-	if me.LastBops == 4 and me.CurBops == 0 then 
-		--self:Bopped()
-	end
 
 end

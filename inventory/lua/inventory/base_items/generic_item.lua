@@ -119,6 +119,9 @@ function Base:NetworkVar(net_typ, what, ...)
 end
 
 ChainAccessor(Base, "Name", "Name")
+ChainAccessor(Base, "ItemID", "ID")
+ChainAccessor(Base, "ItemID", "ItemID")
+ChainAccessor(Base, "ItemName", "ItemName")
 ChainAccessor(Base, "Model", "Model")
 
 ChainAccessor(Base, "CamPos", "CamPos")

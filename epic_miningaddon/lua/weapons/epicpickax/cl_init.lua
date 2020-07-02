@@ -1,105 +1,131 @@
-print('ayy')
 include("shared.lua")
 
-surface.CreateFont("Pickaxe_Ore", {
-        font = "Titillium Web",
-        size = 32,
-        weight = 400
-    })
+function SWEP:DrawHUD()
 
-local function CheckOre()
-
-	local tr = LocalPlayer():GetEyeTrace()
-
-	if not IsValid(tr.Entity) or not tr.Entity.IsOre or tr.Fraction > 256/32768 then 
-	return false end --geteyetrace is 32768 units
-	return tr.Entity
 end
 
+if IsValid(PickaxePanel) then PickaxePanel:Remove() end
 
-function SWEP:DrawHUD()
-	local w,h = ScrW(), ScrH()
-	local wep = self
-	if not self.Panel then 
-		self.Panel = vgui.Create("FFrame")
-		local p = self.Panel
-		p:SetSize(220, 24)
+function SWEP:Deploy()
+	local sw, sh = ScrW(), ScrH()
+
+	self.Deployed = true
+
+	if not IsValid(self.Panel) then
+		local p = vgui.Create("FFrame")
+		local wid = sw / 1920 * 250
+		--local hgt = sh / 1080 * 100
 		p:SetAlpha(0)
-		p:Center()
-		p:MoveBy(110 + 24, 0, 0)
+		p:SetSize(wid, 16 + 24 + 8)
+		p:SetPos(sw/2 + 16, sh / 2 - 16 / 2)
+
+		p:On("ChangedSize", self.RepositionPanel, self)
+		self.Panel = p
+		p.Pickaxe = self
+		p.BackgroundColor.a = 200
 		p:SetCloseable(false, true)
-		p.HeaderSize = 18
+		p.HeaderSize = 16
 
-		function p:Paint(w,h)
-			self:Draw(w,h)
-			local i = 0
-			if not self.OreInfo then return end
-			if LocalPlayer():GetActiveWeapon() ~= wep then self:Remove() return end
-			for k,v in pairs(self.OreInfo) do 
-				i = i + 1
-				local name = "??"
-				local col = Color(250, 150, 150)
-				if Inventory.Ores[k] then 
-					name = Inventory.Ores[k].name
-					col = Inventory.Ores[k].col
-				end
+		p.PostPaint = self.PostPaint
+		PickaxePanel = p
+	end
 
-				surface.SetFont("Pickaxe_Ore")
-				surface.SetTextPos(16, -4 + 28 * i)
+end
 
-				surface.SetTextColor(col)
-				surface.DrawText(name .. ":")
+function SWEP:PostPaint(w, h) --`self` is pnl
 
-				surface.SetTextColor(Color(130, 200, 130))
-				surface.DrawText(" " .. v.r .. "%")
+	if not IsValid(self.Pickaxe) or LocalPlayer():GetActiveWeapon() ~= self.Pickaxe then
+		self:Remove()
+		return
+	end
+	print(self:GetAlpha())
+	local vein = self.Ore and self.Ore:IsValid() and self.Ore --yes
 
-				--draw.SimpleText(name .. " = " .. v.r, "TW24", 24, 24 * i, color_white, 0, 5)
-			end
-			local desH = self.HeaderSize + i*28 + 26
-			if self:GetTall() ~= desH and not self.Animated then
-				self:SizeTo(-1, desH, 0.3, 0, 0.3, function() self.Animated = false end)
-				self.Animated = true
-			end
-			self:CenterVertical()
+	local ores = (vein and vein.Ores) or self.Ores
+	if not ores then return end --kk
+
+	local total = (vein and (vein.TotalAmount or 1)) or self.TotalAmount
+	local start = (vein and vein:GetStartingRichness()) or self.StartingRichness
+
+	local fullw = w - 8
+
+	local i = 0
+	local x = 4
+
+	for name, dat in pairs(ores) do
+		i = i + 1
+		local ore = dat.ore
+		local amt = dat.amt
+		local costamt = amt * ore:GetCost()
+
+		local rectw = fullw / (costamt / total)
+
+		local last = not next(ores, name)
+		local name = ore:GetItemName()
+		print(name, i, last, ore:GetOreColor())
+		if i == 1 then
+			draw.RoundedBoxEx(4, x, self.HeaderSize + 4, rectw, 24, ore:GetOreColor(), true, last, true, last)
+			x = x + rectw
+		elseif last  then
+			draw.RoundedBoxEx(4, x, self.HeaderSize + 4, rectw, 24, ore:GetOreColor(), false, true, false, true)
+			x = x + rectw
+		else
+			surface.SetDrawColor(ore:GetOreColor():Unpack())
+			surface.DrawRect(x, self.HeaderSize + 4, rectw, 24)
+			x = x + rectw
 		end
 
 	end
-
-	local p = self.Panel
-	p:SetDraggable(false)
-	local ore = CheckOre()
-
-	if not ore then
-		p:SetAlpha(L(p:GetAlpha(), 0, 20, true))
-		return 
-	end
-
-	p:SetAlpha(L(p:GetAlpha(), 253, 20, true))
-	p.OreInfo = util.JSONToTable(ore:GetResources()) or p.OreInfo
-
 end
 
-function SWEP:Deploy()
-	self.Deployed = true 
-	local ind = self:EntIndex()
-
-	hook.Add("InventoryUpdate", "Pickaxe"..ind, function(tbl, diff)
-		if not IsValid(self) then hook.Remove("InventoryUpdate", "Pickaxe"..ind) return end 
-
-
-
-	end)
-
+function SWEP.RepositionPanel(pnl, self, w, h)
+	local sw, sh = ScrW(), ScrH()
+	pnl.Y = sh/2 - h/2
 end
 
 function SWEP:Holster()
-	if IsValid(self.Panel) then 
-		self.Panel:Remove()
-	end
-	self.Panel = nil
+
 end
-local g = false
 
 function SWEP:CLPrimaryAttack()
+
+end
+
+function SWEP:DrawHUD()
+	local tr = LocalPlayer():GetEyeTrace()
+	local pnl = self.Panel
+	if not pnl:IsValid() then return end --ok
+
+	if not tr.Hit or not tr.Entity.IsOre or tr.Fraction * 32768 > 128 then
+
+		local anim, new = pnl:To("Alpha", 0, 0.2, 0, 1.9)
+
+		if new then
+			anim:On("Think", function(_, fr)
+				pnl:SetAlpha(pnl.Alpha)
+			end)
+		end
+
+		if self.Ore and self.Ore:IsValid() then
+			self.Ores = self.Ore.Ores
+			self.TotalAmount = self.Ore.TotalAmount or 1
+			self.StartingRichness = self.Ore:GetStartingRichness()
+		else
+			self.Ore = nil
+			self.Ores = nil
+		end
+
+		return
+	end
+
+	local anim, new = pnl:To("Alpha", 255, 0.2, 0, 0.3)
+
+	if new then
+		anim:On("Think", function(_, fr)
+			pnl:SetAlpha(pnl.Alpha)
+		end)
+	end
+
+	pnl.Ore = tr.Entity
 
 end

@@ -43,6 +43,7 @@ local function CheckOre(ply)
 
 	return tr.Entity
 end
+
 function SWEP:Initialize()
 	self:SetHoldType( "ar2" )
 end

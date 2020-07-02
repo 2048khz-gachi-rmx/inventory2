@@ -109,9 +109,9 @@ function ms.CreateInventoryTable(tbl_name, use_slots, more_columns, more_constra
 
 	use_slots = (use_slots ~= false)
 
-	local q = create_table_query:format(tbl_name, 
-		use_slots and slot_str or "", 
-		more, 
+	local q = create_table_query:format(tbl_name,
+		use_slots and slot_str or "",
+		more,
 		(use_slots and slot_constr or "") .. constraints .. (more_constraints or "")
 		)
 
@@ -132,11 +132,14 @@ hook.Add("InventoryTypeRegistered", "CreateInventoryTables", function(inv)
 	ms.CreateInventoryTable(inv.SQLName, inv.UseSlots, inv.SQLColumns, inv.SQLConstraints)
 end)
 
-local conv = Inventory.IDConversion
+
 
 local selIDs = ms.DB:query("SELECT * FROM itemids")
 
 selIDs.onSuccess = function(self, dat)
+
+	local conv = Inventory.IDConversion
+
 	local names = conv.ToID
 	local ids = conv.ToName
 
@@ -162,6 +165,8 @@ local assign_query = ms.DB:prepare("SELECT GetBaseItemID(?) AS id;")
 -- 		ms.AssignItemID(it.Name, function(uid) it:SetUID(uid) end)
 
 function ms.AssignItemID(name, cb, arg)
+	local conv = Inventory.IDConversion
+
 	local id_exists = conv.ToID[name]
 
 	if id_exists then
@@ -326,6 +331,8 @@ function ms.FetchPlayerItems(inv, ply)
 
 		for k,v in ipairs(dat) do
 			local it = Inventory.Util.GetMeta(v.iid)
+			if not it then ErrorNoHalt("Failed to reconstruct item with ItemID: " .. v.iid) continue end
+
 			it = it:new(v.uid, v.iid)
 
 			it:SetOwner(ply)

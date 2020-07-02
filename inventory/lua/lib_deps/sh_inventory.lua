@@ -11,11 +11,23 @@ local verybad = Color(240, 70, 70)
 local InventoryDefine
 
 function InventoryDefine()
+
+	-- this allows us to index
+	local BaseItemsTable = setmetatable({}, {__index = function(self, key)
+		if isnumber(key) then
+
+			local it = self[Inventory.Util.ItemIDToName(key)]
+			self[key] = it --alias it straight away
+
+			return it
+		end
+	end})
+
 	Inventory = {
 		ItemObjects = {}, 				--Objects stores all metas and extension of the Item (the items owned by players and entities)
 
 		BaseItemObjects = {},			--BaseItemObjects stores all metas and extension of the BaseItem (which all Items will use)
-		BaseItems = {},					--stores the actual base item instances
+		BaseItems = BaseItemsTable,					--stores the actual base item instances
 
 		Inventories = {},				--inventory metas
 
@@ -57,6 +69,7 @@ Items = Items
 
 -- _sv are only included serverside
 -- _extension are included by items manually
+-- this function assumes inclusion realm is _SH
 local function shouldIncludeItem(path)
 	local is_sv = path:match("_sv")
 	local ext = path:match("_extension")
@@ -66,12 +79,12 @@ local function shouldIncludeItem(path)
 	if is_sv then cl = false end
 
 	if ext then --extensions get included manually
-		cl = (not is_sv and 1) or false 
+		cl = (not is_sv and 1) or false
 		sv = false
-	end 
+	end
 
 	if Inventory.Included[path] then return false, false end --something before us already included it, don't include again
-	print("including", path, cl, sv)
+
 	return cl, sv
 end
 
@@ -95,7 +108,6 @@ local function ContinueLoading(db)
 	hook.Run("OnInventoryLoad")
 
 	Inventory.Loading = false
-
 
 	hook.Run("InventoryReady")
 	Inventory.Initted = true

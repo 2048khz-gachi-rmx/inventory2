@@ -6,11 +6,12 @@ ENT.Spawnable = false
 ENT.AdminSpawnable = false
 
 ENT.PrintName = "Mining Ore or smth"
-ENT.IsOre = true 
+ENT.IsOre = true
 
 function ENT:SetupDataTables()
+	self:NetworkVar("Int", 1, "Resources")
 
-	self:NetworkVar("String", 0, "Resources")
-	self:NetworkVar("Int", 0, "Bops")
-
+	if CLIENT then
+		self:NetworkVarNotify("Resources", self.UpdateOres)
+	end
 end

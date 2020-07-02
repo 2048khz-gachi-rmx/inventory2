@@ -50,7 +50,7 @@ end
 function bp:CrossInventoryMove(it, inv2, slot)
 	if it:GetInventory() ~= self then errorf("Can't move an item from an inventory which it doesn't belong to! (item) %q vs %q (self)", it:GetInventory(), self) return end
 
-	local slot = slot or inv2:GetFreeSlot()
+	slot = slot or inv2:GetFreeSlot()
 	if not slot then print("Can't cross-inventory-move cuz no slot", slot) return end
 
 	--check if inv2 can accept cross-inventory item
@@ -58,11 +58,11 @@ function bp:CrossInventoryMove(it, inv2, slot)
 	if can == false then return false end
 
 	--check if inv1 can give out the item
-	local can = self:Emit("CanMoveFrom", it, inv2)
+	can = self:Emit("CanMoveFrom", it, inv2)
 	if can == false then return false end
 
 	--check if inv2 can add an item to itself
-	local can = inv2:Emit("CanAddItem", it, it:GetUID())
+	can = inv2:Emit("CanAddItem", it, it:GetUID())
 	if can == false then return false end
 
 
