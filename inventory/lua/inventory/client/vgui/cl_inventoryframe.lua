@@ -22,6 +22,7 @@ function PANEL:Think()
 	if dragndrop.IsDragging() then --motherfuckin dragndrop
 		self.IsWheelHeld = input.IsMouseDown(MOUSE_MIDDLE)
 	end
+	self:Emit("Think")
 end
 
 function PANEL:SetFull(b)
@@ -180,9 +181,11 @@ function PANEL:SplitItem(rec, drop, item)
 	sl:SetMinMax(1, item:GetAmount() - 1)
 	sl:SetValue(math.floor(item:GetAmount() / 2))
 
-	yes.Label = ("%s -> %s / %s"):format(item:GetAmount(), item:GetAmount() - sl:GetValue(), sl:GetValue()) 
+	yes.Label = ("%s -> %s / %s"):format(item:GetAmount(), item:GetAmount() - sl:GetValue(), sl:GetValue())
+	local iid = item:GetItemID()
+
 	local meta = Inventory.Util.GetMeta(iid)
-	local newitem = meta:new(nil, item:GetItemID())
+	local newitem = meta:new(nil, iid)
 
 	newitem:SetAmount(math.floor(item:GetAmount() / 2))
 	newitem:SetSlot(rec:GetSlot())
@@ -298,7 +301,7 @@ function PANEL:AddItemSlot()
 
 	self:On("Change", it, function(self, inv, ...)
 		if inv:GetItemInSlot(i + 1) ~= it:GetItem() then
-			print("Changing", it, inv:GetItemInSlot(i + 1))
+			print("Changing", it, inv:GetItemInSlot(it:GetSlot()))
 			it:SetItem(inv:GetItemInSlot(it:GetSlot()))
 		end
 	end)

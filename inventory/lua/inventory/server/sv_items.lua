@@ -38,8 +38,17 @@ local function equalData(dat1, dat2)
 	return true
 end
 
+-- if returned true that means the item was stacked in some existing items
+-- if returned table then that's a table of new items it had ta create
+
 function Inventory.CheckStackability(inv, iid, cb, slot, dat)
-	if not dat or not dat.Amount then return false end
+	local base = Inventory.Util.GetBase(iid)
+	if not dat or not dat.Amount then
+		dat = {}
+		if base:GetCountable() then
+			dat.Amount = 1
+		end
+	end--return false end
 
 	iid = Inventory.Util.ItemNameToID(iid)
 	local base = Inventory.Util.GetBase(iid)
@@ -59,8 +68,8 @@ function Inventory.CheckStackability(inv, iid, cb, slot, dat)
 		local canStack = math.min(max - cur, amt)
 		v:SetAmount(cur + canStack)
 		amt = amt - canStack
-		if amt == 0 then return end
-		if amt < 0 then errorf("How the fuck did amount become less than 0: canStack %d, max %d, amt %d", canStack, max, amt) return end
+		if amt == 0 then return true end
+		if amt < 0 then errorf("How the fuck did amount become less than 0: canStack %d, max %d, amt %d", canStack, max, amt) return true end
 	end
 
 	local canCreate = math.ceil(amt / maxstack)

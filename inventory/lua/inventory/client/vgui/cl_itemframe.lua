@@ -156,6 +156,14 @@ function ITEM:OpenOptions()
 end
 
 function ITEM:CreateModelPanel(it)
+	if IsValid(self.ModelPanel) and it:GetModel() then
+		self.ModelPanel:SetModel(it:GetModel())
+		self.ModelPanel.Item = it
+
+		BestGuess(nil, self.ModelPanel)
+		return
+	end
+
 	if not IsValid(self.ModelPanel) and it:GetModel() then
 		local mdl = vgui.Create("DModelPanel", self)
 		mdl.Item = it
@@ -213,7 +221,9 @@ function ITEM:SetItem(it)
 
 	self:SetEnabled(Either(it, true, false))
 	if self.FakeItem then self:SetFakeItem(nil) end
+
 	if it then
+
 		self.BorderColor = it.BorderColor and it.BorderColor:Copy() or Colors.LightGray
 		self.FakeBorderColor = nil
 
@@ -230,13 +240,14 @@ function ITEM:SetItem(it)
 
 		self:Emit("Item", it, true)
 
-	elseif self.Item then
+	elseif self.Item then --nilling the existing item
 		self:Emit("ItemTakenOut", self.Item)
 		self:SetCursor("arrow")
 
 		self.Item = nil
 
 		Inventory:RemoveListener("BaseItemDefined", self)
+
 		self.ModelPanel:Remove()
 		self.ModelPanel = nil
 	end
@@ -250,8 +261,8 @@ end
 
 function ITEM:SetFakeItem(it)
 	self.FakeItem = it
-	self:Emit("FakeItem", it)
 	if it ~= nil then
+		self:Emit("FakeItem", it)
 		self:CreateModelPanel(it)
 	else
 		if not self.Item then

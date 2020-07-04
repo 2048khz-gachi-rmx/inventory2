@@ -16,7 +16,10 @@ function SWEP:Deploy()
 		local wid = sw / 1920 * 250
 		--local hgt = sh / 1080 * 100
 		p:SetAlpha(0)
+
 		p:SetSize(wid, 16 + 24 + 8)
+		p.OriginalHeight = 16 + 24 + 8
+
 		p:SetPos(sw/2 + 16, sh / 2 - 16 / 2)
 
 		p:On("ChangedSize", self.RepositionPanel, self)
@@ -25,9 +28,135 @@ function SWEP:Deploy()
 		p.BackgroundColor.a = 200
 		p:SetCloseable(false, true)
 		p.HeaderSize = 16
+		p.Shadow = {alpha = 240, blur = 4}
+
+		p.Animatable = Animatable:new()
 
 		p.PostPaint = self.PostPaint
 		PickaxePanel = p
+	end
+
+end
+
+local OrePanel = {}
+
+function OrePanel:PaintOreBar(w, h, vein, ores)
+	local x = 4
+	local y = self.HeaderSize + 4
+
+	local total = (vein and (vein.TotalAmount or 1)) or self.TotalAmount
+
+	local fullw = w - 8
+	local costw = fullw / total --width per 1 ore-cost
+
+	local i = 0
+	local anim = self.Animatable
+
+	for name, dat in pairs(ores) do
+		i = i + 1
+		local ore = dat.ore
+		local amt = dat.amt
+
+		local cost = ore:GetCost()
+		local costamt = amt * cost
+
+		local rectw = costw * costamt
+
+		anim:MemberLerp(dat, "RectW", rectw, 0.3, 0, 0.4)
+
+		rectw = math.floor(dat.RectW or rectw)
+
+		local missing = dat.startamt - amt
+
+		local missingw = costw * cost * missing
+		anim:MemberLerp(dat, "MissingW", missingw, 0.3, 0, 0.4)
+		missingw = math.ceil(dat.MissingW or missingw)
+
+		local last = not next(ores, name)
+		local name = ore:GetItemName()
+
+		if not ore.MissingOreColor then
+			ore.MissingOreColor = ore:GetOreColor():Copy()
+			ore.MissingOreColor.a = 140
+		end
+
+		local missingcol = ore.MissingOreColor
+		--print("missing:", missingw, name)
+		if i == 1 then
+			--print(missingw, rectw)
+			local roundRight = missingw == 0 and last
+
+			draw.RoundedBoxEx(4, x, y, rectw, 24, ore:GetOreColor(), true, roundRight, true, roundRight)
+			x = x + rectw
+
+			if missingw > 0 then
+				if last then
+					draw.RoundedBoxEx(4, x, y, missingw, 24, missingcol, false, true, false, true)
+				else
+					surface.SetDrawColor(missingcol:Unpack())
+					surface.DrawRect(x, y, missingw, 24)
+				end
+
+				x = x + missingw
+			end
+
+		elseif last then
+
+			local roundRight = missingw == 0
+			draw.RoundedBoxEx(4, x, self.HeaderSize + 4, rectw, 24, ore:GetOreColor(), false, roundRight, false, roundRight)
+			x = x + rectw
+
+			if missingw > 0 then
+				draw.RoundedBoxEx(4, x, y, missingw, 24, missingcol, false, true, false, true)
+
+				x = x + missingw
+			end
+
+		else
+			surface.SetDrawColor(ore:GetOreColor():Unpack())
+			surface.DrawRect(x, self.HeaderSize + 4, rectw, 24)
+			x = x + rectw
+
+			if missingw > 0 then
+				surface.SetDrawColor(missingcol:Unpack())
+				surface.DrawRect(x, y, missingw, 24)
+
+				x = x + missingw
+			end
+
+		end
+
+	end
+end
+
+function OrePanel:PaintOreText(w, h, vein, ores)
+	local needh = self.OriginalHeight + table.Count(ores) * 24 + 4
+
+	local anim, new = self:To("Height", needh, 0.3, 0, 0.2)
+
+	if new then
+		anim:On("Think", function()
+			self:SetTall(self.Height)
+		end)
+	end
+
+	surface.SetFont("OSB20")
+	local tx_template = "%s:  x%d"
+	local y = self.OriginalHeight + 4
+
+	for k,v in pairs(ores) do
+
+
+		local ore, amt = v.ore, v.amt
+		local tx = tx_template:format(ore:GetName(), amt)
+
+		surface.SetTextColor(ore:GetOreColor():Unpack())
+		local tw, th = surface.GetTextSize(tx)
+		surface.SetTextPos(w/2 - tw/2, y)
+		surface.DrawText(ore:GetName() .. ":  ")
+		surface.SetTextColor(color_white)
+		surface.DrawText("x" .. amt)
+		y = y + th
 	end
 
 end
@@ -38,44 +167,16 @@ function SWEP:PostPaint(w, h) --`self` is pnl
 		self:Remove()
 		return
 	end
-	print(self:GetAlpha())
+
+	if self:GetAlpha() == 0 then return end --???
+
 	local vein = self.Ore and self.Ore:IsValid() and self.Ore --yes
 
 	local ores = (vein and vein.Ores) or self.Ores
 	if not ores then return end --kk
 
-	local total = (vein and (vein.TotalAmount or 1)) or self.TotalAmount
-	local start = (vein and vein:GetStartingRichness()) or self.StartingRichness
-
-	local fullw = w - 8
-
-	local i = 0
-	local x = 4
-
-	for name, dat in pairs(ores) do
-		i = i + 1
-		local ore = dat.ore
-		local amt = dat.amt
-		local costamt = amt * ore:GetCost()
-
-		local rectw = fullw / (costamt / total)
-
-		local last = not next(ores, name)
-		local name = ore:GetItemName()
-		print(name, i, last, ore:GetOreColor())
-		if i == 1 then
-			draw.RoundedBoxEx(4, x, self.HeaderSize + 4, rectw, 24, ore:GetOreColor(), true, last, true, last)
-			x = x + rectw
-		elseif last  then
-			draw.RoundedBoxEx(4, x, self.HeaderSize + 4, rectw, 24, ore:GetOreColor(), false, true, false, true)
-			x = x + rectw
-		else
-			surface.SetDrawColor(ore:GetOreColor():Unpack())
-			surface.DrawRect(x, self.HeaderSize + 4, rectw, 24)
-			x = x + rectw
-		end
-
-	end
+	OrePanel.PaintOreBar(self, w, h, vein, ores)
+	OrePanel.PaintOreText(self, w, h, vein, ores)
 end
 
 function SWEP.RepositionPanel(pnl, self, w, h)
@@ -109,7 +210,6 @@ function SWEP:DrawHUD()
 		if self.Ore and self.Ore:IsValid() then
 			self.Ores = self.Ore.Ores
 			self.TotalAmount = self.Ore.TotalAmount or 1
-			self.StartingRichness = self.Ore:GetStartingRichness()
 		else
 			self.Ore = nil
 			self.Ores = nil

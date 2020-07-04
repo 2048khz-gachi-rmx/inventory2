@@ -16,7 +16,13 @@ local function makeOre(name, skin, bigamt)
 	    :SetFOV( 8 )
 		:On("SetInSlot", "ResourceSkin", function(base, item, ipnl, imdl)
 			local ent = imdl:GetEntity()
-			ent:SetSkin(skin or 1)
+
+			if not skin or isnumber(skin) then
+				ent:SetSkin(skin or 1)
+			else
+				ent:SetSubMaterial(1, skin)
+			end
+
 			if item.Data.Amount > (bigamt or self:GetMaxStack() * 0.7) then
 				ent:SetBodygroup(0, 1)
 			else
@@ -29,6 +35,16 @@ local function makeOre(name, skin, bigamt)
 	return ore
 end
 
+if CLIENT then
+	CreateMaterial("mining_coal3", "VertexLitGeneric", {
+
+		["$basetexture"]	= "zerochain/props_mining/zrms_coalpiece",
+
+		["$surfaceprop"] = "stone",
+		["$model"] = 1,
+	})
+end
+
 makeOre("copper_ore", 1, 35)
 	:SetName("Copper Ore")
 	:SetMaxStack(50)
@@ -38,23 +54,25 @@ makeOre("copper_ore", 1, 35)
 	:SetCost(3)
 	:SetOreColor(Color(160, 70, 10))
 
-makeOre("iron_ore", 1, 40)
+makeOre("iron_ore", 0, 40)
 	:SetName("Iron Ore")
 	:SetMaxStack(60)
 	:SetMinRarity(25)
 	:SetMaxRarity(55)
 	:SetWeight(5)
 	:SetCost(2)
+	:SetOreColor(Color(140, 105, 80))
 
-makeOre("coal_ore", 1, 40)
+makeOre("coal_ore", "!mining_coal3", 40)
 	:SetName("Coal Ore")
 	:SetMaxStack(60)
 	:SetMinRarity(5)
 	:SetMaxRarity(25)
 	:SetWeight(8)
 	:SetCost(1)
+	:SetOreColor(Color(20, 20, 20))
 
-makeOre("gold_ore", 1, 20)
+makeOre("gold_ore", 3, 20)
 	:SetName("Gold Ore")
 	:SetMaxStack(30)
 	:SetMinRarity(50)
@@ -62,6 +80,7 @@ makeOre("gold_ore", 1, 20)
 	:SetSpawnChance(30)
 	:SetWeight(1)
 	:SetCost(8)
+	:SetOreColor(Color(230, 220, 75))
 
 -- iron copper gold silver lead aluminum
 

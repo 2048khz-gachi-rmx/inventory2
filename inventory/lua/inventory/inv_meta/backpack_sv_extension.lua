@@ -25,6 +25,8 @@ function bp:NewItem(iid, cb, slot, dat)
 		return left
 	end
 
+	if its == true then return end
+
 	local it = Inventory.NewItem(iid, self)
 	it:SetSlot(slot)
 

@@ -9,7 +9,7 @@ ENT.PrintName = "Mining Ore or smth"
 ENT.IsOre = true
 
 function ENT:SetupDataTables()
-	self:NetworkVar("Int", 1, "Resources")
+	self:NetworkVar("String", 1, "Resources")
 
 	if CLIENT then
 		self:NetworkVarNotify("Resources", self.UpdateOres)

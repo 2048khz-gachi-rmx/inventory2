@@ -16,7 +16,11 @@ end
 local ms = Inventory.MySQL
 if not mysqloo then require("mysqloo") end
 
-if not (ms.DB and ms.DB:status() == 0) then
+local connectFunc
+
+function connectFunc(whomst)
+	if whomst and IsPlayer(whomst) and not whomst:IsSuperAdmin() then return false end
+
 	ms.INFO = {"127.0.0.1", "root", "31415", "inventory"}
 
 	ms.DB = mysqloo.connect(unpack(ms.INFO))
@@ -27,10 +31,17 @@ if not (ms.DB and ms.DB:status() == 0) then
 
 	ms.DB.onConnectionFailed = function(self)
 		ms.LogError("CONNECTION TO MYSQL DATABASE FAILED!!!")
+		ms.LogError("Do `inventory_reconnect` if you want to try again.")
+
+		concommand.Add("inventory_reconnect", connectFunc)
 	end
-	
+
 	ms.DB:connect()
 
+end
+
+if not (ms.DB and ms.DB:status() == 0) then
+	connectFunc()
 else
 	hook.Run("InventoryMySQLConnected", ms.DB)
 end

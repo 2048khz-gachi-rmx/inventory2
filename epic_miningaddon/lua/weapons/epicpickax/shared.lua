@@ -34,12 +34,13 @@ SWEP.Primary.Automatic      = true
 SWEP.Primary.Delay          = 0.4
 SWEP.Primary.Force          = 1
 
+SWEP.MineChance = 0.4
+
 local function CheckOre(ply)
 
 	local tr = ply:GetEyeTrace()
 
-	if not IsValid(tr.Entity) or not tr.Entity.IsOre or tr.Fraction > 256/32768 then
-	return false end --geteyetrace is 32768 units
+	if not IsValid(tr.Entity) or not tr.Entity.IsOre or tr.Fraction > 256/32768 then return false end --geteyetrace is 32768 units
 
 	return tr.Entity
 end

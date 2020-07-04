@@ -223,7 +223,7 @@ function ENT:RandomizeOreRichness(ores)
 		--print("cost for", ore:GetName(), cost)
 		local amt = math.ceil(a[i] * rich / cost)
 		--print("	spawned:", amt)
-		result[ore:GetItemName()] = {ore = ore, amt = amt}
+		result[ore:GetItemName()] = {ore = ore, amt = amt, startamt = amt}
 	end
 
 	self.Ores = result
@@ -236,11 +236,11 @@ end
 function ENT:NetworkOres()
 	local t = {}
 	for name, dat in pairs(self.Ores) do
-		t[#t + 1] = {dat.ore:GetItemID(), dat.amt}
+		t[#t + 1] = {dat.ore:GetItemID(), dat.amt, dat.startamt}
 	end
 
-	self:SetResources(math.random(500, 1000))
-	--self:SetResources(von.serialize(t))
+	--self:SetResources(math.random(500, 1000))
+	self:SetResources(von.serialize(t))
 end
 
 function OresRespawn()

@@ -73,12 +73,12 @@ function Base:PullItemID()
 
 		if not exists_id then
 			hook.Once("InventoryIDReceived", "BaseItemAssign" .. self.ItemName, function(toname, toid)
-				print("ItemName is", self.ItemName, toid[self.ItemName])
 				self:SetID(toid[self.ItemName])
 			end)
 		else
 			self:SetID(exists_id)
 		end
+
 	end
 
 end
@@ -119,8 +119,12 @@ function Base:NetworkVar(net_typ, what, ...)
 end
 
 ChainAccessor(Base, "Name", "Name")
-ChainAccessor(Base, "ItemID", "ID")
-ChainAccessor(Base, "ItemID", "ItemID")
+
+function Base:GetID()
+	return self.ItemID
+end
+Base.GetItemID = Base.GetID
+
 ChainAccessor(Base, "ItemName", "ItemName")
 ChainAccessor(Base, "Model", "Model")
 

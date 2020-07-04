@@ -6,20 +6,34 @@ iPan.FitsItems = 6
 iPan.SlotSize = 64
 iPan.SlotPadding = 4
 
-function iPan.CreateInventory(par, inv, multiple)
+function iPan.CreateInventory(inv, multiple)
 
 	if not multiple and iPan.IFrame and iPan.IFrame:IsValid() then iPan.IFrame:Remove() end
 
 	local multi_invs = false
 
-	if not inv or (not IsInventory(inv) and IsInventory(next(inv))) then
-		multi_invs = true
-		inv = LocalPlayer().Inventory
-	else
-		errorf("Inventory.Panels.CreateInventory: expected nil or table of inventories at arg #2, got #q instead (no inventories there)", type(inv))
+	local has_invs
+
+	if inv then
+		local _, firstinv = next(inv)
+		has_invs = firstinv
 	end
 
-	local f = vgui.Create("InventoryFrame")--multi_invs and "NavFrame" or "FFrame", par)
+	if not inv then --no inv provided; do all of em
+		multi_invs = true
+		inv = LocalPlayer().Inventory
+
+	elseif IsInventory(inv) then --only one inventory provided
+		--nuthin i guess
+
+	elseif IsInventory(has_invs) then --table of inventories provided
+		multi_invs = true
+
+	else --??
+		errorf("Inventory.Panels.CreateInventory: expected nil or table of inventories at arg #2, got %q instead (no inventories there)", type(inv))
+	end
+
+	local f = vgui.Create("InventoryFrame")
 	iPan.IFrame = f
 	f:SetMouseInputEnabled(true)
 	--64 slot width + 4 slot padding + 16: 8 l,r padding + 4 from idfk where
@@ -39,7 +53,7 @@ function iPan.CreateInventory(par, inv, multiple)
 		surface.DrawRect(ScrW() / 2, ScrH() / 2, 3, 3)
 	end)]]
 
-	if multi_invs and inv then
+	if multi_invs and inv then --multiple inventories
 		for k,v in pairs(inv) do
 			if v:Emit("CanOpen") == false then continue end --uhkay
 
@@ -47,9 +61,16 @@ function iPan.CreateInventory(par, inv, multiple)
 			tab:SetTall(50)
 			tab.Inventory = v
 		end
-		f:SetWide(f:GetWide() + 50 + 8)
+	elseif inv then --only one inventory
+		if inv:Emit("CanOpen") == false then return end --uhkay
+
+		local tab = f:AddTab(inv.Name, f.OnSelectTab, f.OnDeselectTab)
+		tab:SetTall(50)
+		tab.Inventory = inv
+		tab:Select(true)
 	end
 
+	f:SetWide(f:GetWide() + 50 + 8)
 	return f
 end
 
