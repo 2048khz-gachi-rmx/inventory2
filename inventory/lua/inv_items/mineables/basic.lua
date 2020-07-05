@@ -25,8 +25,10 @@ local function makeOre(name, skin, bigamt)
 
 			if item.Data.Amount > (bigamt or self:GetMaxStack() * 0.7) then
 				ent:SetBodygroup(0, 1)
+				imdl:SetFOV(10)
 			else
 				ent:SetBodygroup(0, 0)
+				imdl:SetFOV(8)
 			end
 
 		end)
@@ -36,12 +38,22 @@ local function makeOre(name, skin, bigamt)
 end
 
 if CLIENT then
-	CreateMaterial("mining_coal3", "VertexLitGeneric", {
+	CreateMaterial("mining_coal4", "VertexLitGeneric", {
 
 		["$basetexture"]	= "zerochain/props_mining/zrms_coalpiece",
 
 		["$surfaceprop"] = "stone",
 		["$model"] = 1,
+
+
+		["$normalmapalphaenvmapmask"] = "1",
+
+		["$phong"] = 1,
+	        ["$phongexponent"] = 25,
+	        ["$phongboost"] = 0.2,
+			["$phongtint"] = "[1 1 1]",
+	        ["$halflambert"] = 1,
+	        ["$phongfresnelranges"] = "[1 2 3]",
 	})
 end
 
@@ -63,7 +75,7 @@ makeOre("iron_ore", 0, 40)
 	:SetCost(2)
 	:SetOreColor(Color(140, 105, 80))
 
-makeOre("coal_ore", "!mining_coal3", 40)
+makeOre("coal_ore", "!mining_coal4", 40)
 	:SetName("Coal Ore")
 	:SetMaxStack(60)
 	:SetMinRarity(5)

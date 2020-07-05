@@ -4,7 +4,7 @@ include("shared.lua")
 
 ENT.Model = "models/props/CS_militia/furnace01.mdl"
 
-ENT.MaxQueues = 4
+
 ENT.Refinery = true
 
 function ENT:Initialize()
@@ -30,14 +30,20 @@ util.AddNetworkString("OreRefinery")
 
 
 function ENT:Think()
-	local me = RefineryTbl[self]
+
 end
 
 net.Receive("OreRefinery", function(len, ply)
 	if not ply:Alive() then return end
 
 	local ent = net.ReadEntity()
+	local slot = net.ReadUInt(16)
+	local inv = Inventory.Networking.ReadInventory()
+	local item = Inventory.Networking.ReadItem(inv)
 
+	if not inv.IsBackpack then print("inventory is not a backpack") return end
+
+	print(ent, slot, inv, item)
 end)
 
 function ENT:SendInfo(ply)

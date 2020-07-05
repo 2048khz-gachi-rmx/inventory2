@@ -7,6 +7,8 @@ ENT.AdminSpawnable = false
 
 ENT.PrintName = "Refinery or smth"
 
+ENT.MaxQueues = 7
+
 function ENT:SetupDataTables()
 
 	self:NetworkVar("Bool", 0, "Working")
