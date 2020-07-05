@@ -71,6 +71,9 @@ function f:DisappearInventory(p)
 
 end
 
+function f:GetSlots()
+	return self.InvPanel:GetSlots()
+end
 
 function f:SetInventory(inv, pnl, noanim)
 	if pnl then
@@ -147,6 +150,7 @@ function f:SetInventory(inv, pnl, noanim)
 
 	self:Emit("SwitchInventory", inv, p)
 	self:AppearInventory(p)
+
 	return p, true, true
 end
 

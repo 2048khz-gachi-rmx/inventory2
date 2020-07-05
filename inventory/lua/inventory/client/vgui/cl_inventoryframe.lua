@@ -315,7 +315,7 @@ function PANEL:GetItems()
 end
 
 function PANEL:GetSlots()
-
+	return self.Slots
 end
 
 function PANEL:Draw(w, h)

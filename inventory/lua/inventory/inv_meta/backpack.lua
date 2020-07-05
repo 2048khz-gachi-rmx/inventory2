@@ -9,6 +9,8 @@ bp.NetworkID = 1
 bp.MaxItems = 20
 bp.UseSlots = true
 
+bp.IsBackpack = true
+
 function bp:__tostring()
 	return ("%s (owner: %s)"):format(
 		self.Name,
@@ -21,6 +23,7 @@ function bp:OnExtend(new_inv)
 	new_inv.SQLName = false 	--set these yourself!!
 	new_inv.NetworkID = false
 	new_inv.Name = "unnamed inventory!?"
+	new_inv.IsBackpack = false
 end
 
 function bp:Initialize(ply)

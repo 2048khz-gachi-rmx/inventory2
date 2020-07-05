@@ -179,7 +179,6 @@ local invnet = netstack:extend()
 local log = Inventory.Log
 
 function invnet:WriteInventory(inv)
-    print('written inv', inv)
     self:WriteEntity( (inv:GetOwner()) )
     self:WriteUInt(inv.NetworkID, 16)
 
