@@ -1,6 +1,44 @@
 local ITEM = {}
 local iPan = Inventory.Panels
 
+--[[
+	Emits:
+		"ItemHover" - when an item is hovered over this slot:
+			1 - Panel : the slot that's being hovered
+			2 - Item : the item that slot has
+
+		"Drop" - when an item is dropped onto this slot
+			1 - Panel : the slot that was dropped
+			2 - Item : the item that slot has
+		
+		"DragStart" - when this item started to be dragged
+		"DragStop" - when this item stopped being dragged
+
+		"Think" - durr
+
+		"Paint" - durr
+			1 - Number: w
+			2 - Number: h
+
+		"PaintOver" - durr
+			1 - Number: w
+			2 - Number: h
+
+		"Hover" - when the cursor enters the slot
+		"Unhover" - when the cursor exits the slot
+		
+		"ItemInserted" - when a real item gets inserted into this slot
+			1 - Number: slot
+			2 - Item: the item that got inserted
+
+		"ItemTakenOut" - when a real item is taken out of the slot
+			1 - Item: the item that got pulled out
+
+		"FakeItem" - when a fake item is inserted into this slot
+
+		"DragHoverEnd"
+
+]]
 local function BestGuess(_, mdl, ...) --taken from BestGuessLayout
 
 	local ent = mdl:GetEntity()
@@ -230,7 +268,7 @@ function ITEM:SetItem(it)
 		self.Item = it
 		self:SetCursor("hand")
 
-		self:Emit("ItemInserted", it:GetSlot(), it, true)
+		self:Emit("ItemInserted", it:GetSlot(), it)
 
 		Inventory:On("BaseItemDefined", self, ItemFrameUpdate, self)
 
@@ -238,7 +276,7 @@ function ITEM:SetItem(it)
 
 		self.Item:GetBaseItem():Emit("SetInSlot", self.Item, self, self.ModelPanel)
 
-		self:Emit("Item", it, true)
+		--self:Emit("Item", it, true)
 
 	elseif self.Item then --nilling the existing item
 		self:Emit("ItemTakenOut", self.Item)
