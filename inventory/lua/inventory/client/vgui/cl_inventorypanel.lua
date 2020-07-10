@@ -69,7 +69,6 @@ function PANEL:MoveItem(rec, drop, item)
 
 	local crossinv = rec:GetInventory() ~= item:GetInventory()
 
-	
 	local recItem = rec:GetItem(true)
 	rec:SetItem(item)
 	drop:SetItem(recItem)
@@ -82,12 +81,12 @@ function PANEL:MoveItem(rec, drop, item)
 
 	ns:WriteUInt(rec:GetSlot(), 16)
 
+	item:SetSlot(rec:GetSlot()) --assume success
+
 	if crossinv then
 		item:Delete() --remove self from old inv
 		rec:GetInventory():AddItem(item) --add self to new inv
 	end
-
-	item:SetSlot(rec:GetSlot()) --assume success
 
 	Inventory.Networking.PerformAction(crossinv and INV_ACTION_CROSSINV_MOVE or INV_ACTION_MOVE, ns)
 end
@@ -158,6 +157,7 @@ end
 function PANEL:SplitItem(rec, drop, item)
 
 	local crossinv = rec:GetInventory() ~= item:GetInventory()
+	if crossinv then print("cross-inv splitting is not supported yet :(") return end
 
 	if self.IsWheelHeld then
 		local amt = math.floor(item:GetAmount() / 2)
@@ -218,6 +218,9 @@ end
 function PANEL:StackItem(rec, drop, item, amt)
 	print("Stacking items")
 
+	local crossinv = rec:GetInventory() ~= item:GetInventory()
+	if crossinv then print("cross-inv stacking is not supported yet :(") return end
+
 	if not input.IsControlDown() then
 		local it2 = rec:GetItem()
 
@@ -232,7 +235,6 @@ function PANEL:StackItem(rec, drop, item, amt)
 		local cl, sl, yes, no = self:CreateSplitSelection(rec, drop, item)
 
 		yes.Font = "OSB18"
-		
 
 		sl:SetMinMax(1, max)
 		sl:SetValue(math.Round(max / 2))
@@ -275,10 +277,17 @@ function PANEL:ItemDrop(rec, drop, item, ...)
 	end
 
 	if not ((input.IsControlDown() or self.IsWheelHeld) and item:GetCountable()) then --ctrl wasn't held when dropping; move request?
-		print("Moving item", input.IsControlDown(), self.IsWheelHeld)
+		print("Moving item")
+
+		local ok = self:Emit("CanMoveItem", rec, drop, item)
+		if ok == false then return end
+
+		print("All good", ok)
+
 		self:MoveItem(rec, drop, item)
 	elseif not rec:GetItem() then 								--dropped onto empty space
 		print("Splitting item")
+		if self:Emit("CanSplitItem", rec, drop, item) == false then return end
 		self:SplitItem(rec, drop, item)
 	end
 
@@ -301,7 +310,6 @@ function PANEL:AddItemSlot()
 
 	self:On("Change", it, function(self, inv, ...)
 		if inv:GetItemInSlot(i + 1) ~= it:GetItem() then
-			print("Changing", it, inv:GetItemInSlot(it:GetSlot()))
 			it:SetItem(inv:GetItemInSlot(it:GetSlot()))
 		end
 	end)
@@ -320,6 +328,8 @@ end
 
 function PANEL:Draw(w, h)
 	if not self.Inventory then return end
+	if self.NoPaint then return end
+
 	local inv = self.Inventory
 	draw.SimpleText(inv.Name, "OS28", w/2, 16, color_white, 1, 1)
 end

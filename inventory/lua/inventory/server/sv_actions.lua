@@ -8,7 +8,7 @@ local function load()
 		local inv, err = nw.ReadInventory()
 
 		if not inv then errorf("Failed to read inventory from %s: %q", ply, err) return end
-		if not ignoreaccess and not inv:HasAccess(ply, act) then errorf("Failed permission check from %s on inventory %q", ply, inv) return end
+		if not ignoreaccess and not inv:HasAccess(ply, act) then errorf("Failed permission check from %s on inventory '%s'", ply, inv) return end
 
 		return inv
 	end

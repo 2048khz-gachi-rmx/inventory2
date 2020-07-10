@@ -1,7 +1,7 @@
 if CLIENT then error("HOW") end
 local bp = Inventory.Inventories.Backpack
 
-function bp:NewItem(iid, cb, slot, dat)
+function bp:NewItem(iid, cb, slot, dat, nostack)
 	cb = cb or BlankFunc
 
 	local can = self:Emit("CanCreateItem", iid, dat, slot)
@@ -10,40 +10,40 @@ function bp:NewItem(iid, cb, slot, dat)
 	slot = slot or self:GetFreeSlot()
 	if not slot or slot > self.MaxItems then errorf("Didn't find a slot where to put the item or it was above MaxItems! (%s > %d)", slot, self.MaxItems) return end
 
-	local its, left = Inventory.CheckStackability(self, iid, cb, slot, dat)
+	if not nostack then
+		local its, left = Inventory.CheckStackability(self, iid, cb, slot, dat)
 
-	if istable(its) then
+		if istable(its) then
 
-		for k,v in ipairs(its) do
-			v:Insert(self)
-			v:Once("AssignUID", function()
-				self:AddItem(v, true)
-			end)
-			self:AddChange(v, INV_ITEM_ADDED)
+			for k,v in ipairs(its) do
+				v:Insert(self)
+				v:Once("AssignUID", function()
+					self:AddItem(v, true)
+				end)
+				self:AddChange(v, INV_ITEM_ADDED)
+			end
+
+			return left
 		end
 
-		return left
+		if its == true then return end
 	end
-
-	if its == true then return end
 
 	local it = Inventory.NewItem(iid, self)
 	it:SetSlot(slot)
 
-	it:Insert(self)
-
-	if it:GetUID() then
-		self:AddItem(it, true)
-		cb(it, slot)
-		error("INSTANT FIRE???")
-	else
-
+	--if self.UseSQL ~= false then
+		it:Insert(self)
 		it:Once("AssignUID", function()
 			self:AddItem(it, true)
 			cb(it, slot)
 		end)
 
-	end
+	--[[else
+		self:AddItem(it, true)
+		cb(it, slot)
+	end]]
+
 
 end
 
@@ -68,7 +68,11 @@ function bp:CrossInventoryMove(it, inv2, slot)
 	if can == false then return false end
 
 
-	local em = Inventory.MySQL.SetInventory(it, inv2, slot)
+	local em
+
+	if self.UseSQL ~= false then
+		em = Inventory.MySQL.SetInventory(it, inv2, slot)
+	end
 
 	self:RemoveItem(it)
 	inv2:AddItem(it, true)
@@ -117,7 +121,7 @@ end
 --	    Networking & shtuff
 --[[------------------------------]]
 
-function bp:SerializeItems(typ)
+function bp:SerializeItems(typ, key)
 	local max_uid = 0
 	local max_id = 0
 	local amt = 0
@@ -145,6 +149,11 @@ function bp:SerializeItems(typ)
 	local ns = Inventory.Networking.NetStack(max_uid, max_id)
 
 	ns:WriteUInt(self.NetworkID, 16).InventoryNID = true
+
+	if self.MultipleInstances then
+		ns:WriteUInt(key, 16)
+	end
+
 	ns:WriteUInt(amt, 16).ItemsAmount = true
 
 

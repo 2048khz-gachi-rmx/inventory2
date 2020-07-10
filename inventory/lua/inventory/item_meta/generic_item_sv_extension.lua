@@ -46,17 +46,19 @@ function it:Insert(invobj, cb)
 
 	local qobj = Inventory.MySQL.NewItem(self, invobj, sid)
 
-	qobj:Once("Success", function(_, _, dat)
-		local uid = dat[1].uid
+	qobj:Once("Success", function(_, query, dat)
+		local uid = query:lastInsert()
 
 		if cb then cb(self, uid) end
 		self:SetUID(uid)
+		self:SetUIDFake(false)
 
 		if not invobj:HasItem(self) then
 			invobj:AddItem(self)
 		end
 
 		self:Emit("AssignUID", uid)
+
 	end)
 
 	return qobj

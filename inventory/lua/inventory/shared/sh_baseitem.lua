@@ -1,8 +1,13 @@
 
 
 function ToUID(it)
-	return (isnumber(it) and it) or (IsItem(it) and it:GetUID()) or errorf("ToUID: expected number or item as arg #1, got %s instead", type(it))
+
+	if isnumber(it) then return it
+	elseif IsItem(it) then return it:GetUID()
+	else errorf("ToUID: expected number or item as arg #1, got %s instead", type(it)) end
+
 end
+
 
 function Inventory.Util.GetBaseMeta(iid)
 	local base = Inventory.BaseItems[iid]
@@ -14,6 +19,7 @@ function Inventory.Util.GetBaseMeta(iid)
     return Inventory.BaseItemObjects[class]
 end
 
+
 function Inventory.Util.GetMeta(iid)
 	local base = Inventory.Util.GetBaseMeta(iid)
 	if not base then return false end
@@ -21,8 +27,17 @@ function Inventory.Util.GetMeta(iid)
 	return Inventory.ItemObjects[base.ItemClass]
 end
 
+
 function Inventory.Util.GetBase(id)
 	return Inventory.BaseItems[id]
+end
+
+function Inventory.Util.GetInventory(id)
+	for k,v in pairs(Inventory.Inventories) do
+		if v.NetworkID == id then
+			return v
+		end
+	end
 end
 
 function Inventory.Util.ItemNameToID(name)
@@ -39,6 +54,7 @@ function Inventory.Util.IsInventory(obj)
 end
 
 IsInventory = Inventory.Util.IsInventory
+
 
 function Inventory.Util.IsItem(obj)
 	local mt = getmetatable(obj)

@@ -4,7 +4,7 @@ function PLAYER:InitializeInventories()
     self.Inventory = {}
 
     for k,v in pairs(Inventory.Inventories) do
-        if hook.Call("PlayerAddInventory", self, self.Inventory, v) == false then continue end
+        if hook.Call("PlayerAddInventory", self, self.Inventory, v) == false or v:Emit("PlayerCanAddInventory", me) == false then continue end
         self.Inventory[k] = v:new(self)
     end
 

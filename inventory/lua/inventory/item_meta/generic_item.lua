@@ -70,6 +70,8 @@ end
 ChainAccessor(it, "ItemUID", "ItemUID")
 ChainAccessor(it, "ItemUID", "UID")
 
+ChainAccessor(it, "UIDIsFake", "UIDFake")
+
 ChainAccessor(it, "ItemID", "ItemID")
 ChainAccessor(it, "ItemID", "IID")
 ChainAccessor(it, "Known", "Known")

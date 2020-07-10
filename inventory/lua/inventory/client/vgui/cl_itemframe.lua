@@ -10,9 +10,10 @@ local iPan = Inventory.Panels
 		"Drop" - when an item is dropped onto this slot
 			1 - Panel : the slot that was dropped
 			2 - Item : the item that slot has
-		
+
 		"DragStart" - when this item started to be dragged
-		"DragStop" - when this item stopped being dragged
+		"DragStop" - when this item stopped being dragged (dropped)
+			1 - Panel(?) : panel or falsy value: on what this panel was dropped
 
 		"Think" - durr
 
@@ -26,7 +27,7 @@ local iPan = Inventory.Panels
 
 		"Hover" - when the cursor enters the slot
 		"Unhover" - when the cursor exits the slot
-		
+
 		"ItemInserted" - when a real item gets inserted into this slot
 			1 - Number: slot
 			2 - Item: the item that got inserted
@@ -83,6 +84,15 @@ function ITEM:DetourStuff() --eh
 
 end
 
+function ITEM:TrackChanges(inv, slot)
+	self:GetInventory():On("Change", self, function()
+		print("inv changed", slot, inv:GetItemInSlot(slot))
+		if inv:GetItemInSlot(slot) ~= self:GetItem() then
+			self:SetItem(inv:GetItemInSlot(slot))
+		end
+	end)
+end
+
 function ITEM:Init()
 	self:SetSize(iPan.SlotSize, iPan.SlotSize)
 	self:SetText("")
@@ -93,6 +103,8 @@ function ITEM:Init()
 	self.DropFrac = 0
 
 	self:Receiver("Item", function(self, tbl, drop)
+		if tbl[1].PreventDrop then tbl[1].PreventDrop = false return end
+
 		if not drop then
 			self.DropHovered = true
 			self:Emit("ItemHover", tbl[1], tbl[1].Item)
@@ -100,6 +112,7 @@ function ITEM:Init()
 		end
 
 		self.DropHovered = false
+
 		self:Emit("Drop", tbl[1], tbl[1].Item)
 	end)
 
@@ -138,8 +151,11 @@ function ITEM:OnDragStart()
 end
 
 function ITEM:OnDragStop()
-	self:Emit("DragStop")
-	hook.Run("InventoryItemDragStop", self, self:GetItem(true))
+	local rec = dragndrop.m_Receiver
+
+	self:Emit("DragStop", rec)
+	print(self.PreventDrop, "aeiou preventing drop")
+	hook.Run("InventoryItemDragStop", self, self:GetItem(true), rec)
 end
 
 function ITEM:OnItemDrop(slot, it)
@@ -321,6 +337,12 @@ function ITEM:MaskHoverGrad(w, h)
 	surface.SetDrawColor(self.HoverGradientColor or hovCol) --sets the color for the gradient border
 end
 
+function ITEM:DrawBorder(w, h, col)
+	local rnd = self.Rounding
+	draw.RoundedBox(rnd, 0, 0, w, h, col)
+	self:Emit("DrawBorder", w, h, col)
+end
+
 local emptyCol = Color(30, 30, 30)
 
 function Inventory.Panels.ItemDraw(self, w, h)
@@ -345,7 +367,7 @@ function Inventory.Panels.ItemDraw(self, w, h)
 		draw.ColorModHSV(col, ch, cs, cv + add_val / 15)
 
 		--print(cv + add_val / 10, col)
-		draw.RoundedBox(rnd, 0, 0, w, h, col)
+		self:DrawBorder(w, h, col) --draw.RoundedBox(rnd, 0, 0, w, h, col)
 		draw.RoundedBox(rnd, 2, 2, w-4, h-4, Colors.Gray)
 
 		base:Emit("Paint", self.Item, self, self.ModelPanel)
@@ -353,7 +375,7 @@ function Inventory.Panels.ItemDraw(self, w, h)
 		local x, y, w, h = 0, 0, w, h
 
 		if self.Border then
-			draw.RoundedBox(rnd, 0, 0, w, h, self.Border.col or emptyCol)
+			self:DrawBorder(w, h, self.Border.col or emptyCol) --`draw.RoundedBox(rnd, 0, 0, w, h, self.Border.col or emptyCol)
 			x, y = self.Border.w or 2, self.Border.h or 2
 			w, h = w - x*2, h - y*2
 		end

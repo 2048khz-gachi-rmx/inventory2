@@ -257,13 +257,23 @@ function nw.WriteHeader(typ, invs, ply)
 	return header
 end
 
-function nw.NetworkInventory(ply, inv, typ, just_return) --mark 'just_return' as true for this function to just return an invnet (netstack) object
+function nw.NetworkInventory(ply, inv, typ, just_return, key) --mark 'just_return' as true for this function to just return an invnet (netstack) object
 	if inv and IsInventory(inv) and not inv.NetworkID then errorf("Cannot send inventory %q as it doesn't have a network ID!", inv.Name) return end
 	if typ == nil then typ = INV_NETWORK_FULLUPDATE end
 
 	if IsInventory(inv) then
 
-		local ns = inv:SerializeItems(typ)
+		if inv.MultipleInstances and not key then
+			for k,v in pairs(inv:GetOwner().Inventory) do
+				if v == inv then
+					key = k
+					break
+				end
+			end
+			if not key then errorf("Couldn't find key for inventory: %s", inv) return end
+		end
+
+		local ns = inv:SerializeItems(typ, key)
 		nw.CurrentInventory = ns
 
 		if typ == INV_NETWORK_UPDATE then
@@ -288,7 +298,7 @@ function nw.NetworkInventory(ply, inv, typ, just_return) --mark 'just_return' as
 		local owner
 
 		for k,v in pairs(invs) do --recursively network every inventory
-			stacks[#stacks + 1] = nw.NetworkInventory(ply, v, typ, true)
+			stacks[#stacks + 1] = nw.NetworkInventory(ply, v, typ, true, k)
 			local iown = v:GetOwner()
 			if owner and iown ~= owner then errorf("Cannot send multiple inventories with different owners in one net! (%s ~= %s)", owner, iown) return end
 			owner = iown
@@ -315,13 +325,25 @@ function nw.ReadInventory()
 
 	if not ent or not IsValid(ent) then return false, "invalid entity" end
 
+	local base = Inventory.Util.GetInventory(id)
+	if not base then errorf("didn't find inventory with NWID: %s", id) return end
+
+	print(base, base.MultipleInstances, id)
+
+	if base.MultipleInstances then
+		local key = net.ReadUInt(16)
+		print('key:', key)
+		if not ent.Inventory[key] then errorf("didn't find inventory in the entity with NWID/key: %s/%s", id, key) return end
+		return ent.Inventory[key]
+	end
+
 	for k,v in pairs(ent.Inventory) do
 		if v.NetworkID == id then
 			return v
 		end
 	end
 
-	return false, "didnt find inventory in " .. ent
+	return false, "didnt find inventory in " .. tostring(ent)
 end
 
 function nw.ReadItem(inv)

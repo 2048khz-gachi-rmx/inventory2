@@ -1,5 +1,5 @@
 --
-
+setfenv(0, _G)
 local nw = Inventory.Networking or {InventoryIDs = {}}
 Inventory.Networking = nw
 
@@ -35,12 +35,32 @@ end
 
 function nw.ReadInventoryContents(invtbl, typ)
     local max_uid, max_id = nw.ReadHeader()
+
     local invID = net.ReadUInt(16)
+
+    local inv
+
+    for k, baseinv in pairs(Inventory.Inventories) do
+        if baseinv.NetworkID == invID then
+            if baseinv.MultipleInstances then
+                local key = net.ReadUInt(16)
+                print("multiple instances, key is", key, invtbl[key])
+                inv = invtbl[key]
+            else
+                print("not multiple instances, key is", invID)
+                inv = invtbl[baseinv.NetworkID]
+            end
+            break
+        end
+    end
+
+    if not inv then errorf("Didn't find inventory with NetworkID %s!", invID) end
+
     local its = net.ReadUInt(16)
 
     log("CL-Networking: reading %d items for inventory %d", its, invID)
 
-    local inv = invtbl[invID] or errorf("Could not find Inventory with ID %d in that entity!!", invID)
+    
 
     AAA = invtbl
     local slot_size = inv.MaxItems and bit.GetLen(inv.MaxItems)
@@ -63,7 +83,7 @@ function nw.ReadInventoryContents(invtbl, typ)
 
             for i=1, dels do
                 local uid = net.ReadUInt(max_uid)
-                local del_it = inv:DeleteItem(uid)
+                local del_it = inv:DeleteItem(uid, true)
                 log("   successfully deleted item")
                 Inventory:Emit("ItemRemoved", inv, del_it)
             end
@@ -104,7 +124,7 @@ function nw.ReadInventoryContents(invtbl, typ)
 
                 if item then
                     --if there was no item that means we already predicted the removal somewhere
-                    inv:RemoveItem(item)
+                    inv:RemoveItem(item, true)
                     item:SetInventory(newinv)
                 end
             end
@@ -130,7 +150,11 @@ function nw.ReadUpdate(len, type)
             v:Reset()
         end
 
-        invs_table[v.NetworkID] = v
+        if v.MultipleInstances then
+            invs_table[k] = v
+        else
+            invs_table[v.NetworkID] = v
+        end
     end
 
     for i=1, invs do
@@ -178,9 +202,26 @@ net.Receive("InventoryConstants", nw.ReadConstants)
 local invnet = netstack:extend()
 local log = Inventory.Log
 
-function invnet:WriteInventory(inv)
+function invnet:WriteInventory(inv, key)
+    print("writeinventory", inv)
     self:WriteEntity( (inv:GetOwner()) )
     self:WriteUInt(inv.NetworkID, 16)
+
+    if inv.MultipleInstances then
+        if not key then
+            local ow = inv:GetOwner()
+            if not IsValid(ow) then errorf("Tried to write an inventory with multiple instances but without an owner! %s", inv) return end
+            for k,v in pairs(inv:GetOwner().Inventory) do
+                if v == inv then
+                    key = k
+                    break
+                end
+            end
+            if not key then errorf("Couldn't find key for inventory: %s", inv) return end
+        end
+
+        self:WriteUInt(key, 16)
+    end
 
     self.CurrentInventory = inv
 

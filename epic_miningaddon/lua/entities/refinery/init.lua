@@ -24,6 +24,21 @@ function ENT:Initialize()
 		phys:EnableMotion(true)
 	end
 
+	if not Inventory.Inventories.Entity then self:Remove() return end --created too early?
+
+	self.Queue = {}
+	self.Inventory = {Inventory.Inventories.Entity:new(self), Inventory.Inventories.Entity:new(self)}
+
+	self.OreInput = self.Inventory[1] --shortcuts
+	self.OreInput.MaxItems = self.MaxQueues
+
+	self.OreOutput = self.Inventory[2]
+	self.OreOutput.MaxItems = 5
+
+	hook.Once("CPPIAssignOwnership", ("cppiInv:%p"):format(self), function(ply, self)
+		self.OreInput.OwnerUID = ply:SteamID64()
+		self.OreOutput.OwnerUID = ply:SteamID64()
+	end)
 end
 
 util.AddNetworkString("OreRefinery")
@@ -33,17 +48,39 @@ function ENT:Think()
 
 end
 
+function ENT:QueueRefine(ply, item, slot)
+
+end
+
 net.Receive("OreRefinery", function(len, ply)
 	if not ply:Alive() then return end
 
 	local ent = net.ReadEntity()
-	local slot = net.ReadUInt(16)
-	local inv = Inventory.Networking.ReadInventory()
-	local item = Inventory.Networking.ReadItem(inv)
+	local self = ent
 
-	if not inv.IsBackpack then print("inventory is not a backpack") return end
+	local typ = net.ReadUInt(4)
 
-	print(ent, slot, inv, item)
+	if typ == 0 then --deposit
+		local slot = net.ReadUInt(16)
+		local inv = Inventory.Networking.ReadInventory()
+		local item = Inventory.Networking.ReadItem(inv)
+
+		if not inv.IsBackpack then print("inventory is not a backpack") return end
+		if not item then print("didn't get item") return end
+		ent:QueueRefine(ply, item, slot)
+
+		if slot > self.OreInput.MaxItems then print("slot higher than max", slot, self.OreInput.MaxItems) return end
+
+		item:SetAmount(item:GetAmount() - 1)
+
+		self.OreInput:NewItem(item:GetItemID(), function()
+			Inventory.Networking.NetworkInventory(ents.FindInPVS(self), self.OreInput)
+		end, slot, item:GetData(), true)
+
+	elseif typ == 1 then --withdraw
+
+	end
+
 end)
 
 function ENT:SendInfo(ply)
@@ -53,6 +90,7 @@ end
 function ENT:Use(ply)
 
 	net.Start("OreRefinery")
-	net.WriteEntity(self)
+		net.WriteEntity(self)
+		net.WriteUInt(0, 4)
 	net.Send(ply)
 end

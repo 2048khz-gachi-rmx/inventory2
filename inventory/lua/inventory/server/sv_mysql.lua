@@ -127,7 +127,8 @@ function ms.CreateInventoryTable(tbl_name, use_slots, more_columns, more_constra
 end
 
 hook.Add("InventoryTypeRegistered", "CreateInventoryTables", function(inv)
-	if not inv.SQLName then errorf("Inventory %s is missing an SQLName!", inv.Name) return end
+	if not inv.SQLName and inv.UseSQL then errorf("Inventory %s is missing an SQLName!", inv.Name) return end
+	if not inv.UseSQL then return end
 
 	ms.CreateInventoryTable(inv.SQLName, inv.UseSlots, inv.SQLColumns, inv.SQLConstraints)
 end)
@@ -200,14 +201,14 @@ end
 local newitem_name_query 	= ms.DB:prepare("SELECT InsertByItemName(?) AS uid LIMIT 1;")
 local newitem_inv_query 	= ms.DB:prepare("CALL InsertByItemNameInInventory(?, ?, ?, ?);")
 
-local newitem_id_query 		= ms.DB:prepare("INSERT INTO items(iid) VALUES (?); SELECT last_insert_id() AS uid;")
+local newitem_id_query 		= ms.DB:prepare("INSERT INTO items(iid) VALUES (?)")--; SELECT last_insert_id() AS uid;")
 local newitem_idinv_query 	= ms.DB:prepare("CALL InsertByIDInInventory(?, ?, ?, ?);")
 
 function ms.NewItem(item, inv, ply, cb)
 
 	local qobj
 
-	local invname = inv and (inv.SQLName or errorf("Inventory.MySQL.NewItem: No SQLName for inventory %s!", inv.Name))
+	local invname = inv and (inv.SQLName)-- or errorf("Inventory.MySQL.NewItem: No SQLName for inventory %s!", inv.Name))
 	local iid = item.ItemID or item.ItemName
 
 	if not invname then
@@ -234,7 +235,7 @@ function ms.NewItem(item, inv, ply, cb)
 		local slot = item:GetSlot()
 		if not slot then
 			slot = inv:GetFreeSlot()
-			qobj:clearParameters()
+			--qobj:clearParameters()
 			if not slot then errorf("Inventory.MySQL.NewItem: Expected a free slot for item %s, but got nuffin' instead", item) return end
 			item:SetSlot(slot)
 		end
@@ -253,6 +254,7 @@ function ms.NewItem(item, inv, ply, cb)
 	local qem = MySQLEmitter(qobj, true):Catch(qerr)
 
 	qem:Once("Success", "AssignData", function()
+		local uid = qobj:lastInsert()
 		local dat = item:GetPermaData()
 		if not table.IsEmpty(dat) then
 			ms.ItemWriteData(item, dat)
@@ -299,8 +301,15 @@ function ms.SetInventory(it, inv, slot, dat)
 		end
 	end
 
-	local puid = mysqloo.quote(ms.DB, inv:GetOwner():SteamID64())
-	local q2 = ("INSERT IGNORE INTO %s (uid, puid%s) VALUES (%s, %s%s)"):format(inv.SQLName, columns, it:GetUID(), puid, values )
+	local ow, owuid = inv:GetOwner()
+	local puid = mysqloo.quote(ms.DB, owuid)
+	local q2
+
+	if it:GetUIDFake() then
+		q2 = ("INSERT IGNORE INTO %s (puid%s) VALUES (%s, %s%s)"):format(inv.SQLName, columns, puid, values )
+	else
+		q2 = ("INSERT IGNORE INTO %s (uid, puid%s) VALUES (%s, %s%s)"):format(inv.SQLName, columns, it:GetUID(), puid, values )
+	end
 
 	local qo1 = db:query(q1)
 	local qo2 = db:query(q2)

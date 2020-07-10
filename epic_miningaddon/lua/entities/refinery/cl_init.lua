@@ -1,10 +1,16 @@
 include("shared.lua")
 
 local me = {}
-ENT.ContextInteractable = true 
+ENT.ContextInteractable = true
 
 function ENT:Initialize()
+	self.Inventory = {Inventory.Inventories.Entity:new(self), Inventory.Inventories.Entity:new(self)}
 
+	self.OreInput = self.Inventory[1] --shortcuts
+	self.OreInput.MaxItems = self.MaxQueues
+
+	self.OreOutput = self.Inventory[2]
+	self.OreOutput.MaxItems = 5
 end
 
 function ENT:DrawDisplay()
@@ -33,46 +39,78 @@ local slotSize = 64
 local slotPadX = 8 --MINIMUM padding ; if there's less slots than a row can fit, it'll increase padding to compensate
 local slotPadY = 8
 
+function ENT:WithdrawItem(slot, to)
+	local inv = self.OreInput
+	--[[if not inv.Slots[slot] then errorf("How %s", slot) return end
+
+	local nw = Inventory.Networking.Netstack()
+		nw:WriteEntity(self)
+		nw:WriteUInt(1, 4)
+		nw:WriteUInt(slot, 16)
+		nw:WriteUInt(to, 16)
+	nw:Send("OreRefinery")]]
+
+end
+
 function ENT:CreateItemSlot(slot)
+	slot:SetSlot(slot.ID)
 
 	slot:On("ItemHover", "OresOnly", function(slot, slot2, item)
-		if not item:GetBase().IsOre then 
+		print(slot, slot2, item)
+		if not item:GetBase().IsOre then
 			slot.HoverGradientColor = Colors.Red
 		else
 			slot.HoverGradientColor = Colors.Money
 		end
 	end)
 
-	slot:On("Drop", "OresOnly", function(slot, slot2, item)
-		if not item:GetBase().IsOre then return end
+	--[[slot:On("DragStop", "DropOre", function(slot, on)
+		if not IsValid(on) then return end
+		if not on:GetInventory() or not on:GetInventory().IsBackpack then return end
+		self:WithdrawItem(slot.ID, on:GetSlot())
+		slot.PreventDrop = true
+	end)]]
+
+	slot:On("Drop", "DropOre", function(slot, slot2, item)
+		if not item:GetBase().IsOre or not item:GetInventory().IsBackpack then return false end
 
 		local nw = Inventory.Networking.Netstack()
+
 		nw:WriteEntity(self)
+		nw:WriteUInt(0, 4)
 		nw:WriteUInt(slot.ID, 16)
 		nw:WriteInventory(item:GetInventory())
 		nw:WriteItem(item)
 
 		nw:Send("OreRefinery")
+
+		item:SetAmount(item:GetAmount() - 1)
+		return
 	end)
+
+	slot:On("DrawBorder", "DrawSmeltingProgress", function(self, w, h, col)
+		draw.RoundedBox(4, 0, h/2, w, h/2, Colors.Red)
+	end)
+	slot.Inventory = self.OreInput
+	slot:TrackChanges(slot.Inventory, slot.ID)
+
+	if slot.Inventory.Slots[slot.ID] then
+		slot:SetItem(slot.Inventory.Slots[slot.ID])
+	end
 end
 
 function ENT:OnInventorySlotPickup(slot) 	--called for the actual inventory's slots when they get picked up
 	local item = slot:GetItem()
-	print("pikked up", slot, item)
 end
 
 function ENT:OnInventorySlotDrop(slot) 	--same but when it stops being dragged
 	local item = slot:GetItem()
-	print("dropped", slot, item)
 end
 
 function ENT:OnOpenRefine(ref, pnl)
 	if IsValid(pnl) then print(pnl) pnl:PopInShow() return pnl end
 
 	local p = vgui.Create("Panel", ref)
-	--p:Debug()
-
-	local pnl = p --i'm having brainfarts and constantly doing 'pnl' instead of 'p'
 
 	ref:PositionPanel(p)
 
@@ -108,6 +146,7 @@ function ENT:OnOpenRefine(ref, pnl)
 
 		for si=1, row.amtSlots do
 			slotID = slotID + 1
+
 			local slot = vgui.Create("ItemFrame", p)
 			slot:SetSize(slotSize, slotSize)
 			slot:SetPos(icX, row.icY)
@@ -160,6 +199,9 @@ end
 
 net.Receive("OreRefinery", function()
 	local ent = net.ReadEntity()
+	local typ = net.ReadUInt(4)
 
-	ent:OpenMenu()
+	if typ == 0 then --open menu
+		ent:OpenMenu()
+	end
 end)

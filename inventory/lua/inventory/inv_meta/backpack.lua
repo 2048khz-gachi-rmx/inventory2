@@ -10,12 +10,13 @@ bp.MaxItems = 20
 bp.UseSlots = true
 
 bp.IsBackpack = true
+bp.AutoFetchItems = true
 
 function bp:__tostring()
 	return ("%s (owner: %s)"):format(
 		self.Name,
 		( IsValid(self.Owner) and tostring(self.Owner) .. ("[SID: %s] "):format(self.OwnerUID) ) 
-			or self.OwnerUID
+			or self.OwnerUIDx2
 	)
 
 end
@@ -33,7 +34,9 @@ function bp:Initialize(ply)
 
 	if ply then
 		self:SetOwner(ply)
-		if SERVER then Inventory.MySQL.FetchPlayerItems(self, ply) end
+		if SERVER and self.AutoFetchItems then
+			Inventory.MySQL.FetchPlayerItems(self, ply)
+		end
 	end
 end
 
@@ -43,7 +46,8 @@ end
 
 function bp:SetOwner(ply)
 	self.Owner = ply
-	self.OwnerUID = ply:SteamID64()
+	if ply:IsPlayer() then self.OwnerUID = ply:SteamID64() end
+	self:Emit("OwnerAssigned", ply)
 end
 
 function bp:GetOwner()
@@ -74,17 +78,31 @@ if CLIENT then
 	end
 end
 
-function bp:RemoveItem(it)
+--suppresserror if you're not sure the change was predicted (e.g receiving networked deletions)
+function bp:RemoveItem(it, suppresserror)
 	--just removes an item from itself and networks the change
-
+	print(it)
 	local uid = ToUID(it)
 
 	local its, slots = self:GetItems(), self:GetSlots()
+	local foundit
 
-	local foundit = its[uid]
-	if not foundit then errorf("Tried to remove an item which didn't exist in the inventory in the first place!\nInventory: %s\nItem: %s\n", self, it) return end
+	if uid then
+		foundit = its[uid]
+		its[uid] = nil
+	else
+		local found
 
-	its[uid] = nil
+		for k,v in pairs(its) do
+			if v == it then
+				its[k] = nil
+				foundit = v
+				break
+			end
+		end
+	end
+	print("foundit?", foundit, "suppresserror", suppresserror)
+	if not foundit and not suppresserror then errorf("Tried to remove an item which didn't exist in the inventory in the first place!\nInventory: %s\nItem: %s\n", self, it) return end
 
 	if foundit:GetSlot() then
 		slots[foundit:GetSlot()] = nil
@@ -100,7 +118,7 @@ function bp:RemoveItem(it)
 
 	--if the player doesn't know about the item, don't even tell him about the deletion
 	if foundit:GetKnown() then self:AddChange(foundit, INV_ITEM_DELETED) else self:AddChange(foundit, nil) end
-
+	self:Emit("Change")
 	return foundit
 end
 
@@ -111,7 +129,7 @@ function bp:DeleteItem(it)
 	local it = self:RemoveItem(it)
 
 	if SERVER then Inventory.MySQL.DeleteItem(it) end
-
+	self:Emit("Change")
 	return it
 end
 
@@ -140,13 +158,22 @@ function bp:AddItem(it, ignore_emitter)
 		if can == false then return false end
 	end
 
-	self.Items[it:GetUID()] = it
+	if it:GetUID() then
+		self.Items[it:GetUID()] = it
+	else
+		if table.HasValue(self.Items, it) then errorf("Trying to add an item which already existed in this inventory!") return end
+		self.Items[#self.Items + 1] = it
+		it:SetUID(#self.Items)
+		it:SetUIDFake(true)
+	end
+
 	self.Slots[it:GetSlot()] = it
 	self:AddChange(it, INV_ITEM_ADDED)
 
 	it.Inventory = self
 
 	self:Emit("AddItem", it, it:GetUID())
+	self:Emit("Change")
 	return it:GetSlot()
 end
 
@@ -179,7 +206,7 @@ end
 
 function bp:HasAccess(ply, action)
 	local allow = self:Emit("Can" .. action, ply)
-	if allow == false then return false end
+	if allow ~= nil then return allow end
 
 	return ply == self:GetOwner()
 end

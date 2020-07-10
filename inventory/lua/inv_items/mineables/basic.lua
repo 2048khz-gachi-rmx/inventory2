@@ -23,7 +23,7 @@ local function makeOre(name, skin, bigamt)
 				ent:SetSubMaterial(1, skin)
 			end
 
-			if item.Data.Amount > (bigamt or self:GetMaxStack() * 0.7) then
+			if (item.Data.Amount or 0) > (bigamt or self:GetMaxStack() * 0.7) then
 				ent:SetBodygroup(0, 1)
 				imdl:SetFOV(10)
 			else
