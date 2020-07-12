@@ -253,8 +253,9 @@ function ms.NewItem(item, inv, ply, cb)
 
 	local qem = MySQLEmitter(qobj, true):Catch(qerr)
 
-	qem:Once("Success", "AssignData", function()
+	qem:Once("Success", "AssignData", function(_, dat)
 		local uid = qobj:lastInsert()
+		if uid == 0 then uid = dat[1].uid end
 		local dat = item:GetPermaData()
 		if not table.IsEmpty(dat) then
 			ms.ItemWriteData(item, dat)

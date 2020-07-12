@@ -35,7 +35,8 @@ function ENT:Initialize()
 	self.OreOutput = self.Inventory[2]
 	self.OreOutput.MaxItems = 5
 
-	hook.Once("CPPIAssignOwnership", ("cppiInv:%p"):format(self), function(ply, self)
+	hook.Once("CPPIAssignOwnership", ("cppiInv:%p"):format(self), function(ply, ent)
+		if ent ~= self then return end
 		self.OreInput.OwnerUID = ply:SteamID64()
 		self.OreOutput.OwnerUID = ply:SteamID64()
 	end)

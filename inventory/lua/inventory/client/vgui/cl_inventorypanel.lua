@@ -270,23 +270,18 @@ function PANEL:ItemDrop(rec, drop, item, ...)
 	if rec:GetItem() and rec:GetItem():GetItemID() == item:GetItemID() then --there was the same item in that slot;
 		local amt = rec:GetItem():CanStack(item)							--and it can be stacked
 		if amt then
-			local amt = (self.IsWheelHeld and math.floor(item:GetAmount() / 2)) or amt
+			amt = (self.IsWheelHeld and math.floor(item:GetAmount() / 2)) or amt
 			self:StackItem(rec, drop, item, amt)
 			return
 		end
 	end
 
 	if not ((input.IsControlDown() or self.IsWheelHeld) and item:GetCountable()) then --ctrl wasn't held when dropping; move request?
-		print("Moving item")
 
 		local ok = self:Emit("CanMoveItem", rec, drop, item)
 		if ok == false then return end
-
-		print("All good", ok)
-
 		self:MoveItem(rec, drop, item)
 	elseif not rec:GetItem() then 								--dropped onto empty space
-		print("Splitting item")
 		if self:Emit("CanSplitItem", rec, drop, item) == false then return end
 		self:SplitItem(rec, drop, item)
 	end

@@ -98,6 +98,7 @@ function nw.ReadInventoryContents(invtbl, typ)
 
             for i=1, moves do
                 local uid = net.ReadUInt(max_uid)
+                print("max uid:", max_uid)
                 local slot = net.ReadUInt(bit.GetLen(inv.MaxItems))
                 log("   moving item %s into slot %s", uid, slot)
                 local item = inv:GetItem(uid)
