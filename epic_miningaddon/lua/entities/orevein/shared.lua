@@ -12,6 +12,6 @@ function ENT:SetupDataTables()
 	self:NetworkVar("String", 1, "Resources")
 
 	if CLIENT then
-		self:NetworkVarNotify("Resources", self.UpdateOres)
+		self:On("DTChanged", "ResourceTrack", self.UpdateOres) --self:NetworkVarNotify("Resources", self.UpdateOres)
 	end
 end

@@ -67,13 +67,26 @@ function PANEL:MoveItem(rec, drop, item)
 	if not rec:GetSlot() then errorf("This ItemFrame doesn't have a slot assigned to it! Did you forget to call :SetSlot()?") return end
 	if rec.Item == item then return end
 
-	local crossinv = rec:GetInventory() ~= item:GetInventory()
-
 	local recItem = rec:GetItem(true)
-	rec:SetItem(item)
-	drop:SetItem(recItem)
 
-	local ns = Inventory.Networking.Netstack()
+	if crossinv then
+		local ok = item:GetInventory():RequestCrossInventoryMove(item, rec:GetInventory(), rec:GetSlot())
+
+		if ok then
+			rec:SetItem(item)
+			drop:SetItem(recItem)
+		end
+
+	else
+		local ok = item:GetInventory():RequestMove(item, rec:GetSlot())
+
+		if ok then
+			rec:SetItem(item)
+			drop:SetItem(recItem)
+		end
+	end
+
+	--[[local ns = Inventory.Networking.Netstack()
 
 	ns:WriteInventory(item:GetInventory())
 	ns:WriteItem(item)
@@ -88,7 +101,7 @@ function PANEL:MoveItem(rec, drop, item)
 		rec:GetInventory():AddItem(item) --add self to new inv
 	end
 
-	Inventory.Networking.PerformAction(crossinv and INV_ACTION_CROSSINV_MOVE or INV_ACTION_MOVE, ns)
+	Inventory.Networking.PerformAction(crossinv and INV_ACTION_CROSSINV_MOVE or INV_ACTION_MOVE, ns)]]
 end
 
 function PANEL:CreateSplitSelection(rec, drop, item)
@@ -216,20 +229,12 @@ function PANEL:SplitItem(rec, drop, item)
 end
 
 function PANEL:StackItem(rec, drop, item, amt)
-	print("Stacking items")
 
 	local crossinv = rec:GetInventory() ~= item:GetInventory()
 	if crossinv then print("cross-inv stacking is not supported yet :(") return end
 
 	if not input.IsControlDown() then
-		local it2 = rec:GetItem()
-
-		local ns = Inventory.Networking.Netstack()
-		ns:WriteInventory(item:GetInventory())
-		ns:WriteItem(it2) --the one we dropped ON (to stack IN)
-		ns:WriteItem(item) --the one we DROPPED (to stack OUT OF)
-		ns:WriteUInt(amt, 32)
-		Inventory.Networking.PerformAction(INV_ACTION_MERGE, ns)
+		rec:GetInventory():RequestStack(item, rec:GetItem(), amt)
 	else
 		local max = amt
 		local cl, sl, yes, no = self:CreateSplitSelection(rec, drop, item)
@@ -238,7 +243,8 @@ function PANEL:StackItem(rec, drop, item, amt)
 
 		sl:SetMinMax(1, max)
 		sl:SetValue(math.Round(max / 2))
-
+		sl:SetDecimals(0)
+		sl:UpdateNotches()
 		yes.Label = ("%s / %s -> %s / %s"):format(item:GetAmount(), rec:GetItem():GetAmount(), item:GetAmount() - sl:GetValue(), rec:GetItem():GetAmount() + sl:GetValue())
 
 		function sl:OnValueChanged(new)
@@ -249,6 +255,8 @@ function PANEL:StackItem(rec, drop, item, amt)
 		function yes:DoClick()
 			cl:PopOut()
 			self.SplitCloud = nil
+			
+			print("splitting item yall")
 
 			local val = math.Round(sl:GetValue())
 
@@ -268,18 +276,15 @@ end
 function PANEL:ItemDrop(rec, drop, item, ...)
 
 	if rec:GetItem() and rec:GetItem():GetItemID() == item:GetItemID() then --there was the same item in that slot;
-		local amt = rec:GetItem():CanStack(item)							--and it can be stacked
+		self:StackItem(rec, drop, item, amt)
+		return
+		--[[local amt = rec:GetItem():CanStack(item)							--and it can be stacked
 		if amt then
 			amt = (self.IsWheelHeld and math.floor(item:GetAmount() / 2)) or amt
-			self:StackItem(rec, drop, item, amt)
-			return
-		end
+		end]]
 	end
 
 	if not ((input.IsControlDown() or self.IsWheelHeld) and item:GetCountable()) then --ctrl wasn't held when dropping; move request?
-
-		local ok = self:Emit("CanMoveItem", rec, drop, item)
-		if ok == false then return end
 		self:MoveItem(rec, drop, item)
 	elseif not rec:GetItem() then 								--dropped onto empty space
 		if self:Emit("CanSplitItem", rec, drop, item) == false then return end

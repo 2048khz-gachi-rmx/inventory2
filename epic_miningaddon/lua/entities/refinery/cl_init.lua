@@ -4,13 +4,7 @@ local me = {}
 ENT.ContextInteractable = true
 
 function ENT:Initialize()
-	self.Inventory = {Inventory.Inventories.Entity:new(self), Inventory.Inventories.Entity:new(self)}
-
-	self.OreInput = self.Inventory[1] --shortcuts
-	self.OreInput.MaxItems = self.MaxQueues
-
-	self.OreOutput = self.Inventory[2]
-	self.OreOutput.MaxItems = 5
+	self:SHInit()
 end
 
 function ENT:DrawDisplay()
@@ -34,42 +28,25 @@ function ENT:Think()
 
 end
 
-local slotSize = 64
 
-local slotPadX = 8 --MINIMUM padding ; if there's less slots than a row can fit, it'll increase padding to compensate
-local slotPadY = 8
 
 function ENT:WithdrawItem(slot, to)
 	local inv = self.OreInput
-	--[[if not inv.Slots[slot] then errorf("How %s", slot) return end
-
-	local nw = Inventory.Networking.Netstack()
-		nw:WriteEntity(self)
-		nw:WriteUInt(1, 4)
-		nw:WriteUInt(slot, 16)
-		nw:WriteUInt(to, 16)
-	nw:Send("OreRefinery")]]
 
 end
 
-function ENT:CreateItemSlot(slot)
+function ENT:CreateInputSlot(slot)
+	local ent = self
+
 	slot:SetSlot(slot.ID)
 
 	slot:On("ItemHover", "OresOnly", function(slot, slot2, item)
-		print(slot, slot2, item)
 		if not item:GetBase().IsOre then
 			slot.HoverGradientColor = Colors.Red
 		else
 			slot.HoverGradientColor = Colors.Money
 		end
 	end)
-
-	--[[slot:On("DragStop", "DropOre", function(slot, on)
-		if not IsValid(on) then return end
-		if not on:GetInventory() or not on:GetInventory().IsBackpack then return end
-		self:WithdrawItem(slot.ID, on:GetSlot())
-		slot.PreventDrop = true
-	end)]]
 
 	slot:On("Drop", "DropOre", function(slot, slot2, item)
 		if not item:GetBase().IsOre or not item:GetInventory().IsBackpack then return false end
@@ -83,15 +60,51 @@ function ENT:CreateItemSlot(slot)
 		nw:WriteItem(item)
 
 		nw:Send("OreRefinery")
-
+		_AAA = nw
 		item:SetAmount(item:GetAmount() - 1)
 		return
 	end)
 
-	slot:On("DrawBorder", "DrawSmeltingProgress", function(self, w, h, col)
-		draw.RoundedBox(4, 0, h/2, w, h/2, Colors.Red)
+	local col = Color(250, 110, 20)
+	slot:On("DrawBorder", "DrawSmeltingProgress", function(self, w, h)
+		
+		local it = self.Item
+		local base = it:GetBase()
+		local refTime = base:GetSmeltTime()
+		local start = ent.Status.Networked[self:GetSlot()]
+
+		local fr = math.min((CurTime() - start) / refTime, 1)
+
+		draw.RoundedBox(4, 0, h - fr*h, w, fr*h, col)
 	end)
+
 	slot.Inventory = self.OreInput
+	slot:TrackChanges(slot.Inventory, slot.ID)
+
+	if slot.Inventory.Slots[slot.ID] then
+		slot:SetItem(slot.Inventory.Slots[slot.ID])
+	end
+end
+
+function ENT:CreateOutputSlot(slot)
+	local ent = self
+
+	slot:SetSlot(slot.ID)
+
+	slot:On("ItemHover", "OresOnly", function(slot, slot2, item)
+		if item == slot:GetItem() then
+			slot.HoverGradientColor = nil
+		else
+			slot.HoverGradientColor = Colors.Red
+		end
+	end)
+
+	slot:On("Drop", "DropOre", function(slot, slot2, item)
+		return false
+	end)
+
+	slot.Inventory = self.OreOutput
+	print("Tracking", self.OreOutput, slot.ID)
 	slot:TrackChanges(slot.Inventory, slot.ID)
 
 	if slot.Inventory.Slots[slot.ID] then
@@ -107,21 +120,33 @@ function ENT:OnInventorySlotDrop(slot) 	--same but when it stops being dragged
 	local item = slot:GetItem()
 end
 
+local slotSize = 64
+
+local slotPadX = 8 --MINIMUM padding ; if there's less slots than a row can fit, it'll increase padding to compensate
+local slotPadY = 8
+
 function ENT:OnOpenRefine(ref, pnl)
 	if IsValid(pnl) then print(pnl) pnl:PopInShow() return pnl end
+	if not op then op = SysTime() end
 
-	local p = vgui.Create("Panel", ref)
+	local main = vgui.Create("Panel", ref)
+	ref:PositionPanel(main)
+	-- INPUT 
+	local p = vgui.Create("Panel", main)
+	--p:Debug()
 
-	ref:PositionPanel(p)
+	p:SetTall(main:GetTall() * 0.7)
+	p:SetWide(main:GetWide())
 
 	local rows = {}
 
-	local fitsOnRow = math.floor(p:GetWide() / (slotSize + slotPadX))
+	local fitsOnRow = math.max(math.floor(p:GetWide() / (slotSize + slotPadX)), 1) -- don't worry i already infinite-loop'd myself 3 times on division-by-0
 	local amtrows = math.ceil(self.MaxQueues / fitsOnRow)
 
 	local slotW, slotH = slotSize + slotPadX, slotSize + slotPadY
 
 	for i=1, amtrows do
+
 		local t = {}
 		rows[i] = t
 								-- V means we can fit all slots 			V means we're the last row and we can fit more slots than there are left
@@ -142,6 +167,7 @@ function ENT:OnOpenRefine(ref, pnl)
 	local slotID = 0
 
 	for i, row in ipairs(rows) do
+
 		local icX = row.icX
 
 		for si=1, row.amtSlots do
@@ -151,14 +177,49 @@ function ENT:OnOpenRefine(ref, pnl)
 			slot:SetSize(slotSize, slotSize)
 			slot:SetPos(icX, row.icY)
 			slot.ID = slotID
-			self:CreateItemSlot(slot)
+			self:CreateInputSlot(slot)
 
 			icX = icX + row.slotW
 		end
 	end
+	--of all the auto-center-fit-buttons-on-rows algorithms i made, this ^ is probably the most elegant tbh
 
-	--of all the auto-center-fit-buttons-on-rows algorithms i made, this is probably the most elegant tbh
-	return p
+
+	-- OUTPUT
+	local out = vgui.Create("DHorizontalScroller", main)
+	out:SetTall(main:GetTall() * 0.3)
+	out:SetWide(main:GetWide())
+	out.Y = main:GetTall() * 0.7
+
+	function out:Paint(w, h)
+		surface.SetDrawColor(40, 40, 40)
+		surface.DrawRect(0, 0, w, h)
+
+		surface.SetDrawColor(10, 10, 10)
+		surface.SetMaterial(MoarPanelsMats.gu)
+		surface.DrawTexturedRect(0, 0, w, 4)
+	end
+
+	--Output has only one row so its a bit simpler
+	
+	local totalW = (slotSize + slotPadX) * self.OutputSlots - slotPadX
+	if totalW > out:GetWide() then
+
+	end
+
+	local icX = out:GetWide() / 2 - totalW / 2
+
+	for i=1, self.OutputSlots do
+		local slot = vgui.Create("ItemFrame", out)
+		slot:SetSize(slotSize, slotSize)
+		slot:SetPos(icX, out:GetTall() / 2 - slotSize / 2)
+		slot.ID = i
+
+		self:CreateOutputSlot(slot)
+		icX = icX + slotSize + slotPadX
+	end
+
+	return main
 end
 
 function ENT:OnCloseRefine(ref)
@@ -169,6 +230,7 @@ function ENT:OpenMenu()
 	if IsValid(self.Frame) then return end
 
 	local inv = Inventory.Panels.CreateInventory(LocalPlayer().Inventory.Backpack)
+
 	inv:SetTall(350)
 	inv:CenterVertical()
 

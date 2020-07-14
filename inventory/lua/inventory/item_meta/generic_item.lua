@@ -48,12 +48,12 @@ local function equalData(dat1, dat2)
 	return true
 end
 
-function it:CanStack(it2)
+function it:CanStack(it2, amt)
 	if not equalData(self.Data, it2.Data) then return false end
 	if self:GetItemID() ~= it2:GetItemID() then return false end
 	if self:GetAmount() == self:GetMaxStack() then return false end
 
-	return math.min(self:GetMaxStack() - self:GetAmount(), it2:GetAmount())
+	return math.min(self:GetMaxStack() - self:GetAmount(), it2:GetAmount(), amt or math.huge)
 end
 
 function it:Delete()
@@ -93,6 +93,7 @@ BaseItemAccessor(it, "Name", "NiceName")
 BaseItemAccessor(it, "Deletable", "Deletable")
 
 BaseItemAccessor(it, "Model", "Model")
+BaseItemAccessor(it, "ModelColor", "ModelColor")
 BaseItemAccessor(it, "FOV", "FOV")
 BaseItemAccessor(it, "CamPos", "CamPos")
 BaseItemAccessor(it, "LookAng", "LookAng")
@@ -112,10 +113,13 @@ ChainAccessor(it, "Inventory", "Inventory")
 
 function it:SetSlot(slot)
 	self.Slot = slot
+
 	local inv = self:GetInventory()
+	if CLIENT then print("it:SetSlot called with current inv being and slot is", slot, inv) end
 	if inv then
 		inv:SetSlot(self, slot)
 	end
+
 end
 
 function it:GetSlot()

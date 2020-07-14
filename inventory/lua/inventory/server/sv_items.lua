@@ -8,7 +8,7 @@ function Inventory.NewItem(iid, invobj, dat)
 	local it = Inventory.Util.GetMeta(iid)
 
 	local item = it:new(nil, iid)
-	item.Inventory = invobj
+	item:SetInventory(invobj)
 
 	local base = item:GetBaseItem()
 
@@ -43,6 +43,7 @@ end
 
 function Inventory.CheckStackability(inv, iid, cb, slot, dat)
 	local base = Inventory.Util.GetBase(iid)
+
 	if not dat or not dat.Amount then
 		dat = {}
 		if base:GetCountable() then

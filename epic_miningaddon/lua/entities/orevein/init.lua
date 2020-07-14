@@ -233,6 +233,21 @@ function ENT:RandomizeOreRichness(ores)
 
 end
 
+function ENT:MineOut(orename, ply)
+	local ore = self.Ores[orename]
+	ore.amt = ore.amt - 1
+
+	if ore.amt <= 0 then self.Ores[orename] = nil end
+
+	ply.Inventory.Backpack:NewItem(orename, function()
+		ply:NetworkInventory(ply.Inventory.Backpack)
+	end)
+
+	if table.Count(self.Ores) == 0 then
+		self:Remove()
+	end
+end
+
 function ENT:NetworkOres()
 	local t = {}
 	for name, dat in pairs(self.Ores) do

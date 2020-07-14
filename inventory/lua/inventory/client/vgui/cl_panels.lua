@@ -34,6 +34,7 @@ function iPan.CreateInventory(inv, multiple)
 	end
 
 	local f = vgui.Create("InventoryFrame")
+
 	iPan.IFrame = f
 	f:SetMouseInputEnabled(true)
 	--64 slot width + 4 slot padding + 16: 8 l,r padding + 4 from idfk where
@@ -69,7 +70,7 @@ function iPan.CreateInventory(inv, multiple)
 		tab.Inventory = inv
 		tab:Select(true)
 	end
-
+	
 	f:SetWide(f:GetWide() + 50 + 8)
 	return f
 end

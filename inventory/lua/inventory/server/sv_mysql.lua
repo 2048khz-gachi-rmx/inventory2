@@ -127,8 +127,8 @@ function ms.CreateInventoryTable(tbl_name, use_slots, more_columns, more_constra
 end
 
 hook.Add("InventoryTypeRegistered", "CreateInventoryTables", function(inv)
-	if not inv.SQLName and inv.UseSQL then errorf("Inventory %s is missing an SQLName!", inv.Name) return end
-	if not inv.UseSQL then return end
+	if not inv.SQLName and inv.UseSQL ~= false then errorf("Inventory %s is missing an SQLName!", inv.Name) return end
+	if inv.UseSQL == false then return end
 
 	ms.CreateInventoryTable(inv.SQLName, inv.UseSlots, inv.SQLColumns, inv.SQLConstraints)
 end)
@@ -253,9 +253,10 @@ function ms.NewItem(item, inv, ply, cb)
 
 	local qem = MySQLEmitter(qobj, true):Catch(qerr)
 
-	qem:Once("Success", "AssignData", function(_, dat)
+	qem:Once("Success", "AssignData", function(_, qobj, dat)
 		local uid = qobj:lastInsert()
 		if uid == 0 then uid = dat[1].uid end
+
 		local dat = item:GetPermaData()
 		if not table.IsEmpty(dat) then
 			ms.ItemWriteData(item, dat)
@@ -287,8 +288,11 @@ function ms.SetInventory(it, inv, slot, dat)
 	local t = ms.DB:createTransaction()
 
 	local q1
-	if it:GetInventory() then
-		q1 = ("DELETE FROM %s WHERE uid = %s"):format(it:GetInventory().SQLName, it:GetUID())
+
+	local src_inv = it:GetInventory()
+
+	if src_inv and src_inv.UseSQL ~= false then
+		q1 = ("DELETE FROM %s WHERE uid = %s"):format(src_inv.SQLName, it:GetUID())
 	end
 
 	local columns, values = inv.UseSlots and ", slotid" or "", (slot and ", " .. slot) or (inv.UseSlots and "NULL") or ""
@@ -312,12 +316,19 @@ function ms.SetInventory(it, inv, slot, dat)
 		q2 = ("INSERT IGNORE INTO %s (uid, puid%s) VALUES (%s, %s%s)"):format(inv.SQLName, columns, it:GetUID(), puid, values )
 	end
 
-	local qo1 = db:query(q1)
-	local qo2 = db:query(q2)
+	local qo1, qo2
 
-	print(q1, q2)
-	t:addQuery(qo1)
-	t:addQuery(qo2)
+	if src_inv.UseSQL ~= false then
+		qo1 = db:query(q1)
+		t:addQuery(qo1)
+	end
+
+	if inv.UseSQL then
+		qo2 = db:query(q2)
+		t:addQuery(qo2)
+	end
+
+	print(qo1 and q1 or "[ignored]", "\n", qo2 and q2 or "[ignored]")
 
 	return MySQLEmitter:new(t, true):Catch(trerr)
 end

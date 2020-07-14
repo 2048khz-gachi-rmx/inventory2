@@ -56,6 +56,7 @@ function OrePanel:PaintOreBar(w, h, vein, ores)
 		i = i + 1
 		local ore = dat.ore
 		local amt = dat.amt
+		local start = dat.startamt
 
 		local cost = ore:GetCost()
 		local costamt = amt * cost
@@ -66,14 +67,13 @@ function OrePanel:PaintOreBar(w, h, vein, ores)
 
 		rectw = math.floor(dat.RectW or rectw)
 
-		local missing = dat.startamt - amt
+		local missingw = (costw * start * cost) - rectw
 
-		local missingw = costw * cost * missing
-		anim:MemberLerp(dat, "MissingW", missingw, 0.3, 0, 0.4)
-		missingw = math.ceil(dat.MissingW or missingw)
+		--local missingw = costw * cost * missing
+		--anim:MemberLerp(dat, "MissingW", missingw, 0.3, 0, 0.4)
+		--missingw = math.ceil(dat.MissingW or missingw)
 
 		local last = not next(ores, name)
-		local name = ore:GetItemName()
 
 		if not ore.MissingOreColor then
 			ore.MissingOreColor = ore:GetOreColor():Copy()

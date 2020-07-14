@@ -8,7 +8,7 @@ char.SQLName = "ply_charinv"
 char.NetworkID = 4
 char.Name = "Character"
 char.MaxItems = 50
-char.UseSlots = false
+--char.UseSlots = false
 
 char.SQLColumns = {
 	{

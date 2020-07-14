@@ -56,10 +56,10 @@ local function load()
 		local where = net.ReadUInt(16)
 		local amt = net.ReadUInt(32)
 
-		if it:Emit("CanSplit", amt) == false then return end
-		if inv:Emit("CanAddItem", it, it:GetUID()) == false then return end
+		if it:Emit("CanSplit", amt) == false then print("cannot split") return end
+		if inv:Emit("CanAddItem", it, it:GetUID()) == false then print("cannot add item") return end
 
-		if where > inv.MaxItems or inv:GetItemInSlot(where) then return end
+		if where > inv.MaxItems or inv:GetItemInSlot(where) then print("where > maxitems or", inv:GetItemInSlot(where)) return end
 		if not it:GetCountable() or amt > it:GetAmount() or amt == 0 then return end
 
 		it:SetAmount(it:GetAmount() - amt)
@@ -91,7 +91,7 @@ local function load()
 		local want_amt = math.max(net.ReadUInt(32), 1)
 
 		if it == it2 then return end --no
-		
+
 		local amt = it:CanStack(it2)
 		if not amt then return end
 
@@ -99,6 +99,10 @@ local function load()
 
 		it:SetAmount(it:GetAmount() + amt)
 		it2:SetAmount(it2:GetAmount() - amt)
+
+		inv:AddChange(it, INV_ITEM_DATACHANGED)
+		inv:AddChange(it2, INV_ITEM_DATACHANGED)
+
 		return true
 	end
 
@@ -109,9 +113,10 @@ local function load()
 
 		local where = net.ReadUInt(16)
 
+		print("Crossinv requested")
 
 		local ok = inv:CrossInventoryMove(it, invto, where)
-		if ok ~= false then it:SetSlot(where) end
+		--if ok ~= false then it:SetSlot(where) end
 	end
 
 	nw.Actions[INV_ACTION_CROSSINV_SPLIT] = function(ply)
@@ -145,6 +150,14 @@ local function load()
 				if IsValid(ply) then ply:NetworkInventory({inv, invto}, INV_NETWORK_UPDATE) end
 			end)
 		end)
+	end
+
+	local resyncsCD = {}
+
+	nw.Actions[INV_ACTION_RESYNC] = function(ply)
+		if resyncsCD[ply] and CurTime() - resyncsCD[ply] < 3 then return end
+
+		ply:NI()
 	end
 
 	net.Receive("Inventory", function(len, ply)

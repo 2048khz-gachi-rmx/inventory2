@@ -64,7 +64,7 @@ function PANEL:PerformLayout(w, h)
 		local slot, name = v.Slot, v.Name
 		local nwid, side = v.ID, v.Side
 
-		local y = v.YFrac 	-- this is a 0-1, which is the middle of the button on the panel 
+		local y = v.YFrac 	-- this is a 0-1, which is the middle of the button on the panel
 							-- (e.g. 0.4 = 40%, so the button's middle should be at 40% of the panel height)
 
 		local x = (side == LEFT and 4) or w - eqBtnSize - 4
@@ -96,7 +96,7 @@ function PANEL.EquipItem(slot, self, itemfr, item)
 
 	slot:SetItem(item)
 	local inv = item:GetInventory()
-	print("Item:", item)
+
 	inv:CrossInventoryMove(item, self:GetInventory(), slot.ID)
 	--[[inv:RemoveItem(item)
 	self:GetInventory():AddItem(item)
@@ -108,8 +108,8 @@ function PANEL:HighlightFit(btn, itemfr, item)
 	local can = canEquip(btn, item)
 	if not can then
 		btn.HoverGradientColor = Colors.DarkerRed
-		btn:AlphaTo(120, 0.1, 0) 
-		return 
+		btn:AlphaTo(120, 0.1, 0)
+		return
 	end
 
 	btn.HoverGradientColor = Colors.Money

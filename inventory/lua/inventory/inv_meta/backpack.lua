@@ -9,6 +9,8 @@ bp.NetworkID = 1
 bp.MaxItems = 20
 bp.UseSlots = true
 
+bp.UseSQL = true
+
 bp.IsBackpack = true
 bp.AutoFetchItems = true
 
@@ -60,28 +62,24 @@ function bp:SetSlot(it, slot)   --this is basically an accessor func;
 								--item:SetSlot() is preferred
 	for i=1, self.MaxItems do
 		if self.Slots[i] == it then
+			print("found past self @ slot", i, self.Slots[i]:GetAmount(), self.Slots[i]:GetUID())
 			self.Slots[i] = nil
 			--not breaking. just in case there's more.
 		end
 	end
 
+	print("setting", it, "@", slot, "in", self)
+
 	self.Slots[slot] = it
-
+	
 	if it:GetKnown() then self:AddChange(it, INV_ITEM_MOVED) end --if the player doesn't know about the item, don't replace the change
-end
-
-if CLIENT then
-	function bp:CrossInventoryMove(it, inv2, slot)
-		self:RemoveItem(it)
-		inv2:AddItem(it)
-		if slot then it:SetSlot(slot) end
-	end
 end
 
 --suppresserror if you're not sure the change was predicted (e.g receiving networked deletions)
 function bp:RemoveItem(it, suppresserror)
 	--just removes an item from itself and networks the change
-	print(it)
+	--if CLIENT then printf("---------\nRemoveItem called clientside, removing from inv %s, slot %s : traceback: %s", self, IsItem(it) and it:GetSlot() or "[uid provided]", debug.traceback()) end
+
 	local uid = ToUID(it)
 
 	local its, slots = self:GetItems(), self:GetSlots()
@@ -101,32 +99,40 @@ function bp:RemoveItem(it, suppresserror)
 			end
 		end
 	end
-	print("foundit?", foundit, "suppresserror", suppresserror)
-	if not foundit and not suppresserror then errorf("Tried to remove an item which didn't exist in the inventory in the first place!\nInventory: %s\nItem: %s\n", self, it) return end
 
-	if foundit:GetSlot() then
-		slots[foundit:GetSlot()] = nil
+	if not foundit and not suppresserror then errorf("Tried to remove an item which didn't exist in the inventory in the first place!\nInventory: %s\nItem: %s\n", self, it) return end
+	if not foundit then return end
+
+	local slot = foundit:GetSlot()
+
+	if slot then
+		slots[slot] = nil
 	else
 
 		for i=1, self.MaxItems do
 			if self.Slots[i] == foundit then
 				self.Slots[i] = nil
+				slot = i
 			end
 		end
 
 	end
 
+	foundit:SetInventory(nil)
+	foundit:SetSlot(nil)
+
 	--if the player doesn't know about the item, don't even tell him about the deletion
-	if foundit:GetKnown() then self:AddChange(foundit, INV_ITEM_DELETED) else self:AddChange(foundit, nil) end
+	if foundit:GetKnown() then self:AddChange(foundit, INV_ITEM_DELETED) else self.Changes[foundit] = nil end
 	self:Emit("Change")
+	self:Emit("RemovedItem", it, slot)
 	return foundit
 end
 
-function bp:DeleteItem(it)
+function bp:DeleteItem(it, suppresserror)
 	--actually completely deletes an item, both from the backpack and from MySQL completely
 	local uid = (isnumber(it) and it) or it:GetUID()
 
-	local it = self:RemoveItem(it)
+	local it = self:RemoveItem(it, suppresserror)
 
 	if SERVER then Inventory.MySQL.DeleteItem(it) end
 	self:Emit("Change")
@@ -137,7 +143,7 @@ function bp:MoveItem(it, slot)	--this is a utility function which swaps slots if
 	if self.MaxItems and slot > self.MaxItems then errorf("Attempted to move item out of inventory bounds (%d > %d)", slot, self.MaxItems) return end
 	local it2 = self:GetItemInSlot(slot)
 	local b4slot = it:GetSlot()
-	print("bp:MoveItem: moved src:", b4slot, it:GetUID(), " into", slot)
+
 	if it == it2 or it:GetSlot() == slot then return false end
 
 	it:SetSlot(slot)
@@ -151,7 +157,12 @@ function bp:GetItemInSlot(slot)
 end
 
 function bp:AddItem(it, ignore_emitter)
-	if not self.Slots then print("WHAT!??!?!") return end
+	if not it:GetSlot() then errorf("Can't add an item without a slot set! Set a slot first!\nItem: %s", it) return end
+
+	if it:GetInventory() and it:GetInventory() ~= self then
+		errorf("Can't add an item that already has an inventory, remove it from the old inventory first!\nItem: %s\nItem's inv: %s\nAttempted inv: %s\n----\n", it, it:GetInventory(), self)
+		return
+	end
 
 	if not ignore_emitter then
 		local can = self:Emit("CanAddItem", it, it:GetUID())
@@ -170,7 +181,7 @@ function bp:AddItem(it, ignore_emitter)
 	self.Slots[it:GetSlot()] = it
 	self:AddChange(it, INV_ITEM_ADDED)
 
-	it.Inventory = self
+	it:SetInventory(self)
 
 	self:Emit("AddItem", it, it:GetUID())
 	self:Emit("Change")
@@ -213,7 +224,9 @@ end
 
 --takes: item or uid, INV_ITEM_DELETED or INV_ITEM_MOVED
 function bp:AddChange(it, what)
-	self.Changes[it] = what
+	local ch = self.Changes[it] or {}
+	self.Changes[it] = ch
+	ch[what] = true
 end
 
 function bp:Register(addstack)
@@ -228,5 +241,11 @@ ChainAccessor(bp, "Slots", "Slots")
 ChainAccessor(bp, "OwnerUID", "OwnerID")
 ChainAccessor(bp, "OwnerUID", "OwnerUID")
 
-if SERVER then include("inventory/inv_meta/backpack_sv_extension.lua") end
+if SERVER then
+	include("inventory/inv_meta/backpack_sv_extension.lua")
+	AddCSLuaFile("inventory/inv_meta/backpack_cl_extension.lua")
+else
+	include("inventory/inv_meta/backpack_cl_extension.lua")
+end
+
 bp:Register()

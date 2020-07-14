@@ -18,13 +18,11 @@ function SWEP:SVPrimaryAttack(ply, ore)
 	local mined = false
 
 	for k,v in pairs(ores) do
-		local succ = math.random() <= self.MineChance
+		local succ = (math.random() * v.ore:GetMineChanceMult()) <= self.MineChance
 
 		if succ then
-			v.amt = v.amt - 1
-			if v.amt <= 0 then ores[k] = nil end
+			ore:MineOut(k, ply)
 
-			ply.Inventory.Backpack:NewItem(k)
 			mined = true
 		end
 

@@ -185,6 +185,16 @@ local newItems = {}
 function nw.NetworkItemNames(ply, ids)
 	log("Networking constants for %s", ply)
 
+	if istable(ply) and IsPlayer(select(2, next(ply))) then
+		for k,v in ipairs(ply) do
+			ply.KnowsItemNames = true
+		end
+	elseif IsPlayer(ply) then
+		ply.KnowsItemNames = true
+	else
+		print("what did i receive", ply, select(2, next(ply)), IsPlayer(select(2, next(ply))))
+	end
+
 	local dat = von.serialize(ids or Inventory.IDConversion.ToName)
 	local comp = util.Compress(dat)
 	local needs_comp = false
@@ -257,9 +267,19 @@ function nw.WriteHeader(typ, invs, ply)
 	return header
 end
 
+local function knows(ply)
+	return ply.KnowsItemNames
+end
+
 function nw.NetworkInventory(ply, inv, typ, just_return, key) --mark 'just_return' as true for this function to just return an invnet (netstack) object
 	if inv and IsInventory(inv) and not inv.NetworkID then errorf("Cannot send inventory %q as it doesn't have a network ID!", inv.Name) return end
 	if typ == nil then typ = INV_NETWORK_FULLUPDATE end
+
+	if istable(ply) then
+		nw.NetworkItemNames(Filter(ply, true):Invert(knows))
+	elseif IsPlayer(ply) then
+		if not knows(ply) then nw.NetworkItemNames(ply) end
+	end
 
 	if IsInventory(inv) then
 
@@ -284,6 +304,7 @@ function nw.NetworkInventory(ply, inv, typ, just_return, key) --mark 'just_retur
 			return ns
 		else 						--      V we're only networking 1 inventory
 			local st = {nw.WriteHeader(typ, 1, inv:GetOwner()), ns} --write the header first, then the actual contents
+
 			nw.SendNetStacks(st, ply)
 		end
 
@@ -292,7 +313,7 @@ function nw.NetworkInventory(ply, inv, typ, just_return, key) --mark 'just_retur
 		 --or we're networking to the player himself
 
 		local invs = (istable(inv) and inv) or ply.Inventory
-		if istable(inv) then typ = INV_NETWORK_UPDATE end --if we were given just a few inventories then it's most likely it's just an update
+		if istable(inv) and not typ then typ = INV_NETWORK_UPDATE end --if we were given just a few inventories then it's most likely it's just an update
 
 		local stacks = {}
 		local owner
@@ -328,11 +349,9 @@ function nw.ReadInventory()
 	local base = Inventory.Util.GetInventory(id)
 	if not base then errorf("didn't find inventory with NWID: %s", id) return end
 
-	print(base, base.MultipleInstances, id)
-
 	if base.MultipleInstances then
 		local key = net.ReadUInt(16)
-		print('key:', key)
+
 		if not ent.Inventory[key] then errorf("didn't find inventory in the entity with NWID/key: %s/%s", id, key) return end
 		return ent.Inventory[key]
 	end
@@ -350,7 +369,7 @@ function nw.ReadItem(inv)
 	local uid = net.ReadUInt(32)
 
 	local it = inv:GetItem(uid)
-	if not it then return false, ("didn't find item UID %d in %s"):format(uid, inv) end 
+	if not it then return false, ("didn't find item UID %d in %s"):format(uid, inv) end
 
 	return it
 end

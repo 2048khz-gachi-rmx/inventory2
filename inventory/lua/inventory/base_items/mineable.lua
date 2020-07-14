@@ -6,13 +6,25 @@ local Mineable = Inventory.BaseItemObjects.Mineable or gen:callable("Mineable", 
 Mineable.OreColor = color_white
 Mineable.IsOre = true
 
+
 ChainAccessor(Mineable, "SmeltsTo", "SmeltsTo")
+
+ChainAccessor(Mineable, "SmeltTime", "SmeltTime")
+Mineable.SmeltTime = 30
+
 ChainAccessor(Mineable, "SpawnChance", "SpawnChance")
 ChainAccessor(Mineable, "MinRarity", "MinRarity")
 ChainAccessor(Mineable, "MaxRarity", "MaxRarity")
 ChainAccessor(Mineable, "Weight", "Weight")
+
+ChainAccessor(Mineable, "MineChanceMult", "MineChanceMult")
+Mineable.MineChanceMult = 1
+
 ChainAccessor(Mineable, "Cost", "Cost")
+Mineable.Cost = 1
+
 ChainAccessor(Mineable, "OreColor", "OreColor")
+Mineable.OreColor = color_white:Copy()
 
 Inventory.Mineables = Inventory.Mineables or {}
 

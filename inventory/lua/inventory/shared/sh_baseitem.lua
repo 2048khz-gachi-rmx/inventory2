@@ -11,7 +11,7 @@ end
 
 function Inventory.Util.GetBaseMeta(iid)
 	local base = Inventory.BaseItems[iid]
-	if not base then print("no base") return false end
+	if not base then print("no base for iid", iid) return false end
 
 	local class = base.BaseName
 	if not class then print("no base name") return false end

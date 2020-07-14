@@ -43,7 +43,8 @@ function Base:Initialize(name)
 
 	self.Deletable = true
 
-	self.ItemName = name
+	self.ItemName = name --ID as a string
+	self.Name = name --nice name, can be overridden
 
 	self.BaseName = self.BaseName -- stop __indexes and make it show up when rawprinting the item
 	self.ItemClass = self.ItemClass
@@ -127,6 +128,7 @@ Base.GetItemID = Base.GetID
 
 ChainAccessor(Base, "ItemName", "ItemName")
 ChainAccessor(Base, "Model", "Model")
+ChainAccessor(Base, "ModelColor", "ModelColor")
 
 ChainAccessor(Base, "CamPos", "CamPos")
 ChainAccessor(Base, "FOV", "FOV")

@@ -16,6 +16,7 @@ function PANEL:SetItem(it)
 	if it then
 		it:GenerateText(self)
 	end
+
 end
 
 vgui.Register("ItemCloud", PANEL, "Cloud")

@@ -43,9 +43,9 @@ concommand.Add("inventory_model", function(_, _, _, args)
 	btn:SetSize(120, 36)
 	btn:SetText("Copy")
 
-	local tx = [[:SetCamPos( Vector(%.1f, %.1f, %.1f) )
-	    :SetLookAng( Angle(%.1f, %.1f, %.1f) )
-	    :SetFOV( %.1f )]]
+	local tx = [[	:SetCamPos( Vector(%.1f, %.1f, %.1f) )
+	:SetLookAng( Angle(%.1f, %.1f, %.1f) )
+	:SetFOV( %.1f )]]
 	function btn:DoClick()
 	    local pos, ang, fov = adj:GetCamPos(), adj:GetLookAng(), adj:GetFOV()
 	    SetClipboardText(tx:format(pos[1], pos[2], pos[3], ang[1], ang[2], ang[3], fov))

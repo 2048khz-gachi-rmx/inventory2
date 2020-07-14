@@ -48,6 +48,7 @@ function it:Insert(invobj, cb)
 
 	qobj:Once("Success", function(_, query, dat)
 		local uid = query:lastInsert()
+		if uid == 0 then uid = dat[1].uid end
 
 		if cb then cb(self, uid) end
 		self:SetUID(uid)

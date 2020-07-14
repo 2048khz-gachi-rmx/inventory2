@@ -18,7 +18,6 @@ function nw.ReadItem(uid_sz, iid_sz, slot_sz, inventory)
 
     if not item then
         local meta = Inventory.Util.GetMeta(iid)
-        print(iid, meta)
         item = meta:new(uid, iid)
     end
 
@@ -44,10 +43,8 @@ function nw.ReadInventoryContents(invtbl, typ)
         if baseinv.NetworkID == invID then
             if baseinv.MultipleInstances then
                 local key = net.ReadUInt(16)
-                print("multiple instances, key is", key, invtbl[key])
                 inv = invtbl[key]
             else
-                print("not multiple instances, key is", invID)
                 inv = invtbl[baseinv.NetworkID]
             end
             break
@@ -59,8 +56,6 @@ function nw.ReadInventoryContents(invtbl, typ)
     local its = net.ReadUInt(16)
 
     log("CL-Networking: reading %d items for inventory %d", its, invID)
-
-    
 
     AAA = invtbl
     local slot_size = inv.MaxItems and bit.GetLen(inv.MaxItems)
@@ -98,7 +93,6 @@ function nw.ReadInventoryContents(invtbl, typ)
 
             for i=1, moves do
                 local uid = net.ReadUInt(max_uid)
-                print("max uid:", max_uid)
                 local slot = net.ReadUInt(bit.GetLen(inv.MaxItems))
                 log("   moving item %s into slot %s", uid, slot)
                 local item = inv:GetItem(uid)
@@ -136,6 +130,10 @@ function nw.ReadInventoryContents(invtbl, typ)
     inv:Emit("Change")
 end
 
+function nw.Resync()
+    nw.PerformAction(INV_ACTION_RESYNC)
+end
+
 function nw.ReadUpdate(len, type)
     local invs = net.ReadUInt(8) --amount of inventories
     local ent = net.ReadEntity()
@@ -165,6 +163,7 @@ end
 
 
 function nw.ReadNet(len)
+     log("CL-NW: ReadNet: Received inventory update")
     local type = net.ReadUInt(4) --type of networking (fullupdate? partial update?)
 
     if type == INV_NETWORK_FULLUPDATE or type == INV_NETWORK_UPDATE then
@@ -204,7 +203,7 @@ local invnet = netstack:extend()
 local log = Inventory.Log
 
 function invnet:WriteInventory(inv, key)
-    print("writeinventory", inv)
+
     self:WriteEntity( (inv:GetOwner()) )
     self:WriteUInt(inv.NetworkID, 16)
 
@@ -245,7 +244,7 @@ end
 function nw.PerformAction(enum, ns)
     net.Start("Inventory")
         net.WriteUInt(enum, 16)
-        net.WriteNetStack(ns)
+        if ns then net.WriteNetStack(ns) end
     net.SendToServer()
 end
 

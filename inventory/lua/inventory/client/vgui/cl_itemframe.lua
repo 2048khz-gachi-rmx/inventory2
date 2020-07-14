@@ -40,6 +40,7 @@ local iPan = Inventory.Panels
 		"DragHoverEnd"
 
 ]]
+
 local function BestGuess(_, mdl, ...) --taken from BestGuessLayout
 
 	local ent = mdl:GetEntity()
@@ -66,6 +67,7 @@ local function BestGuess(_, mdl, ...) --taken from BestGuessLayout
 
 	end
 
+	mdl:SetColor(item:GetModelColor() or color_white)
 	mdl.Spin = item:GetShouldSpin()
 end
 
@@ -86,7 +88,6 @@ end
 
 function ITEM:TrackChanges(inv, slot)
 	self:GetInventory():On("Change", self, function()
-		print("inv changed", slot, inv:GetItemInSlot(slot))
 		if inv:GetItemInSlot(slot) ~= self:GetItem() then
 			self:SetItem(inv:GetItemInSlot(slot))
 		end
@@ -154,7 +155,7 @@ function ITEM:OnDragStop()
 	local rec = dragndrop.m_Receiver
 
 	self:Emit("DragStop", rec)
-	print(self.PreventDrop, "aeiou preventing drop")
+
 	hook.Run("InventoryItemDragStop", self, self:GetItem(true), rec)
 end
 
@@ -368,7 +369,7 @@ function Inventory.Panels.ItemDraw(self, w, h)
 
 		--print(cv + add_val / 10, col)
 		self:DrawBorder(w, h, col) --draw.RoundedBox(rnd, 0, 0, w, h, col)
-		draw.RoundedBox(rnd, 2, 2, w-4, h-4, Colors.Gray)
+		draw.RoundedBox(rnd, 2, 2, w-4, h-4, self.Color or Colors.Gray)
 
 		base:Emit("Paint", self.Item, self, self.ModelPanel)
 	else
@@ -380,7 +381,7 @@ function Inventory.Panels.ItemDraw(self, w, h)
 			w, h = w - x*2, h - y*2
 		end
 
-		draw.RoundedBox(rnd, x, y, w, h, emptyCol)
+		draw.RoundedBox(rnd, x, y, w, h, self.EmptyColor or emptyCol)
 	end
 
 	if self.DropFrac > 0 then

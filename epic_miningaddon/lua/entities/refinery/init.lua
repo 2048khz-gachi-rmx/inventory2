@@ -26,14 +26,9 @@ function ENT:Initialize()
 
 	if not Inventory.Inventories.Entity then self:Remove() return end --created too early?
 
+	self:SHInit()
+
 	self.Queue = {}
-	self.Inventory = {Inventory.Inventories.Entity:new(self), Inventory.Inventories.Entity:new(self)}
-
-	self.OreInput = self.Inventory[1] --shortcuts
-	self.OreInput.MaxItems = self.MaxQueues
-
-	self.OreOutput = self.Inventory[2]
-	self.OreOutput.MaxItems = 5
 
 	hook.Once("CPPIAssignOwnership", ("cppiInv:%p"):format(self), function(ply, ent)
 		if ent ~= self then return end
@@ -46,11 +41,40 @@ util.AddNetworkString("OreRefinery")
 
 
 function ENT:Think()
+	local now = false
+	for k,v in pairs(self.OreInput:GetItems()) do
+		local fin = v.StartedRefining + v:GetBase():GetSmeltTime()
+		if CurTime() > fin then
+			--print(v, "finished")
+			local smTo = v:GetBase():GetSmeltsTo()
+			if not smTo then print("didn't find what", v:GetName(), " smelts to") continue end --?
+			local insta = self.OreOutput:NewItem(smTo, function() print('succeeded, sending info') self:SendInfo() end)
+			v:Delete()
 
+			if insta then print("insta boys") now = true end
+		end
+	end
+
+	if now then print("sending now") self:SendInfo() end
+
+	self:NextThink(CurTime() + 0.2)
+	return true
 end
 
 function ENT:QueueRefine(ply, item, slot)
+	if slot > self.OreInput.MaxItems then print("slot higher than max", slot, self.OreInput.MaxItems) return end
 
+	item:SetAmount(item:GetAmount() - 1)
+
+	self.OreInput:NewItem(item:GetItemID(), function(new)
+		local plys = Filter(ents.FindInPVS(self), true):Filter(IsPlayer)
+
+		self.Status:Set(slot, CurTime()):Network()
+		Inventory.Networking.NetworkInventory(plys, self.OreInput)
+
+		new.StartedRefining = CurTime()
+
+	end, slot, item:GetData(), true)
 end
 
 net.Receive("OreRefinery", function(len, ply)
@@ -70,26 +94,18 @@ net.Receive("OreRefinery", function(len, ply)
 		if not item then print("didn't get item") return end
 		ent:QueueRefine(ply, item, slot)
 
-		if slot > self.OreInput.MaxItems then print("slot higher than max", slot, self.OreInput.MaxItems) return end
-
-		item:SetAmount(item:GetAmount() - 1)
-
-		self.OreInput:NewItem(item:GetItemID(), function()
-			Inventory.Networking.NetworkInventory(ents.FindInPVS(self), self.OreInput)
-		end, slot, item:GetData(), true)
-
 	elseif typ == 1 then --withdraw
 
 	end
 
 end)
 
-function ENT:SendInfo(ply)
-
+function ENT:SendInfo()
+	Inventory.Networking.NetworkInventory(Filter(ents.FindInPVS(self), true):Filter(IsPlayer), self.Inventory, INV_NETWORK_FULLUPDATE)
 end
 
 function ENT:Use(ply)
-
+	Inventory.Networking.NetworkInventory(ply, self.Inventory)
 	net.Start("OreRefinery")
 		net.WriteEntity(self)
 		net.WriteUInt(0, 4)
