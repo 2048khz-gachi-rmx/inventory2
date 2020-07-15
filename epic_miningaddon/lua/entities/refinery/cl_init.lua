@@ -35,6 +35,22 @@ function ENT:WithdrawItem(slot, to)
 
 end
 
+function ENT:QueueOre(slot, it)
+	if not it then return end
+
+	local nw = Inventory.Networking.Netstack()
+
+		nw:WriteEntity(self)
+		nw:WriteUInt(0, 4)
+		nw:WriteUInt(slot, 16)
+		nw:WriteInventory(it:GetInventory())
+		nw:WriteItem(it)
+
+	nw:Send("OreRefinery")
+
+	it:SetAmount(it:GetAmount() - 1)
+end
+
 function ENT:CreateInputSlot(slot)
 	local ent = self
 
@@ -50,24 +66,12 @@ function ENT:CreateInputSlot(slot)
 
 	slot:On("Drop", "DropOre", function(slot, slot2, item)
 		if not item:GetBase().IsOre or not item:GetInventory().IsBackpack then return false end
-
-		local nw = Inventory.Networking.Netstack()
-
-		nw:WriteEntity(self)
-		nw:WriteUInt(0, 4)
-		nw:WriteUInt(slot.ID, 16)
-		nw:WriteInventory(item:GetInventory())
-		nw:WriteItem(item)
-
-		nw:Send("OreRefinery")
-		_AAA = nw
-		item:SetAmount(item:GetAmount() - 1)
-		return
+		ent:QueueOre(slot.ID, item)
 	end)
 
 	local col = Color(250, 110, 20)
 	slot:On("DrawBorder", "DrawSmeltingProgress", function(self, w, h)
-		
+
 		local it = self.Item
 		local base = it:GetBase()
 		local refTime = base:GetSmeltTime()
@@ -104,7 +108,7 @@ function ENT:CreateOutputSlot(slot)
 	end)
 
 	slot.Inventory = self.OreOutput
-	print("Tracking", self.OreOutput, slot.ID)
+
 	slot:TrackChanges(slot.Inventory, slot.ID)
 
 	if slot.Inventory.Slots[slot.ID] then
@@ -126,8 +130,10 @@ local slotPadX = 8 --MINIMUM padding ; if there's less slots than a row can fit,
 local slotPadY = 8
 
 function ENT:OnOpenRefine(ref, pnl)
-	if IsValid(pnl) then print(pnl) pnl:PopInShow() return pnl end
+	if IsValid(pnl) then pnl:PopInShow() return pnl end
 	if not op then op = SysTime() end
+
+	local ent = self
 
 	local main = vgui.Create("Panel", ref)
 	ref:PositionPanel(main)
@@ -201,13 +207,14 @@ function ENT:OnOpenRefine(ref, pnl)
 	end
 
 	--Output has only one row so its a bit simpler
-	
-	local totalW = (slotSize + slotPadX) * self.OutputSlots - slotPadX
-	if totalW > out:GetWide() then
 
-	end
+	local totalW = (slotSize + slotPadX) * self.OutputSlots - slotPadX
 
 	local icX = out:GetWide() / 2 - totalW / 2
+
+	if totalW > out:GetWide() then
+		icX = 8
+	end
 
 	for i=1, self.OutputSlots do
 		local slot = vgui.Create("ItemFrame", out)
@@ -219,6 +226,80 @@ function ENT:OnOpenRefine(ref, pnl)
 		icX = icX + slotSize + slotPadX
 	end
 
+	local qAll = vgui.Create("InvisPanel", ref)
+	ref:PositionPanel(qAll)
+	qAll:SetMouseInputEnabled(false)
+	Inventory.Panels.ListenForItem(qAll)
+
+	qAll:On("Drop", function(self, slot, item)
+		for i=1, ent.MaxQueues do
+			local it = ent.OreInput.Slots[i]
+			if it then continue end
+
+			ent:QueueOre(i, item)
+
+			if item:GetAmount() <= 0 then break end
+		end
+	end)
+
+	qAll.Frac = 0
+	function qAll:Think()
+		self.Ctrl = input.IsShiftDown()
+
+		if self.Ctrl and self.Dragging then
+			self:SetMouseInputEnabled(true)
+		else
+			self:SetMouseInputEnabled(false)
+		end
+	end
+
+	local blk = color_black:Copy()
+	local gray = Colors.DarkerGray:Copy()
+	local wht = color_white:Copy()
+
+	local tx = "Queue x%d %s"
+	local str
+
+	function qAll:Paint(w, h)
+		if self.Ctrl and self.Dragging then
+			self:To("Frac", 1, 0.3, 0, 0.3)
+		else
+			self:To("Frac", 0, 0.2, 0, 0.3)
+		end
+
+		local fr = self.Frac
+
+		gray.a = fr * 230
+		blk.a = fr * 250
+		wht.a = fr * 255
+
+		surface.SetDrawColor(gray:Unpack())
+		surface.DrawRect(0, 0, w, h)
+
+		surface.SetDrawColor(blk:Unpack())
+		self:DrawGradientBorder(w, h, 4, 4)
+
+		local it = self.Dragging
+
+		if it then
+			local free = ent.MaxQueues - table.Count(ent.OreInput.Items)
+			str = tx:format(math.min(it:GetAmount(), free), it:GetName())
+		end
+
+		draw.SimpleText(str, "OSB36", w/2, h/2, wht, 1, 1)
+
+	end
+
+	hook.Add("InventoryItemDragStart", main, function(_, slot, slotitem)
+		if not slotitem or not slotitem:GetBase().IsOre then return end
+		qAll.Dragging = slotitem
+	end)
+
+
+	hook.Add("InventoryItemDragStop", main, function(_, slot, slotitem, rec)
+		qAll.Dragging = false
+	end)
+
 	return main
 end
 
@@ -229,9 +310,11 @@ end
 function ENT:OpenMenu()
 	if IsValid(self.Frame) then return end
 
-	local inv = Inventory.Panels.CreateInventory(LocalPlayer().Inventory.Backpack)
+	local inv = Inventory.Panels.CreateInventory(LocalPlayer().Inventory.Backpack, nil, {
+		SlotSize = 64
+	})
 
-	inv:SetTall(350)
+	--inv:SetTall(350)
 	inv:CenterVertical()
 
 	for k,v in pairs(inv:GetSlots()) do
@@ -240,10 +323,10 @@ function ENT:OpenMenu()
 	end
 	local ref = vgui.Create("NavFrame")
 	self.Frame = ref
-	ref:SetSize(450, 350)
+	ref:SetSize(450, inv:GetTall())
 	ref:MakePopup()
-	ref:SetPos( ScrW() / 2 - (450 + 8 + inv:GetWide()) / 2,
-				ScrH() / 2 - 350 / 2)
+	ref:SetPos( ScrW() / 2 - (ref:GetWide() + 8 + inv:GetWide()) / 2,
+				ScrH() / 2 - ref:GetTall() / 2)
 	ref.Shadow = {}
 	ref:SetRetractedSize(40)
 	ref:SetExpandedSize(200)

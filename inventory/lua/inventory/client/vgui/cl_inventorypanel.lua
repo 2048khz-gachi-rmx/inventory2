@@ -255,8 +255,6 @@ function PANEL:StackItem(rec, drop, item, amt)
 		function yes:DoClick()
 			cl:PopOut()
 			self.SplitCloud = nil
-			
-			print("splitting item yall")
 
 			local val = math.Round(sl:GetValue())
 
@@ -297,10 +295,14 @@ function PANEL:AddItemSlot()
 	local i = #self.Slots
 
 	local it = vgui.Create("ItemFrame", self.Scroll)
-	local x = i % iPan.FitsItems
-	local y = math.floor(i / iPan.FitsItems)
-	it:SetPos( 	8 + x * (iPan.SlotSize + iPan.SlotPadding),
-				8 + y * (iPan.SlotSize + iPan.SlotPadding))
+
+	local main = self:GetMainFrame()
+	
+	local x = i % main.FitsItems
+	local y = math.floor(i / main.FitsItems)
+	
+	it:SetPos( 	8 + x * (main.SlotSize + main.SlotPadding),
+				8 + y * (main.SlotSize + main.SlotPadding))
 
 	self.Slots[i + 1] = it
 	it:SetInventoryFrame(self)

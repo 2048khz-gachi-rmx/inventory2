@@ -6,7 +6,7 @@ local bp = Inventory.Inventories.Backpack
 -- returns false if failed
 
 -- returns nil if callback will be called with the new item(s)
-function bp:NewItem(iid, cb, slot, dat, nostack)
+function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
 	if not isstring(iid) and not isnumber(iid) then
 		errorf("Attempted to create item with IID: %s (%s)", iid, type(iid))
 		return
@@ -17,14 +17,12 @@ function bp:NewItem(iid, cb, slot, dat, nostack)
 	local can = self:Emit("CanCreateItem", iid, dat, slot)
 	if can == false then print"cannot create item" return false end
 
-	slot = slot or self:GetFreeSlot()
-	if not slot or slot > self.MaxItems then errorf("Didn't find a slot where to put the item or it was above MaxItems! (%s > %d)", slot, self.MaxItems) return end
 
 	if not nostack then
-		local its, left = Inventory.CheckStackability(self, iid, cb, slot, dat)
+		local its, left = Inventory.CheckStackability(self, iid, cb, dat)
 
-		if istable(its) then
-
+		if istable(its) and table.Count(its) > 0 then
+			print("checkstackability created new items")
 			for k,v in ipairs(its) do
 				v:Insert(self)
 				v:Once("AssignUID", function()
@@ -36,9 +34,15 @@ function bp:NewItem(iid, cb, slot, dat, nostack)
 
 			return left
 		end
-
-		if its == true then return true end
+		print("checkstackability stacked all items")
+		if its == true then
+			if cbanyway then cb() end
+			return true
+		end
 	end
+
+	slot = slot or self:GetFreeSlot()
+	if not slot or slot > self.MaxItems then errorf("Didn't find a slot where to put the item or it was above MaxItems! (%s > %d)", slot, self.MaxItems) return end
 
 	local it = Inventory.NewItem(iid, self)
 	it:SetSlot(slot)

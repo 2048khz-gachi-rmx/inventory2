@@ -66,6 +66,7 @@ makeOre("copper_ore", 1, 35)
 	:SetCost(3)
 	:SetOreColor(Color(160, 70, 10))
 	:SetSmeltsTo("copper_bar")
+	:SetSmeltTime(10)
 	:SetMineChanceMult(1.5)
 
 makeOre("iron_ore", 0, 40)

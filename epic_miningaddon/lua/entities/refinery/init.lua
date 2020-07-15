@@ -42,20 +42,27 @@ util.AddNetworkString("OreRefinery")
 
 function ENT:Think()
 	local now = false
+	local fin_amt = {}
+
 	for k,v in pairs(self.OreInput:GetItems()) do
 		local fin = v.StartedRefining + v:GetBase():GetSmeltTime()
 		if CurTime() > fin then
 			--print(v, "finished")
 			local smTo = v:GetBase():GetSmeltsTo()
 			if not smTo then print("didn't find what", v:GetName(), " smelts to") continue end --?
-			local insta = self.OreOutput:NewItem(smTo, function() print('succeeded, sending info') self:SendInfo() end)
+
+			fin_amt[smTo] = (fin_amt[smTo] or 0) + 1
 			v:Delete()
 
-			if insta then print("insta boys") now = true end
 		end
 	end
 
-	if now then print("sending now") self:SendInfo() end
+	for name, amt in pairs(fin_amt) do
+		local insta = self.OreOutput:NewItem(name, function() self:SendInfo() end, nil, {Amount = amt})
+		if insta then now = true end
+	end
+
+	if now then self:SendInfo() end
 
 	self:NextThink(CurTime() + 0.2)
 	return true
@@ -63,6 +70,7 @@ end
 
 function ENT:QueueRefine(ply, item, slot)
 	if slot > self.OreInput.MaxItems then print("slot higher than max", slot, self.OreInput.MaxItems) return end
+	if self.OreInput[slot] then print("there's already an item in that slot") return end
 
 	item:SetAmount(item:GetAmount() - 1)
 

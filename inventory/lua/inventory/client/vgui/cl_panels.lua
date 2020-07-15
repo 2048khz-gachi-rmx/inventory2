@@ -3,10 +3,10 @@
 local iPan = Inventory.Panels
 
 iPan.FitsItems = 6
-iPan.SlotSize = 64
+iPan.SlotSize = 80
 iPan.SlotPadding = 4
 
-function iPan.CreateInventory(inv, multiple)
+function iPan.CreateInventory(inv, multiple, set)
 
 	if not multiple and iPan.IFrame and iPan.IFrame:IsValid() then iPan.IFrame:Remove() end
 
@@ -35,11 +35,25 @@ function iPan.CreateInventory(inv, multiple)
 
 	local f = vgui.Create("InventoryFrame")
 
+	local slotSize = set and set.SlotSize or iPan.SlotSize
+	local slotPad = set and set.SlotPadding or iPan.SlotPadding
+	local fits = set and set.FitsItems or iPan.FitsItems
+
+	f.SlotSize = slotSize
+	f.SlotPadding = slotPad
+	f.FitsItems = fits
+	
+	
+
 	iPan.IFrame = f
 	f:SetMouseInputEnabled(true)
+
+	
+
 	--64 slot width + 4 slot padding + 16: 8 l,r padding + 4 from idfk where
-	f:SetSize((iPan.SlotSize + iPan.SlotPadding) * iPan.FitsItems + 16 + 4, 128)
+	f:SetSize((slotSize + slotPad) * fits + 16 + 4, 128)
 	f.Shadow = {}
+
 
 	f.Inventory = inv
 
@@ -72,14 +86,34 @@ function iPan.CreateInventory(inv, multiple)
 	end
 	
 	f:SetWide(f:GetWide() + 50 + 8)
+	f:SetTall(math.max(ScrH() * 0.4, 350))
+
 	return f
+end
+
+-- makes a panel listen for item hovers and drops
+-- emits "ItemHover" - slot, item
+-- emits "Drop" - slot, item
+
+function Inventory.Panels.ListenForItem(pnl)
+
+	pnl:Receiver("Item", function(self, tbl, drop)
+
+		if not drop then
+			self:Emit("ItemHover", tbl[1], tbl[1].Item)
+			return
+		end
+
+		self:Emit("Drop", tbl[1], tbl[1].Item)
+	end)
+
 end
 
 hook.Add("PlayerButtonDown", "Inventory", function(p, k)
 	if k ~= KEY_F4 then return end
 	local f = iPan.CreateInventory()
 	f:SetFull(true)
-	f:SetTall(320)
+	--f:SetTall(math.max(ScrH() * 0.4, 350))
 	f:MakePopup()
 	f:Center()
 	f:SelectTab("Backpack")

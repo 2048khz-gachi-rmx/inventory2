@@ -2,6 +2,7 @@ local ITEM = {}
 local iPan = Inventory.Panels
 
 --[[
+	To enable receiving items: Receiver "Item"
 	Emits:
 		"ItemHover" - when an item is hovered over this slot:
 			1 - Panel : the slot that's being hovered
@@ -12,8 +13,11 @@ local iPan = Inventory.Panels
 			2 - Item : the item that slot has
 
 		"DragStart" - when this item started to be dragged
+			- global hook for this: "InventoryItemDragStart" (args: slot panel, item)
+
 		"DragStop" - when this item stopped being dragged (dropped)
 			1 - Panel(?) : panel or falsy value: on what this panel was dropped
+			- global hook for this: "InventoryItemDragStop" (args: slot panel, item, receiver)
 
 		"Think" - durr
 
@@ -104,7 +108,6 @@ function ITEM:Init()
 	self.DropFrac = 0
 
 	self:Receiver("Item", function(self, tbl, drop)
-		if tbl[1].PreventDrop then tbl[1].PreventDrop = false return end
 
 		if not drop then
 			self.DropHovered = true
@@ -262,6 +265,10 @@ end
 function ITEM:SetInventoryFrame(it)
 	self.InventoryFrame = it
 	self.Inventory = it:GetInventory()
+
+	local mf = it:GetMainFrame()
+
+	if mf then self:SetSize(mf.SlotSize, mf.SlotSize) end
 end
 
 function ITEM:GetInventory()
@@ -303,8 +310,10 @@ function ITEM:SetItem(it)
 
 		Inventory:RemoveListener("BaseItemDefined", self)
 
-		self.ModelPanel:Remove()
-		self.ModelPanel = nil
+		if self.ModelPanel then
+			self.ModelPanel:Remove()
+			self.ModelPanel = nil
+		end
 	end
 
 end

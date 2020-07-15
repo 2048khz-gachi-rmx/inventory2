@@ -83,6 +83,7 @@ function f:SetInventory(inv, pnl, noanim)
 	end
 
 	local p = vgui.Create("InventoryPanel", self)
+
 	p:SetFull(self.FullInventory)
 	p:SetMainFrame(self)
 	p:SetInventory(inv)

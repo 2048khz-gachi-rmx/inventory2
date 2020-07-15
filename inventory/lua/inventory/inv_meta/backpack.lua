@@ -71,7 +71,7 @@ function bp:SetSlot(it, slot)   --this is basically an accessor func;
 	print("setting", it, "@", slot, "in", self)
 
 	self.Slots[slot] = it
-	
+
 	if it:GetKnown() then self:AddChange(it, INV_ITEM_MOVED) end --if the player doesn't know about the item, don't replace the change
 end
 
