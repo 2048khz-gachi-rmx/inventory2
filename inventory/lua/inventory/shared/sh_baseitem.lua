@@ -40,6 +40,19 @@ function Inventory.Util.GetInventory(id)
 	end
 end
 
+function Inventory.Util.GetItemCount(inv, id)
+	local name = Inventory.Util.ItemIDToName(id)
+	local amt = 0
+
+	for k,v in pairs(inv:GetItems()) do
+		if v.ItemName == name then
+			amt = amt + (v:GetAmount() or 0)
+		end
+	end
+
+	return amt
+end
+
 function Inventory.Util.ItemNameToID(name)
 	return isnumber(name) and name or Inventory.IDConversion.ToID[name]
 end

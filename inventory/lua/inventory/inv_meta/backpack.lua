@@ -1,6 +1,6 @@
 local bp = Inventory.Inventories.Backpack or Emitter:extend()
 Inventory.Inventories.Backpack = bp
-_G.bp = bp
+
 bp.IsInventory = true
 
 bp.Name = "Backpack"

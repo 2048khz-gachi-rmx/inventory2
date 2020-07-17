@@ -8,7 +8,11 @@ Base.Extensions = Base.Extensions or {}
 
 Base.NetworkedVars = {}
 
---Extend = a new class is being extended from base (e.g. 'Equipment' from 'Generic')
+-- Extend = a new class is being extended from base (e.g. 'Equipment' from 'Generic')
+-- `name` is just the name of your base class
+
+-- `class` is what item meta instances of this base class should use (the ones players hold)
+
 function Base:OnExtend(new, name, class)
 	if not isstring(name) then error("Base item extensiosns _MUST_ have a name assigned to them!") return end
 
@@ -105,6 +109,10 @@ local types = {
 function Base:AddDefaultData(name, var)
 	self.DefaultData[name] = var
 end
+
+-- `what` may be a function which must return a netstack
+-- if it's a function then the second argument will be whether the var is being read or written
+-- `true` if written, `false` if read
 
 function Base:NetworkVar(net_typ, what, ...)
 	local typ = types[net_typ]

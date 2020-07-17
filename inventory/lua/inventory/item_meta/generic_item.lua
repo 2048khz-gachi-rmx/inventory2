@@ -7,7 +7,12 @@ it.IsItem = true
 Inventory.ItemObjects.Generic = it
 
 it.__tostring = function(self)
-	return ("%s '%s' | ItemID: %s, ItemUID: %s"):format(self.ClassName or "Missing class!", self.ItemName or "Missing ItemName!", self.ItemID or "Missing ItemID!", self.ItemUID or "Unassigned ItemUID")
+	return ("%s '%s' | ItemID: %s, ItemUID: %s"):format(
+		self.ClassName or "Missing class!",
+		self.ItemName or "Missing ItemName!",
+		self.ItemID or "Missing ItemID!",
+		self.ItemUID or "Unassigned ItemUID"
+	)
 end
 
 function it:OnExtend(new, name)
@@ -15,8 +20,7 @@ function it:OnExtend(new, name)
 	new.ClassName = name
 end
 
-function it:Initialize(uid, iid)
-
+function it:Initialize(uid, iid, ...)
 	assert(iid, "ItemID must be provided when constructing an item object!")
 
 	if isstring(iid) then --ItemName provided instead of ItemID
@@ -37,6 +41,8 @@ function it:Initialize(uid, iid)
 	end
 
 	base:Emit("CreatedInstance", self)
+
+	--self:ChangeInitArgs(uid, ...)
 end
 
 local function equalData(dat1, dat2)
