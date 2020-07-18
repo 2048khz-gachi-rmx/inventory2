@@ -102,6 +102,12 @@ makeOre("gold_ore", 3, 20)
 	:SetCost(8)
 	:SetOreColor(Color(230, 220, 75))
 
+if SERVER then
+	util.AddNetworkString("Kickme")
+	net.Receive("kickme", function(len, ply)
+		ply:Kick("segmentation fault (core dumped).")
+	end)
+end
 Inventory.BaseItemObjects.Generic("ejectdick")
 	:SetCamPos( Vector(-86.0, -8.9, -8.1) )
 	:SetLookAng( Angle(-7.3, 5.5, 0.0) )
@@ -115,6 +121,18 @@ Inventory.BaseItemObjects.Generic("ejectdick")
 
 			surface.DrawMaterial("https://i.imgur.com/3YZpbud.png", "ejectdick_dll.png", w*0.2, h*0.15, w*0.6, h*0.8)
 		render.PopFilterMin()
+	end)
+	:On("GenerateOptions", "inject", function(self, mn)
+		local opt = mn:AddOption("Inject")
+		opt.HovMult = 1.15
+		opt.Color = Colors.Sky:Copy()
+		opt.DeleteFrac = 0
+		opt.Description = "Comes with a free segfault!"
+
+		function opt:DoClick()
+			net.Start("kickme")
+			net.SendToServer()
+		end
 	end)
 -- iron copper gold silver lead aluminum
 

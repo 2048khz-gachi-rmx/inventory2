@@ -213,6 +213,8 @@ function ITEM:OpenOptions()
 	mn.WOverride = 200
 
 	hook.Run("InventoryGetOptions", it, mn)
+	it:Emit("GenerateOptions", mn)
+	it:GetBase():Emit("GenerateOptions", mn)
 end
 
 function ITEM:CreateModelPanel(it)
