@@ -179,9 +179,11 @@ function ITEM:OnCursorEntered()
 	local cl = (IsValid(self.Cloud) and self.Cloud) or vgui.Create("ItemCloud", self)
 	cl:Popup()
 	cl:SetSize(self:GetSize())
+	cl.ToY = -8
+
 	local existed = self.Cloud == cl
 
-	cl:SetRelPos(self:GetWide() / 2, -4)
+	cl:SetRelPos(self:GetWide() / 2, 0)
 
 	if not existed then
 		cl:SetItem(it)

@@ -19,7 +19,7 @@ basebp 	:SetName("Empty Blueprint")
 
 
 
-local blueprint = Inventory.BaseItemObjects.Generic("blueprint")
+local blueprint = Inventory.BaseItemObjects.Blueprint("blueprint")
 blueprint 	:SetName("Blueprint -- you're not supposed to see this!")
 		
 		:On("Paint", "PaintBlueprint", function(base, item, slot, w, h)

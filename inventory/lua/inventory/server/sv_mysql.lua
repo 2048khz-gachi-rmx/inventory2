@@ -253,9 +253,9 @@ function ms.NewItem(item, inv, ply, cb)
 
 	local qem = MySQLEmitter(qobj, true):Catch(qerr)
 
-	qem:Once("Success", "AssignData", function(_, qobj, dat)
+	qem:Once("Success", "AssignData", function(_, qobj, res)
 		local uid = qobj:lastInsert()
-		if uid == 0 then uid = dat[1].uid end
+		if uid == 0 then uid = res[1].uid end
 
 		local dat = item:GetPermaData()
 		if not table.IsEmpty(dat) then
@@ -467,6 +467,7 @@ local patch_dat_query = ms.DB:prepare("UPDATE items SET data = JSON_MERGE_PATCH(
 
 function ms.ItemSetData(it, t)
 	t = t or it:GetData()
+	if not it:GetUID() then return end --perhaps not initialized yet?...
 
 	local json = util.TableToJSON(t)
 	if not json then errorf("Failed to get JSON from arg: %s", t) return end --?

@@ -138,7 +138,7 @@ function nw.ReadUpdate(len, type)
     local invs = net.ReadUInt(8) --amount of inventories
     local ent = net.ReadEntity()
 
-    log("CL-NW: Update: Received %d inventories for %s; packet length is %d", invs, ent, len)
+    log("CL-NW: Update: Received %d inventories for %s; packet length is %d bytes", invs, ent, len / 8)
 
     local invs_table = {} --map out all the entity's inventories into {[nwID] = obj} pairs
 

@@ -26,6 +26,7 @@ function Base:OnExtend(new, name, class)
 	new.FileName, new.FilePath = false, false
 	new.BaseName = name
 	new.ItemClass = class
+	new.NetworkedVars = {}
 
 	--if name ~= self.BaseName then
 		self.Extensions[name] = new
@@ -42,6 +43,8 @@ function Base:Initialize(name)
 	for k,v in ipairs(base.NetworkedVars) do
 		self.NetworkedVars[k] = v
 	end
+
+	--self.NetworkedVars = self.__instance.NetworkedVars
 
 	self.DefaultData = {}
 
@@ -114,16 +117,28 @@ end
 -- if it's a function then the second argument will be whether the var is being read or written
 -- `true` if written, `false` if read
 
-function Base:NetworkVar(net_typ, what, ...)
+function Base:NetworkVar(net_typ, what, id, ...)
 	local typ = types[net_typ]
 	local given = select('#', ...)
+	local args = {...}
 
-	if isnumber(typ) and given ~= typ - 1 then errorf("Mismatched amount of args provided (%d) vs. args needed (%d): %s", given, typ, ...) return end
+	if not isfunction(what) and id then
+		table.insert(args, 1, id)
+		given = given + 1
+		id = nil
+	end
+
+	if isnumber(typ) and given ~= typ - 1 then errorf("Mismatched amount of args provided (%d) vs. args needed (%d): %s", given, typ - 1, table.concat(args)) return end
 	if not isstring(what) and not isfunction(what) then errorf("NetworkVar accepts either a string (key in its' .Data table) or a function which determines how to network! Got %s instead", type(what)) return end
-	if self.NetworkedVars[what] then return end
+	if isfunction(what) and not id then errorf("NetworkVar needs an ID as the 3rd argument if you provide a function as the second arg!") return end
 
-	self.NetworkedVars[#self.NetworkedVars + 1] = {type = net_typ, what = what, args = {...}}
-	self.NetworkedVars[what] = net_typ
+	local key = #self.NetworkedVars + 1
+	if istable(self.NetworkedVars[id or what]) then key = self.NetworkedVars[id or what].id end
+
+	local t = {type = net_typ, what = what, args = args, id = key}
+
+	self.NetworkedVars[key] = t
+	self.NetworkedVars[id or what] = t
 	return self
 end
 
@@ -146,10 +161,14 @@ ChainAccessor(Base, "ShouldSpin", "ShouldSpin")
 function Base:SetCountable(b)
 
 	if not self.Countable and b == true then
+		if self.NetworkedVars[1] and self.NetworkedVars[1].what == "Amount" then return self end --already countable or somethin'?
+
+		local len = self:GetMaxStack() and bit.GetLen(self:GetMaxStack())
+		print("Len for", self.Name, len)
 		table.insert(self.NetworkedVars, 1, {
 			type = "UInt",
 			what = "Amount",
-			args = {self:GetMaxStack() and bit.GetLen(self:GetMaxStack()) or 32}
+			args = {len or 32}
 		})
 		self:AddDefaultData("Amount", 1)
 
@@ -216,7 +235,7 @@ function Base:Register(addstack)
 			local fp, fn = rawget(v, "FilePath"), rawget(v, "FileName") --don't inherit those to avoid infinite loops
 
 			if k == self.BaseName then errorf("Infinite inclusion loop averted: %q is equal to %q", k, self.BaseName) return end
-			if not v.FilePath or not v.FileName then errorf("What the fuck hello", k) return end
+			if not fp or not fn then --[[errorf("What the fuck hello", k)]] return end
 
 			Inventory.IncludeClass(fp, fn)
 		end

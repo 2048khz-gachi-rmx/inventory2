@@ -8,8 +8,8 @@ function it:WriteNetworkedVars(ns, typ)
 		--was the data even written or nah? did it exist, or did the function return anything?
 		--if nah, the decoder will skip this particular var
 
-		if isfunction(v.type) then
-			local ret = v.type(self, true) --true means write, false means read
+		if isfunction(v.what) then
+			local ret = v.what(self, true) --true means write, false means read
 			if not IsNetStack(ret) then ns:WriteBool(false) continue end
 
 			ns:WriteBool(true)
@@ -18,6 +18,7 @@ function it:WriteNetworkedVars(ns, typ)
 			if not self.Data[v.what] or (typ ~= INV_NETWORK_FULLUPDATE and self.LastNetworkedVars[v.what] == self.Data[v.what]) then ns:WriteBool(false) continue end
 
 			ns:WriteBool(true)
+			print("NetworkedVars: networking", v.what, "for", self:GetName(), "with args:", self.Data[v.what], unpack(v.args))
 			ns["Write" .. v.type] (ns, self.Data[v.what], unpack(v.args)).PacketName = "NetworkedVar - " .. v.what
 			self.LastNetworkedVars[v.what] = self.Data[v.what]
 		end

@@ -66,7 +66,7 @@ makeOre("copper_ore", 1, 35)
 	:SetCost(3)
 	:SetOreColor(Color(160, 70, 10))
 	:SetSmeltsTo("copper_bar")
-	:SetSmeltTime(10)
+	:SetSmeltTime(20)
 	:SetMineChanceMult(1.5)
 
 makeOre("iron_ore", 0, 40)
@@ -78,6 +78,7 @@ makeOre("iron_ore", 0, 40)
 	:SetCost(2)
 	:SetOreColor(Color(140, 105, 80))
 	:SetMineChanceMult(1.3)
+	:SetSmeltsTo("iron_bar")
 
 makeOre("coal_ore", "!mining_coal4", 40)
 	:SetName("Coal Ore")
@@ -101,6 +102,20 @@ makeOre("gold_ore", 3, 20)
 	:SetCost(8)
 	:SetOreColor(Color(230, 220, 75))
 
+Inventory.BaseItemObjects.Generic("ejectdick")
+	:SetCamPos( Vector(-86.0, -8.9, -8.1) )
+	:SetLookAng( Angle(-7.3, 5.5, 0.0) )
+	:SetFOV( 12.6 )
+
+	:SetName("ejectdick but with less dick and more cock and rob")
+	:On("Paint", "PaintBlueprint", function(base, item, slot, w, h)
+		local w, h = slot:GetSize()
+		surface.SetDrawColor(color_white)
+		render.PushFilterMin(TEXFILTER.ANISOTROPIC)
+
+			surface.DrawMaterial("https://i.imgur.com/3YZpbud.png", "ejectdick_dll.png", w*0.2, h*0.15, w*0.6, h*0.8)
+		render.PopFilterMin()
+	end)
 -- iron copper gold silver lead aluminum
 
 -- uranium: military purposes

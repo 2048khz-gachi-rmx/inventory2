@@ -139,8 +139,8 @@ function it:ReadNetworkedVars()
 		local read = net.ReadBool()
 		if not read then continue end
 
-		if isfunction(v.type) then
-			v.type(self, false)
+		if isfunction(v.what) then
+			v.what(self, false)
 		else
 			self.Data[v.what] = net["Read" .. v.type] (unpack(v.args))
 		end
