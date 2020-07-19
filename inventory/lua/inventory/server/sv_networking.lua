@@ -281,6 +281,8 @@ function nw.NetworkInventory(ply, inv, typ, just_return, key) --mark 'just_retur
 		if not knows(ply) then nw.NetworkItemNames(ply) end
 	end
 
+	hook.Run("InventoryNetwork", ply, inv)
+
 	if IsInventory(inv) then
 
 		if inv.MultipleInstances and not key then

@@ -10,6 +10,28 @@ mods.Pool.Blazing = {
 
 mods.Pool.Crippling = {
 	MaxTier = 3,
+	Markup = function(it, cl, mup)
+		local mod = mup:AddPiece()
+		mod.Font = "OS72"
+		mod:AddTag(MarkupTags("scale", 0.35, 0.35))
+		local t = mod:AddTag(MarkupTags("rotate", -10, 0))
+		mod:AddText("Crip")
+		mod:EndTag(t)
+		mod:AddTag(MarkupTags("rotate", 10, 0))
+		mod:AddText("pling", 15)
+
+		local recalced = false
+
+		mod:On("ShouldRecalculateHeight", "ThisIsAHack", function(self, buf)
+			if recalced then return end
+			recalced = true
+		end)
+
+		mod:On("RecalculateHeight", "ThisIsAHack", function(self, buf)
+			self:SetTall(40)
+			return true
+		end)
+	end,
 }
 
 
@@ -48,6 +70,14 @@ if SERVER then
 		mods.Send(ply)
 	end)
 
+	local know = {}
+
+	hook.Add("InventoryNetwork", "Modifiers", function(ply)
+		if know[ply] or not IsPlayer(ply) then return end
+		mods.EncodeMods()
+		mods.Send(ply)
+		know[ply] = true
+	end)
 
 	mods.EncodeMods()
 	mods.Send(player.GetAll())

@@ -28,8 +28,12 @@ bp:On("GenerateText", "BlueprintModifiers", function(self, cloud, markup)
 	cloud.MaxW = 250
 
 	for k,v in pairs(self:GetModifiers()) do
-		local mod = markup:AddPiece()
-		mod:AddText(k)
+		if Inventory.Modifiers.Pool[k].Markup then
+			Inventory.Modifiers.Pool[k].Markup (self, cloud, markup)
+		else
+			local mod = markup:AddPiece()
+			mod:AddText(k)
+		end
 	end
 
 end)
