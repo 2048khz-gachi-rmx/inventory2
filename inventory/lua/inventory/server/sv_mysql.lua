@@ -472,7 +472,7 @@ function ms.ItemSetData(it, t)
 	local json = util.TableToJSON(t)
 	if not json then errorf("Failed to get JSON from arg: %s", t) return end --?
 
-	printf("ItemSetData: patching JSON %s", json)
+	--printf("ItemSetData: patching JSON %s", json)
 
 	patch_dat_query:setString(1, json)
 	patch_dat_query:setNumber(2, it:GetUID())

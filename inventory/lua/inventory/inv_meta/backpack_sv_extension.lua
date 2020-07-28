@@ -93,6 +93,7 @@ local function ActuallyMove(inv1, inv2, it, slot)
 		inv1:AddChange(it, INV_ITEM_CROSSMOVED)
 		inv2.Changes[it][INV_ITEM_ADDED] = nil
 	end
+	return em
 end
 
 function bp:CrossInventoryMove(it, inv2, slot)
@@ -109,7 +110,7 @@ function bp:CrossInventoryMove(it, inv2, slot)
 	end
 
 	if not self:CanCrossInventoryMove(it, inv2) then return false end
-	ActuallyMove(self, inv2, it, slot)
+	local em = ActuallyMove(self, inv2, it, slot)
 
 	return em
 end
