@@ -75,10 +75,16 @@ function ENT:QueueRefine(ply, item, slot)
 	item:SetAmount(item:GetAmount() - 1)
 
 	self.OreInput:NewItem(item:GetItemID(), function(new)
-		local plys = Filter(ents.FindInPVS(self), true):Filter(IsPlayer)
 
-		self.Status:Set(slot, CurTime()):Network()
-		Inventory.Networking.NetworkInventory(plys, self.OreInput)
+		self.Status:Set(slot, CurTime())
+
+		timer.Create(("NetworkRefinery:%p"):format(self), 0, 1, function()
+			if not IsValid(self) then return end
+
+			local plys = Filter(ents.FindInPVS(self), true):Filter(IsPlayer)
+			self.Status:Network()
+			Inventory.Networking.NetworkInventory(plys, self.OreInput)
+		end)
 
 		new.StartedRefining = CurTime()
 
