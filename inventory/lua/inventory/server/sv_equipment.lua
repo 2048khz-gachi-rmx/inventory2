@@ -18,9 +18,11 @@ local function load(act)
 		local em = it:Equip(ply, slot)
 		em:Then(function()
 			if IsValid(ply) then
-				ply:NetworkInventory({inv, ply.Inventory.Character})
+				ply:NetworkInventory({inv, ply.Inventory.Character}, INV_NETWORK_UPDATE)
 			end
 		end)
+
+		return false
 	end
 end
 
