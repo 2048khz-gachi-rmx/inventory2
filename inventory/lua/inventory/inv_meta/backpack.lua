@@ -139,8 +139,12 @@ function bp:DeleteItem(it, suppresserror)
 	return it
 end
 
+function bp:IsSlotLegal(slot)
+	return (not self.MaxItems and true) or slot <= self.MaxItems
+end
+
 function bp:MoveItem(it, slot)	--this is a utility function which swaps slots if an item exists and stores the slot change in sql
-	if self.MaxItems and slot > self.MaxItems then errorf("Attempted to move item out of inventory bounds (%d > %d)", slot, self.MaxItems) return end
+	if not self:IsSlotLegal(slot) then errorf("Attempted to move item out of inventory bounds (%d > %d)", slot, self.MaxItems) return end
 	local it2 = self:GetItemInSlot(slot)
 	local b4slot = it:GetSlot()
 

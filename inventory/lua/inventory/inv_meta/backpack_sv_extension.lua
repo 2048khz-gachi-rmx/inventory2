@@ -101,6 +101,7 @@ function bp:CrossInventoryMove(it, inv2, slot)
 
 	slot = slot or inv2:GetFreeSlot()
 	if not slot then print("Can't cross-inventory-move cuz no slot", slot) return false end
+	if not self:IsSlotLegal(slot) then errorf("Attempted to move item out of inventory bounds (%s > %s)", slot, self.MaxItems) return end
 
 	local other_item = inv2:GetItemInSlot(slot)
 
