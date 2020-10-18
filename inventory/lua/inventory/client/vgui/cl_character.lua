@@ -10,8 +10,11 @@ function PANEL:Init()
 	local mdl = vgui.Create("DModelPanel", self)
 	mdl:Dock(FILL)
 	mdl:DockMargin(24, textAreaHeight + 8, 24, 8)
+
 	mdl:SetModel(LocalPlayer():GetModel())
-	mdl:SetFOV(40)
+	mdl:SetFOV(45)
+
+	local info = PositionSpawnIcon(mdl.Entity, Vector(), true)
 
 	local p = mdl.Paint
 	local col = Color(40, 40, 40)
@@ -41,7 +44,7 @@ end
 local eqBtnSize = 68
 
 function PANEL:SizeToMain(main)
-	self:SetSize(math.min(main:GetWide() * 0.6, 450), math.max(450, main:GetTall()))
+	self:SetSize(math.min(main:GetWide() * 0.6, 450), math.max(450, main:GetTall() * 1.2))
 end
 
 function PANEL:Think()
