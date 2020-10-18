@@ -209,12 +209,14 @@ function ITEM:OpenOptions()
 	mn:SetPos(gui.MouseX() - 8, gui.MouseY() + 1)
 	mn:MoveBy(8, 0, 0.3, 0, 0.4)
 	mn:PopIn()
-	mn:Open()
+	
 	mn.WOverride = 200
 
 	hook.Run("InventoryGetOptions", it, mn)
 	it:Emit("GenerateOptions", mn)
 	it:GetBase():Emit("GenerateOptions", mn)
+
+	mn:Open()
 end
 
 function ITEM:CreateModelPanel(it)

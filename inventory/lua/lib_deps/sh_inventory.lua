@@ -146,8 +146,12 @@ end
 Inventory.ReloadInventory = reload
 Inventory.Reload = reload
 
+LibItUp.OnInitEntity(LoadInventory)
+
+--[[
 if not existed then
 	hook.Add("InitPostEntity", "Inventory", LoadInventory)
 else
 	LoadInventory(true)
 end
+]]

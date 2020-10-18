@@ -151,7 +151,6 @@ end
 
 function it:Register(addstack)
 	hook.Run("ItemClassRegistered", self, self.ClassName)
-	print("Registering", self.ClassName)
 	Inventory.RegisterClass(self.ClassName, self, Inventory.ItemObjects, (addstack or 0) + 1)
 end
 
