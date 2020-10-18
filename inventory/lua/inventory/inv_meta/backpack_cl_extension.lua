@@ -76,7 +76,7 @@ function bp:CanMove(it, slot)
 end
 
 function bp:RequestMove(it, slot)
-	if not self:CanMove(it, slot) then return end
+	if not self:CanMove(it, slot) then return false end
 
 	local ns = Inventory.Networking.Netstack()
 
@@ -88,6 +88,7 @@ function bp:RequestMove(it, slot)
 	it:SetSlot(slot) --assume success
 
 	Inventory.Networking.PerformAction(crossinv and INV_ACTION_CROSSINV_MOVE or INV_ACTION_MOVE, ns)
+	return true
 end
 
 function bp:CanStack(out, _in, amt)
