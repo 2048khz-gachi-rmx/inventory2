@@ -15,7 +15,10 @@ local sizes = {
 	[5] = 1
 }
 
+ActiveOres = ActiveOres or {}
+
 function ENT:Initialize()
+	ActiveOres[#ActiveOres + 1] = self
 
 	self:RandomizeStats()
 
@@ -36,6 +39,10 @@ function ENT:Initialize()
 	end
 
 	self:GenerateOres()
+
+	self:CallOnRemove("UntrackOre", function()
+		table.RemoveByValue(ActiveOres, self)
+	end)
 
 end
 
@@ -94,7 +101,7 @@ function ENT:GenerateOres(tries)
 	if tries > 5 then
 		printf("GenerateOres: try #%d !!!!!!", tries)
 	end
-	if tries >= 20 then
+	if tries >= 50 then
 		self:Remove()
 		error("This is getting ridiculous.")
 	end
@@ -258,7 +265,49 @@ function ENT:NetworkOres()
 	self:SetResources(von.serialize(t))
 end
 
-function OresRespawn()
+local function readOreData()
+	Inventory.OresPositions = Inventory.OresPositions or {}
+
+	local dat = file.Read("inventory/ore_positions.dat", "DATA")
+	if not dat then
+		file.Write("inventory/ore_positions.dat", "")
+		return
+	end
+
+	local poses = util.JSONToTable(dat)
+
+	for k,v in ipairs(poses) do
+		if not table.HasValue(Inventory.OresPositions, v) then	-- O(n^2) lets goooo
+			Inventory.OresPositions[#Inventory.OresPositions + 1] = v
+		end
+	end
+
+end
+
+function OresRespawn(amt)
+	amt = amt or 4
+
+	readOreData()
+
+	local spawns = {} -- [seqNum] = pos
+	local posCopy = {}
+
+	for i=1, #Inventory.OresPositions do
+		posCopy[i] = Inventory.OresPositions[i]
+	end
+
+	for i=1, amt do
+		if #posCopy == 0 then break end
+		local pick = math.random(1, #posCopy)
+		spawns[i] = posCopy[pick]
+
+		posCopy[pick] = posCopy[#posCopy]
+		posCopy[#posCopy] = nil
+	end
+
+	for num, pos in ipairs(spawns) do
+		printf("spawning rock #%d at %s", num, pos)
+	end
 
 end
 
@@ -269,7 +318,7 @@ else
 	local invready = false
 	local entsready = false
 
-	hook.Add("OnInvLoad", "SpawnOres", function()	--only after inventory is ready
+	hook.Add("InventoryReady", "SpawnOres", function()	--only after inventory is ready
 		if entsready then OresRespawn() end
 		invready = true
 	end)

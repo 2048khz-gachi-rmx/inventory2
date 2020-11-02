@@ -64,17 +64,17 @@ end
 
 
 function bp:CanCrossInventoryMove(it, inv2, slot)
-	--check if inv2 can accept cross-inventory item
-	local can = inv2:Emit("CanMoveTo", it, self, slot)
-	if can == false then return false end
+	-- check if we have that slot available
+	if self:IsSlotLegal(slot) == false then return false end
 
-	--check if inv1 can give out the item
-	can = self:Emit("CanMoveFrom", it, inv2, slot)
-	if can == false then return false end
+	-- check if inv2 can accept cross-inventory item
+	if inv2:Emit("CanMoveTo", it, self, slot) == false then return false end
 
-	--check if inv2 can add an item to itself
-	can = inv2:Emit("CanAddItem", it, it:GetUID(), slot)
-	if can == false then return false end
+	-- check if we can give out the item
+	if self:Emit("CanMoveFrom", it, inv2, slot) == false then return false end
+
+	-- check if inv2 can add an item to itself
+	if inv2:Emit("CanAddItem", it, it:GetUID(), slot) == false then return false end
 
 	return true
 end
@@ -101,16 +101,19 @@ function bp:CrossInventoryMove(it, inv2, slot)
 
 	slot = slot or inv2:GetFreeSlot()
 	if not slot then print("Can't cross-inventory-move cuz no slot", slot) return false end
-	if not self:IsSlotLegal(slot) then errorf("Attempted to move item out of inventory bounds (%s > %s)", slot, self.MaxItems) return end
+	if not inv2:IsSlotLegal(slot) then printf("Attempted to move item out of inventory bounds (%s > %s)", slot, inv2.MaxItems) return end
 
 	local other_item = inv2:GetItemInSlot(slot)
 
 	if other_item then
-		if not inv2:CanCrossInventoryMove(other_item, self) then return false end
-		ActuallyMove(inv2, self, other_item, it:GetSlot())
+		if not inv2:CanCrossInventoryMove(other_item, self) then print(inv2, "doesn't allow CIM") return false end
 	end
 
-	if not self:CanCrossInventoryMove(it, inv2) then return false end
+	if not self:CanCrossInventoryMove(it, inv2) then print(self, "doesn't allow CIM") return false end
+
+	if other_item then
+		ActuallyMove(inv2, self, other_item, it:GetSlot())
+	end
 	local em = ActuallyMove(self, inv2, it, slot)
 
 	return em

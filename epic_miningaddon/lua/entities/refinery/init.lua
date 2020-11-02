@@ -42,6 +42,7 @@ util.AddNetworkString("OreRefinery")
 
 function ENT:Think()
 	local now = false
+	local anythingSmelted = false
 	local fin_amt = {}
 
 	for k,v in pairs(self.OreInput:GetItems()) do
@@ -53,7 +54,8 @@ function ENT:Think()
 
 			fin_amt[smTo] = (fin_amt[smTo] or 0) + 1
 			v:Delete()
-
+			--self.Status:Set(v:GetSlot(), nil)
+			anythingSmelted = true
 		end
 	end
 
@@ -63,6 +65,7 @@ function ENT:Think()
 	end
 
 	if now then self:SendInfo() end
+	if anythingSmelted then self.Status:Network() end
 
 	self:NextThink(CurTime() + 0.2)
 	return true
@@ -79,10 +82,11 @@ function ENT:QueueRefine(ply, item, slot)
 		self.Status:Set(slot, CurTime())
 
 		timer.Create(("NetworkRefinery:%p"):format(self), 0, 1, function()
-			if not IsValid(self) then return end
+			if not IsValid(self) then print(self, "not valid") return end
 
 			local plys = Filter(ents.FindInPVS(self), true):Filter(IsPlayer)
 			self.Status:Network()
+
 			Inventory.Networking.NetworkInventory(plys, self.OreInput)
 		end)
 

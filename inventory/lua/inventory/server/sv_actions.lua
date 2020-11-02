@@ -13,7 +13,7 @@ local function load()
 		return inv
 	end
 	
-	local function readItem(ply,inv, act, ...)
+	local function readItem(ply, inv)
 		local it, err = nw.ReadItem(inv)
 		if not it then errorf("Failed to read item from %s: %q", ply, err) return end
 
@@ -47,7 +47,7 @@ local function load()
 
 		local nw = inv:MoveItem(it, where) ~= false
 	
-		return nw, inv
+		return true, nw, inv
 	end
 
 	nw.Actions[INV_ACTION_SPLIT] = function(ply)
@@ -81,13 +81,14 @@ local function load()
 			end)
 		end)
 
-		return false, inv
+		return true, true, inv
 	end
 
 	nw.Actions[INV_ACTION_MERGE] = function(ply)
 		local inv = readInv(ply, "Merge")
-		local it = readItem(ply, inv, "Merge") --to stack IN
 		local it2 = readItem(ply, inv, "Merge") --to stack OUT OF
+		local it = readItem(ply, inv, "Merge") --to stack IN
+		
 		local want_amt = math.max(net.ReadUInt(32), 1)
 
 		if it == it2 then return end --no
@@ -103,31 +104,62 @@ local function load()
 		inv:AddChange(it, INV_ITEM_DATACHANGED)
 		inv:AddChange(it2, INV_ITEM_DATACHANGED)
 
-		return true
+		return true, true, inv
 	end
 
-	nw.Actions[INV_ACTION_CROSSINV_MOVE] = function(ply)
-		local inv = readInv(ply, "CrossInventoryFrom")
-		local it = readItem(ply, inv, "CrossInventory")
-		local invto = readInv(ply, "CrossInventoryReceiver")
+	nw.Actions[INV_ACTION_CROSSINV_MOVE] = function(ply, inv, it, invto)
+		inv = inv or readInv(ply, "CrossInventoryFrom")
+		it = it or readItem(ply, inv, "CrossInventory")
+		invto = invto or readInv(ply, "CrossInventoryReceiver")
 
 		local where = net.ReadUInt(16)
 
 		print("Crossinv requested")
 
 		local ok = inv:CrossInventoryMove(it, invto, where)
+		print("Ok?", ok)
 		--if ok ~= false then it:SetSlot(where) end
+		return ok
+	end
+
+	nw.Actions[INV_ACTION_CROSSINV_MERGE] = function(ply)
+		print("Crossinv stacking req received")
+
+		local inv = readInv(ply, "CrossInventoryFrom")
+		local it2 = readItem(ply, inv) -- stack from
+
+		local invto = readInv(ply, "CrossInventoryReceiver")
+		local it = readItem(ply, invto)  -- stack to
+
+		local amt = math.max(net.ReadUInt(32), 1)
+		amt = math.min(amt, it:GetAmount())
+
+		if not inv:CanCrossInventoryMove(it, invto, it2:GetSlot()) then print("cant crossinv") return false end
+		local amt = it2:CanStack(it, amt)
+		if not amt or amt == 0 then print("no stack", amt) return false end
+
+		it:SetAmount(it:GetAmount() + amt)
+		it2:SetAmount(it2:GetAmount() - amt)
+
+		inv:AddChange(it, INV_ITEM_DATACHANGED)
+		inv:AddChange(it2, INV_ITEM_DATACHANGED)
+
+		--if ok ~= false then it:SetSlot(where) end
+		return true
 	end
 
 	nw.Actions[INV_ACTION_CROSSINV_SPLIT] = function(ply)
 		local inv = readInv(ply, "CrossInventoryFrom")
-		local it = readItem(ply, inv, "CrossInventory")
+		local it = readItem(ply, inv) -- stack from
+
 		local invto = readInv(ply, "CrossInventoryReceiver")
-		local where = net.ReadUInt(16)
-		local amt = net.ReadUInt(32)
+		local slot = net.ReadUInt(16)
+
+		local amt = math.max(net.ReadUInt(32), 1)
+		amt = math.min(amt, it:GetAmount())
 
 		if it:Emit("CanSplit", amt) == false then return end
-		if invto:Emit("CanAddItem", it, it:GetUID()) == false then return end
+		if not inv:CanCrossInventoryMove(it, invto, slot) then print("cant crossinv") return false end
 
 		if where > invto.MaxItems or invto:GetItemInSlot(where) then return end
 		if not it:GetCountable() or amt > it:GetAmount() or amt == 0 then return end
@@ -147,9 +179,14 @@ local function load()
 			local em = new:SetData(dat)
 
 			em:Then(function()
-				if IsValid(ply) then ply:NetworkInventory({inv, invto}, INV_NETWORK_UPDATE) end
+				if IsValid(ply) then
+					ply:NetworkInventory(inv, INV_NETWORK_UPDATE)
+					ply:NetworkInventory(invto, INV_NETWORK_UPDATE)
+				end
 			end)
 		end)
+
+		return true
 	end
 
 	local resyncsCD = {}
@@ -163,7 +200,7 @@ local function load()
 	net.Receive("Inventory", function(len, ply)
 		local act = net.ReadUInt(16)
 		if not nw.Actions[act] then errorf("Failed to find action for enum %d from player %s", act, ply) return end
-		local needs_nw, inv = nw.Actions[act](ply)
+		local _, needs_nw, inv = nw.Actions[act](ply)
 
 		if needs_nw then
 			ply:NetworkInventory(inv, INV_NETWORK_UPDATE)

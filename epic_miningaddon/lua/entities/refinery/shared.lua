@@ -9,6 +9,8 @@ ENT.PrintName = "Refinery or smth"
 
 ENT.MaxQueues = 7
 ENT.OutputSlots = 3
+ENT.InventoryUseOwnership = false
+
 function ENT:SetupDataTables()
 
 	self:NetworkVar("Bool", 0, "Working")

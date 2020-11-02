@@ -75,7 +75,7 @@ function ENT:CreateInputSlot(slot)
 		local it = self.Item
 		local base = it:GetBase()
 		local refTime = base:GetSmeltTime()
-		local start = ent.Status.Networked[self:GetSlot()]
+		local start = ent.Status:Get(self:GetSlot(), 0)
 
 		local fr = math.min((CurTime() - start) / refTime, 1)
 

@@ -170,7 +170,8 @@ end
 function PANEL:SplitItem(rec, drop, item)
 
 	local crossinv = rec:GetInventory() ~= item:GetInventory()
-	if crossinv then print("cross-inv splitting is not supported yet :(") return end
+	local act_enum = crossinv and INV_ACTION_CROSSINV_SPLIT or INV_ACTION_SPLIT
+	--if crossinv then print("cross-inv splitting is not supported yet :(") return end
 
 	if self.IsWheelHeld then
 		local amt = math.floor(item:GetAmount() / 2)
@@ -179,10 +180,13 @@ function PANEL:SplitItem(rec, drop, item)
 		ns:WriteInventory(item:GetInventory())
 		ns:WriteItem(item)
 
+		if crossinv then
+			ns:WriteInventory(rec:GetInventory())
+		end
 		ns:WriteUInt(rec:GetSlot(), 16)
 		ns:WriteUInt(amt, 32)
 
-		Inventory.Networking.PerformAction(INV_ACTION_SPLIT, ns)
+		Inventory.Networking.PerformAction(act_enum, ns)
 
 		return
 	end
@@ -203,7 +207,7 @@ function PANEL:SplitItem(rec, drop, item)
 	newitem:SetAmount(math.floor(item:GetAmount() / 2))
 	newitem:SetSlot(rec:GetSlot())
 	function sl:OnValueChanged(new)
-		new = math.Round(new)
+		new = math.floor(new)
 		newitem:SetAmount(new)
 		yes.Label = ("%s -> %s / %s"):format(item:GetAmount(), item:GetAmount() - new, new)
 	end
@@ -216,11 +220,15 @@ function PANEL:SplitItem(rec, drop, item)
 		ns:WriteInventory(item:GetInventory())
 		ns:WriteItem(item)
 
+		if crossinv then
+			ns:WriteInventory(rec:GetInventory())
+		end
+
 		ns:WriteUInt(rec:GetSlot(), 16)
-		local amt = math.Round(sl:GetValue())
+		local amt = math.floor(sl:GetValue())
 		ns:WriteUInt(amt, 32)
 
-		Inventory.Networking.PerformAction(INV_ACTION_SPLIT, ns)
+		Inventory.Networking.PerformAction(act_enum, ns)
 		rec:SetFakeItem(nil)
 		rec:SetItem(newitem)
 	end
@@ -231,12 +239,15 @@ end
 function PANEL:StackItem(rec, drop, item, amt)
 
 	local crossinv = rec:GetInventory() ~= item:GetInventory()
-	if crossinv then print("cross-inv stacking is not supported yet :(") return end
+	local act_enum = crossinv and INV_ACTION_CROSSINV_MERGE or INV_ACTION_MERGE
+
+	--if crossinv then print("cross-inv stacking is not supported yet :(") return end
 
 	if not input.IsControlDown() then
 		rec:GetInventory():RequestStack(item, rec:GetItem(), amt)
 	else
-		local max = amt
+
+		local max = rec:GetItem():CanStack(item, item:GetAmount())
 		local cl, sl, yes, no = self:CreateSplitSelection(rec, drop, item)
 
 		yes.Font = "OSB18"
@@ -248,7 +259,7 @@ function PANEL:StackItem(rec, drop, item, amt)
 		yes.Label = ("%s / %s -> %s / %s"):format(item:GetAmount(), rec:GetItem():GetAmount(), item:GetAmount() - sl:GetValue(), rec:GetItem():GetAmount() + sl:GetValue())
 
 		function sl:OnValueChanged(new)
-			new = math.Round(new)
+			new = math.floor(new)
 			yes.Label = ("%s / %s -> %s / %s"):format(item:GetAmount(), rec:GetItem():GetAmount(), item:GetAmount() - new, rec:GetItem():GetAmount() + new)
 		end
 
@@ -256,17 +267,19 @@ function PANEL:StackItem(rec, drop, item, amt)
 			cl:PopOut()
 			self.SplitCloud = nil
 
-			local val = math.Round(sl:GetValue())
+			local val = math.floor(sl:GetValue())
 
-			local ns = Inventory.Networking.Netstack()
-			ns:WriteInventory(item:GetInventory())
-			ns:WriteItem(rec:GetItem()) --the one we dropped ON (to stack IN)
-			ns:WriteItem(item) --the one we DROPPED (to stack OUT OF)
-			ns:WriteUInt(val, 32)
-			Inventory.Networking.PerformAction(INV_ACTION_MERGE, ns)
+			--[[local ns = Inventory.Networking.Netstack()
+				ns:WriteInventory(item:GetInventory())
+				ns:WriteItem(rec:GetItem()) --the one we dropped ON (to stack IN)
+				ns:WriteItem(item) --the one we DROPPED (to stack OUT OF)
+				ns:WriteUInt(val, 32)
+			Inventory.Networking.PerformAction(act_enum, ns)]]
 
-			item:SetAmount(item:GetAmount() - val)
-			rec:GetItem():SetAmount(rec:GetItem():GetAmount() + val)
+			rec:GetInventory():RequestStack(item, rec:GetItem(), val)
+
+			--[[item:SetAmount(item:GetAmount() - val)
+			rec:GetItem():SetAmount(rec:GetItem():GetAmount() + val)]]
 		end
 	end
 end
@@ -274,7 +287,7 @@ end
 function PANEL:ItemDrop(rec, drop, item, ...)
 
 	if rec:GetItem() and rec:GetItem():GetItemID() == item:GetItemID() then --there was the same item in that slot;
-		self:StackItem(rec, drop, item, amt)
+		self:StackItem(rec, drop, item)
 		return
 		--[[local amt = rec:GetItem():CanStack(item)							--and it can be stacked
 		if amt then

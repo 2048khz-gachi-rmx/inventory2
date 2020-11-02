@@ -24,12 +24,12 @@ ent:On("OwnerAssigned", "StoreEntity", function(self, ow)
 end)
 
 
-ent:On("PlayerCanAddInventory", "NoAutoAdd", function()
+ent:On("PlayerCanAddInventory", "NoAutoAdd", function() -- don't add this inventory to players' inventory list
 	return false
 end)
 
 function ent:HasAccess(ply)
 	local ow = self.OwnerUID
-	print(ow, ply:SteamID64(), "CanAccess")
-	return ow == ply:SteamID64()
+
+	return self.InventoryUseOwnership and ow == ply:SteamID64()
 end

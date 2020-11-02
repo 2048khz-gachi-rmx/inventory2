@@ -49,12 +49,6 @@ function bp:RequestCrossInventoryMove(it, inv2, slot)
 
 	local ns = Inventory.Networking.Netstack()
 
-	print(self)
-	PrintTable(self.Items)
-	PrintTable( Filter(self.Items):Filter(function(v) return v == it end) )
-
-	print("wryyy")
-
 	ns:WriteInventory(self)
 	ns:WriteItem(it, true)
 
@@ -104,11 +98,24 @@ function bp:RequestStack(item_out, item_in, amt)
 
 	local ns = Inventory.Networking.Netstack()
 
+	local crossinv = item_out:GetInventory() ~= item_in:GetInventory()
+	local act_enum = crossinv and INV_ACTION_CROSSINV_MERGE or INV_ACTION_MERGE
+
+	if crossinv then
+		ns:WriteInventory(item_out:GetInventory())
+		ns:WriteItem(item_out)
+	end
+
 	ns:WriteInventory(item_in:GetInventory())
+	if not crossinv then
+		ns:WriteItem(item_out)
+	end
 	ns:WriteItem(item_in)
-	ns:WriteItem(item_out) 
 	ns:WriteUInt(amt, 32)
-	Inventory.Networking.PerformAction(INV_ACTION_MERGE, ns)
+
+	
+
+	Inventory.Networking.PerformAction(act_enum, ns)
 
 	item_in:SetAmount(item_in:GetAmount() + amt)
 	item_out:SetAmount(item_out:GetAmount() - amt)

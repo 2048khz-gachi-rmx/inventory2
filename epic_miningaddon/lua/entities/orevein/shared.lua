@@ -15,3 +15,9 @@ function ENT:SetupDataTables()
 		self:On("DTChanged", "ResourceTrack", self.UpdateOres) --self:NetworkVarNotify("Resources", self.UpdateOres)
 	end
 end
+
+AddCSLuaFile("oremark_cl.lua")
+hook.Add("LibItUp", "LoadOremark", function(lib)
+	print(lib)
+	lib.OnInitEntity(Curry(include, "oremark" .. (SERVER and "_sv" or "_cl") .. ".lua"))
+end)

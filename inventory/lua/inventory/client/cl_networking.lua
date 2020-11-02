@@ -3,7 +3,12 @@ setfenv(0, _G)
 local nw = Inventory.Networking or {InventoryIDs = {}}
 Inventory.Networking = nw
 
-local log = Inventory.Log
+local realLog = Inventory.Log
+
+log = function(...)
+    if not Inventory.Networking.Verbose then return end
+    realLog(...)
+end
 
 function nw.ReadHeader()
     local max_uid, max_id = net.ReadUInt(5), net.ReadUInt(5)
@@ -55,7 +60,7 @@ function nw.ReadInventoryContents(invtbl, typ)
 
     local its = net.ReadUInt(16)
 
-    log("CL-Networking: reading %d items for inventory %d", its, invID)
+    realLog("CL-Networking: reading %d items for inventory %d", its, invID)
 
     AAA = invtbl
     local slot_size = inv.MaxItems and bit.GetLen(inv.MaxItems)
@@ -138,7 +143,7 @@ function nw.ReadUpdate(len, type)
     local invs = net.ReadUInt(8) --amount of inventories
     local ent = net.ReadEntity()
 
-    log("CL-NW: Update: Received %d inventories for %s; packet length is %d bytes", invs, ent, len / 8)
+    realLog("CL-NW: Update: Received %d inventories for %s; packet length is %d bytes", invs, ent, len / 8)
 
     local invs_table = {} --map out all the entity's inventories into {[nwID] = obj} pairs
 
@@ -163,7 +168,7 @@ end
 
 
 function nw.ReadNet(len)
-     log("CL-NW: ReadNet: Received inventory update")
+    realLog("CL-NW: ReadNet: Received inventory update")
     local type = net.ReadUInt(4) --type of networking (fullupdate? partial update?)
 
     if type == INV_NETWORK_FULLUPDATE or type == INV_NETWORK_UPDATE then
