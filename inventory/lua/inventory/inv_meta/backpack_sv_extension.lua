@@ -1,8 +1,17 @@
 
 local bp = Inventory.Inventories.Backpack
 
+--[[
+	returns:
+		true - action was done without making new items
+		table + number - items were stackable OR new were created; if number is non-0 then it didn't fit this amount of items
+						 (maybe there were no slots or whatever) ; table can be empty if it didn't fit ANY items;
+						 REMINDER: the items don't have a UID yet! :Once("AssignUID") if you need to do something on them!
+
+		false + string - error
+]]
 -- returns true if the action was done without making a new item
--- return number if the item was stackable and it didn't fit some in (number is the remainder that didn't stack in)
+-- returns table + number if the item was stackable and it didn't fit some in because no space or whatever (number is the remainder that didn't stack in)
 -- returns false if failed
 
 -- returns nil if callback will be called with the new item(s)
@@ -14,25 +23,26 @@ function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
 
 	cb = cb or BlankFunc
 
-	local can = self:Emit("CanCreateItem", iid, dat, slot)
-	if can == false then print"cannot create item" return false end
+	local can, why = self:Emit("CanCreateItem", iid, dat, slot)
+	if can == false then return false, ("Cannot create item (%s)"):format(why or "emit returned false") end
 
 
 	if not nostack then
 		local its, left = Inventory.CheckStackability(self, iid, cb, dat)
 
-		if istable(its) and table.Count(its) > 0 then
-			print("checkstackability created new items")
+		if istable(its) then
+			printf("checkstackability created %d items", table.Count(its))
 			for k,v in ipairs(its) do
 				v:Insert(self)
-				v:Once("AssignUID", function()
+				v:On("AssignUID", "InsertIntoInv", function(v, uid)
+					print("inserted; adding item and change")
 					self:AddItem(v, true)
+					self:AddChange(v, INV_ITEM_ADDED)
 					cb(it, slot)
 				end)
-				self:AddChange(v, INV_ITEM_ADDED)
 			end
 
-			return left
+			return its, left
 		end
 		print("checkstackability stacked all items")
 		if its == true then
@@ -42,18 +52,21 @@ function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
 	end
 
 	slot = slot or self:GetFreeSlot()
-	if not slot or slot > self.MaxItems then errorf("Didn't find a slot where to put the item or it was above MaxItems! (%s > %d)", slot, self.MaxItems) return end
+	if not slot or slot > self.MaxItems then
+		return false, ("Didn't find a slot where to put the item or it was above MaxItems! (%s > %d)"):format(slot, self.MaxItems)
+	end
 
 	local it = Inventory.NewItem(iid, self)
 	it:SetSlot(slot)
 
 	--if self.UseSQL ~= false then
-		it:Insert(self)
-		it:Once("AssignUID", function()
-			self:AddItem(it, true)
-			cb(it, slot)
-		end)
+	it:Insert(self)
+	it:Once("AssignUID", function()
+		self:AddItem(it, true)
+		cb(it, slot)
+	end)
 
+	return {it}, 0
 	--[[else
 		self:AddItem(it, true)
 		cb(it, slot)
@@ -62,19 +75,56 @@ function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
 
 end
 
+function bp:NewItemNetwork(who, iid, cb, slot, dat, nostack, cbanyway)
 
+	if isnumber(who) or isstring(who) then
+		-- shift args 1 up
+		cbanyway = nostack
+		nostack = dat
+		dat = slot
+		slot = cb
+		cb = iid
+		iid = who
+
+		who = self:GetOwner()
+	end
+
+	local real_cb = function(...)
+		cb(...)
+
+		if IsValid(self:GetOwner()) then
+			Inventory.Networking.NetworkInventory(who, self, INV_NETWORK_UPDATE)
+		end
+	end
+
+	local res = self:NewItem(iid, real_cb, slot, dat, nostack, cbanyway)
+
+	-- true is the only case where we need to call cb and network manually
+
+	if res == true then
+		if cbanyway then
+			real_cb() --already takes care of networking
+		elseif IsValid(self:GetOwner()) then
+			Inventory.Networking.NetworkInventory(who, self, INV_NETWORK_UPDATE)
+		end
+	end
+
+end
+
+-- can you move FROM this inv?
 function bp:CanCrossInventoryMove(it, inv2, slot)
-	-- check if we have that slot available
-	if self:IsSlotLegal(slot) == false then return false end
+	-- check if they have that slot available
+
+	if slot and inv2:IsSlotLegal(slot) == false then return false end
 
 	-- check if inv2 can accept cross-inventory item
-	if inv2:Emit("CanMoveTo", it, self, slot) == false then return false end
+	if inv2:Emit("CanMoveTo", it, self, slot) == false then print("CanMoveTo no") return false end
 
 	-- check if we can give out the item
-	if self:Emit("CanMoveFrom", it, inv2, slot) == false then return false end
+	if self:Emit("CanMoveFrom", it, inv2, slot) == false then print("CanMoveFrom no") return false end
 
 	-- check if inv2 can add an item to itself
-	if inv2:Emit("CanAddItem", it, it:GetUID(), slot) == false then return false end
+	if inv2:Emit("CanAddItem", it, it:GetUID(), slot) == false then print("CanAdd no") return false end
 
 	return true
 end
@@ -96,6 +146,7 @@ local function ActuallyMove(inv1, inv2, it, slot)
 	return em
 end
 
+-- move from bp to inv2
 function bp:CrossInventoryMove(it, inv2, slot)
 	if it:GetInventory() ~= self then errorf("Can't move an item from an inventory which it doesn't belong to! (item) %q vs %q (self)", it:GetInventory(), self) return end
 
@@ -104,12 +155,12 @@ function bp:CrossInventoryMove(it, inv2, slot)
 	if not inv2:IsSlotLegal(slot) then printf("Attempted to move item out of inventory bounds (%s > %s)", slot, inv2.MaxItems) return end
 
 	local other_item = inv2:GetItemInSlot(slot)
-
+	print("theres other item?", other_item, slot, inv2)
 	if other_item then
-		if not inv2:CanCrossInventoryMove(other_item, self) then print(inv2, "doesn't allow CIM") return false end
+		if not inv2:CanCrossInventoryMove(other_item, self, it:GetSlot()) then print(inv2, "#1 doesn't allow CIM") return false end
 	end
 
-	if not self:CanCrossInventoryMove(it, inv2) then print(self, "doesn't allow CIM") return false end
+	if not self:CanCrossInventoryMove(it, inv2) then print(self, "#2 doesn't allow CIM") return false end
 
 	if other_item then
 		ActuallyMove(inv2, self, other_item, it:GetSlot())
@@ -171,11 +222,11 @@ function bp:SerializeItems(typ, key)
 	elseif typ == INV_NETWORK_UPDATE then
 
 		for k,v in pairs(self:GetItems()) do
-			local req = false 
+			local req = false
 
 			if self.Changes[v] then
-				for k,v in pairs(self.Changes[v]) do 
-					if Inventory.RequiresNetwork[k] then req = true break end 
+				for k,v in pairs(self.Changes[v]) do
+					if Inventory.RequiresNetwork[k] then req = true break end
 				end
 			end
 
@@ -198,6 +249,7 @@ function bp:SerializeItems(typ, key)
 
 	ns:WriteUInt(amt, 16).ItemsAmount = true
 
+	print("!!! Backpack:SerializeItems: typ", typ)
 
 	if typ == INV_NETWORK_FULLUPDATE then
 		for k,v in pairs(self:GetItems()) do
@@ -207,11 +259,11 @@ function bp:SerializeItems(typ, key)
 
 	elseif typ == INV_NETWORK_UPDATE then
 		for k,v in pairs(self:GetItems()) do
-			local req = false 
+			local req = false
 
 			if self.Changes[v] then
-				for k,v in pairs(self.Changes[v]) do 
-					if Inventory.RequiresNetwork[k] then req = true break end 
+				for k,v in pairs(self.Changes[v]) do
+					if Inventory.RequiresNetwork[k] then req = true break end
 				end
 			end
 
