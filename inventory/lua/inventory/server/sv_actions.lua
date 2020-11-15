@@ -8,7 +8,7 @@ local function load()
 		local inv, err = nw.ReadInventory()
 
 		if not inv then errorf("Failed to read inventory from %s: %q", ply, err) return end
-		if not ignoreaccess and not inv:HasAccess(ply, act) then errorf("Failed permission check from %s on inventory '%s'", ply, inv) return end
+		if not ignoreaccess and not inv:HasAccess(ply, act) then errorf("Failed permission check %s from %s on inventory '%s'", act, ply, inv) return end
 
 		return inv
 	end
@@ -88,7 +88,7 @@ local function load()
 		local inv = readInv(ply, "Merge")
 		local it2 = readItem(ply, inv, "Merge") --to stack OUT OF
 		local it = readItem(ply, inv, "Merge") --to stack IN
-		
+
 		local want_amt = math.max(net.ReadUInt(32), 1)
 
 		if it == it2 then return end --no
@@ -114,36 +114,34 @@ local function load()
 
 		local where = net.ReadUInt(16)
 
-		print("Crossinv requested")
-
 		local ok = inv:CrossInventoryMove(it, invto, where)
-		print("Ok?", ok)
+
 		--if ok ~= false then it:SetSlot(where) end
 		return ok
 	end
 
 	nw.Actions[INV_ACTION_CROSSINV_MERGE] = function(ply)
-		print("Crossinv stacking req received")
-
 		local inv = readInv(ply, "CrossInventoryFrom")
-		local it2 = readItem(ply, inv) -- stack from
+		local it = readItem(ply, inv) -- stack from
 
 		local invto = readInv(ply, "CrossInventoryReceiver")
-		local it = readItem(ply, invto)  -- stack to
+		local it2 = readItem(ply, invto)  -- stack to
 
 		local amt = math.max(net.ReadUInt(32), 1)
 		amt = math.min(amt, it:GetAmount())
 
+			-- can inv give out the item to invto?
 		if not inv:CanCrossInventoryMove(it, invto, it2:GetSlot()) then print("cant crossinv") return false end
+
 		local amt = it2:CanStack(it, amt)
+
 		if not amt or amt == 0 then print("no stack", amt) return false end
 
-		it:SetAmount(it:GetAmount() + amt)
-		it2:SetAmount(it2:GetAmount() - amt)
+		it:SetAmount(it:GetAmount() - amt)
+		it2:SetAmount(it2:GetAmount() + amt)
 
 		inv:AddChange(it, INV_ITEM_DATACHANGED)
 		inv:AddChange(it2, INV_ITEM_DATACHANGED)
-
 		--if ok ~= false then it:SetSlot(where) end
 		return true
 	end
