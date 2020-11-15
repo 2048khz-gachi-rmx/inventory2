@@ -35,6 +35,7 @@ function bp:Initialize(ply)
 	self.Changes = {}
 
 	if ply then
+		print("Owner set")
 		self:SetOwner(ply)
 		if SERVER and self.AutoFetchItems then
 			Inventory.MySQL.FetchPlayerItems(self, ply)
@@ -176,10 +177,11 @@ function bp:AddItem(it, ignore_emitter)
 	if it:GetUID() then
 		self.Items[it:GetUID()] = it
 	else
-		if table.HasValue(self.Items, it) then errorf("Trying to add an item which already existed in this inventory!") return end
-		self.Items[#self.Items + 1] = it
-		it:SetUID(#self.Items)
-		it:SetUIDFake(true)
+		errorf("Can't create an item to an inventory without a UID! %s", it)
+		--if table.HasValue(self.Items, it) then errorf("Trying to add an item which already existed in this inventory!") return end
+		--self.Items[#self.Items + 1] = it
+		--it:SetUID(#self.Items)
+		--it:SetUIDFake(true)
 	end
 
 	self.Slots[it:GetSlot()] = it
