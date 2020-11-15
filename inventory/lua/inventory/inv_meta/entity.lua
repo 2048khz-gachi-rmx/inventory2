@@ -16,9 +16,11 @@ ent:Register()
 
 
 ent:On("OwnerAssigned", "StoreEntity", function(self, ow)
+	print("OwnerAssigned emitter fired")
 	local hookid = ("EntInv:%p"):format(ow)
-
-	hook.Once("CPPIAssignOwnership", hookid, function(ply, ent)
+	print("Added hook", hookid)
+	hook.OnceRet("CPPIAssignOwnership", hookid, function(ply, ent)
+		if ent ~= self then return false end
 		self.OwnerUID = ply:SteamID64()
 	end)
 end)
@@ -29,7 +31,8 @@ ent:On("PlayerCanAddInventory", "NoAutoAdd", function() -- don't add this invent
 end)
 
 function ent:HasAccess(ply)
-	local ow = self.OwnerUID
+	if not self.UseOwnership then return true end
 
-	return self.InventoryUseOwnership and ow == ply:SteamID64()
+	local ow = self.OwnerUID
+	return ow == ply:SteamID64()
 end
