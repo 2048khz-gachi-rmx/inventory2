@@ -246,8 +246,8 @@ function ENT:MineOut(orename, ply)
 
 	if ore.amt <= 0 then self.Ores[orename] = nil end
 
-	ply.Inventory.Backpack:NewItem(orename, function()
-		ply:NetworkInventory(ply.Inventory.Backpack)
+	ply.Inventory.Backpack:NewItemNetwork(orename, function()
+		--ply:NetworkInventory(ply.Inventory.Backpack)
 	end)
 
 	if table.Count(self.Ores) == 0 then
@@ -284,17 +284,51 @@ local function readOreData()
 
 end
 
+local function rollOrePos()
+
+	local posCopy = table.Copy(Inventory.OresPositions)
+
+	while true do
+		local key = math.random(1, #posCopy)
+		pos = posCopy[key]
+		if not pos then print(key, posCopy[key]) error("no available position to spawn a rock...?") break end
+
+		for _, ent in ipairs(ActiveOres) do
+			if ent:GetPos():DistToSqr(pos) < 4 then goto nextPos end -- we already have a rock at pretty much that location; reroll
+		end
+
+		if pos then
+			return pos
+		end
+
+		::nextPos::
+		table.remove(posCopy, key)
+	end
+
+end
+
+local entClass = "orevein"
+
+local function createOre(pos)
+	pos = pos or rollOrePos()
+
+	local ore = ents.Create(entClass)
+	ore:SetPos(pos)
+	ore:Spawn()
+
+	ore:GetPhysicsObject():EnableMotion(false)
+
+	print("creating ore @", pos, ore)
+end
+
 function OresRespawn(amt)
 	amt = amt or 4
 
 	readOreData()
 
 	local spawns = {} -- [seqNum] = pos
-	local posCopy = {}
+	local posCopy = table.Copy(Inventory.OresPositions)
 
-	for i=1, #Inventory.OresPositions do
-		posCopy[i] = Inventory.OresPositions[i]
-	end
 
 	for i=1, amt do
 		if #posCopy == 0 then break end
@@ -305,26 +339,31 @@ function OresRespawn(amt)
 		posCopy[#posCopy] = nil
 	end
 
-	for num, pos in ipairs(spawns) do
-		printf("spawning rock #%d at %s", num, pos)
-	end
+end
 
+local function loadOres()
+	Inventory.Ores = Inventory.Ores or {}
+
+	Inventory.Ores.Create = createOre
+	Inventory.Ores.RollPosition = rollOrePos
+
+	OresRespawn()
 end
 
 if CurTime() > 60 then
-	OresRespawn()
+	loadOres()
 else
 
 	local invready = false
 	local entsready = false
 
 	hook.Add("InventoryReady", "SpawnOres", function()	--only after inventory is ready
-		if entsready then OresRespawn() end
+		if entsready then loadOres() end
 		invready = true
 	end)
 
 	hook.Add("InitPostEntity", "SpawnOres", function()
-		if invready then OresRespawn() end
+		if invready then loadOres() end
 		entsready = true
 	end)
 end

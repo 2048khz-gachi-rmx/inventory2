@@ -35,6 +35,7 @@ SWEP.Primary.Delay          = 0.4
 SWEP.Primary.Force          = 1
 
 SWEP.MineChance = 0.4
+SWEP.FailChance = 1 - SWEP.MineChance	-- dont touch
 
 local function CheckOre(ply)
 

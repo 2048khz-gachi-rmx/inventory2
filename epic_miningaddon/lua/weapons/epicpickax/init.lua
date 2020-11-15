@@ -18,11 +18,11 @@ function SWEP:SVPrimaryAttack(ply, ore)
 	local mined = false
 
 	for k,v in pairs(ores) do
-		local succ = (math.random() * v.ore:GetMineChanceMult()) <= self.MineChance
+		local chance = math.random()
+		local succ = chance >= self.FailChance / v.ore:GetMineChanceMult()
 
 		if succ then
 			ore:MineOut(k, ply)
-
 			mined = true
 		end
 
@@ -32,7 +32,6 @@ function SWEP:SVPrimaryAttack(ply, ore)
 
 	if mined == true then
 		ore:NetworkOres()
-		ply:NetworkInventory(ply.Inventory.Backpack, INV_NETWORK_UPDATE)
 		snd = snd:format("hard", math.random(1, 3))
 	else
 		snd = snd:format("soft", math.random(1, 3))

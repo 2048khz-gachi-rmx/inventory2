@@ -1,17 +1,12 @@
 include("shared.lua")
 
-function SWEP:DrawHUD()
+local OrePanel = {}
 
-end
+function SWEP:ValidatePanel()
 
-if IsValid(PickaxePanel) then PickaxePanel:Remove() end
+	if not IsValid(PickaxePanel) then
+		local sw, sh = ScrW(), ScrH()
 
-function SWEP:Deploy()
-	local sw, sh = ScrW(), ScrH()
-
-	self.Deployed = true
-
-	if not IsValid(self.Panel) then
 		local p = vgui.Create("FFrame")
 		local wid = sw / 1920 * 250
 		--local hgt = sh / 1080 * 100
@@ -22,8 +17,8 @@ function SWEP:Deploy()
 
 		p:SetPos(sw/2 + 16, sh / 2 - 16 / 2)
 
-		p:On("ChangedSize", self.RepositionPanel, self)
-		self.Panel = p
+		p:On("ChangedSize", OrePanel.Reposition)
+
 		p.Pickaxe = self
 		p.BackgroundColor.a = 200
 		p:SetCloseable(false, true)
@@ -32,13 +27,18 @@ function SWEP:Deploy()
 
 		p.Animatable = Animatable:new()
 
-		p.PostPaint = self.PostPaint
+		p.PostPaint = OrePanel.PostPaint
 		PickaxePanel = p
 	end
 
 end
 
-local OrePanel = {}
+if IsValid(PickaxePanel) then PickaxePanel:Remove() end
+
+function SWEP:Deploy()
+	self.Deployed = true
+	self:ValidatePanel()
+end
 
 function OrePanel:PaintOreBar(w, h, vein, ores)
 	local x = 4
@@ -161,7 +161,7 @@ function OrePanel:PaintOreText(w, h, vein, ores)
 
 end
 
-function SWEP:PostPaint(w, h) --`self` is pnl
+function OrePanel:PostPaint(w, h)
 
 	if not IsValid(self.Pickaxe) or LocalPlayer():GetActiveWeapon() ~= self.Pickaxe then
 		self:Remove()
@@ -179,9 +179,9 @@ function SWEP:PostPaint(w, h) --`self` is pnl
 	OrePanel.PaintOreText(self, w, h, vein, ores)
 end
 
-function SWEP.RepositionPanel(pnl, self, w, h)
+function OrePanel:Reposition(w, h)
 	local sw, sh = ScrW(), ScrH()
-	pnl.Y = sh/2 - h/2
+	self.Y = sh/2 - h/2
 end
 
 function SWEP:Holster()
@@ -194,8 +194,9 @@ end
 
 function SWEP:DrawHUD()
 	local tr = LocalPlayer():GetEyeTrace()
-	local pnl = self.Panel
-	if not pnl:IsValid() then return end --ok
+	self:ValidatePanel()
+
+	local pnl = PickaxePanel
 
 	if not tr.Hit or not tr.Entity.IsOre or tr.Fraction * 32768 > 128 then
 

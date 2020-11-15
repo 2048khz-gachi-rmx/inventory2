@@ -4,7 +4,6 @@ local me = {}
 
 function ENT:Initialize()
 	if #self:GetResources() > 0 then --bweh
-		print("called UpdateOres from initialize:", self:GetResources())
 		self:UpdateOres(nil, "from init; none", self:GetResources())
 	end
 
