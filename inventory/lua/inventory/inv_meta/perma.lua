@@ -40,13 +40,13 @@ prm:On("OpenFrame", "OpenInventoryCharacter", function(self, main, invpnl)
 end)
 
 prm:On("CanAddItem", "EquippableOnly", function(self, it)
-    local base = Inventory.Util.GetBaseMeta(it:GetIID())
-    return base.IsEquippable
+	local base = Inventory.Util.GetBaseMeta(it:GetIID())
+	return base.IsEquippable
 end)
 
 prm:On("CanCreateItem", "EquippableOnly", function(self, iid, dat, slot)
 	local base = Inventory.Util.GetBaseMeta(iid)
-    return base.IsEquippable
+	return base.IsEquippable
 end)
 
 prm:Register()

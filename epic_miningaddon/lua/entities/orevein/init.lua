@@ -5,8 +5,9 @@ include("shared.lua")
 
 ENT.Model = "models/props/cs_militia/militiarock0%s.mdl"
 
-OreRespawnTime = 300 --seconds
-
+local OreRespawnTime = 5 --seconds
+local OreInvisibleTime = 5 -- has to be invisible for X to everyone to disappear
+local OreVisibleTime = 120 -- if it's X seconds past it's time to remove it'll be removed regardless of people seeing
 
 local sizes = {
 	[1] = 3,
@@ -44,6 +45,9 @@ function ENT:Initialize()
 		table.RemoveByValue(ActiveOres, self)
 	end)
 
+	self.LastActivity = CurTime()
+	self.LastThink = CurTime()
+	self.InvisiblePVS = 0
 end
 
 local drop_start = 0.5
@@ -93,6 +97,54 @@ end
 
 function ENT:ApplyOres(tbl)
 
+end
+
+function ENT:RespawnElsewhere()
+	OresRespawn(1) -- first spawn so our ore entity is counted towards proximity check
+	self:Remove()  -- then respawn
+end
+
+function ENT:Think()
+	local timeTillDespawn = OreRespawnTime - (CurTime() - self.LastActivity)
+
+	local delta = CurTime() - self.LastThink
+	self.LastThink = self.LastThink + delta
+
+	if timeTillDespawn > 5 then
+		local dur = math.min(timeTillDespawn - 1, OreRespawnTime - 1)
+		self:NextThink(CurTime() + dur)
+		return true
+	else
+		if timeTillDespawn < -OreVisibleTime then
+			-- it's really time for us to go now
+			self:RespawnElsewhere()
+			return
+		end
+
+		if timeTillDespawn < 0 then
+			-- it's approx. time to respawn; if we're invisible to everyone else for 5s we do it
+			local plys = player.GetAll()
+
+			for _, ply in ipairs(plys) do
+				if self:TestPVS(ply) == true then
+					self.InvisiblePVS = 0 --we're visible to someone
+					self:NextThink(CurTime() + 0.5)
+					return true
+				end
+			end
+
+			self.InvisiblePVS = self.InvisiblePVS + delta
+
+			if self.InvisiblePVS > OreInvisibleTime then
+				self:RespawnElsewhere()
+				return
+			end
+
+			self:NextThink(CurTime() + 1)
+			return true
+		end
+
+	end
 end
 
 function ENT:GenerateOres(tries)
@@ -246,9 +298,9 @@ function ENT:MineOut(orename, ply)
 
 	if ore.amt <= 0 then self.Ores[orename] = nil end
 
-	ply.Inventory.Backpack:NewItemNetwork(orename, function()
-		--ply:NetworkInventory(ply.Inventory.Backpack)
-	end)
+	ply.Inventory.Backpack:NewItemNetwork(orename)
+
+	self.LastActivity = CurTime()
 
 	if table.Count(self.Ores) == 0 then
 		self:Remove()
@@ -284,11 +336,13 @@ local function readOreData()
 
 end
 
-local function rollOrePos()
+local function rollOrePos(num)
+	num = num or 1
 
 	local posCopy = table.Copy(Inventory.OresPositions)
+	local ret = {}
 
-	while true do
+	while #ret < num do
 		local key = math.random(1, #posCopy)
 		pos = posCopy[key]
 		if not pos then print(key, posCopy[key]) error("no available position to spawn a rock...?") break end
@@ -298,13 +352,14 @@ local function rollOrePos()
 		end
 
 		if pos then
-			return pos
+			ret[#ret + 1] = pos
 		end
 
 		::nextPos::
 		table.remove(posCopy, key)
 	end
 
+	return ret
 end
 
 local entClass = "orevein"
@@ -317,28 +372,21 @@ local function createOre(pos)
 	ore:Spawn()
 
 	ore:GetPhysicsObject():EnableMotion(false)
-
-	print("creating ore @", pos, ore)
 end
 
 function OresRespawn(amt)
-	amt = amt or 4
+	amt = amt or 4 - #ActiveOres
+	if amt <= 0 then return end
 
-	readOreData()
-
-	local spawns = {} -- [seqNum] = pos
-	local posCopy = table.Copy(Inventory.OresPositions)
-
-
-	for i=1, amt do
-		if #posCopy == 0 then break end
-		local pick = math.random(1, #posCopy)
-		spawns[i] = posCopy[pick]
-
-		posCopy[pick] = posCopy[#posCopy]
-		posCopy[#posCopy] = nil
+	if not Inventory.OresPositions then
+		readOreData()
 	end
 
+	local spawns = rollOrePos(amt)
+
+	for k,v in ipairs(spawns) do
+		createOre(v)
+	end
 end
 
 local function loadOres()
@@ -353,17 +401,5 @@ end
 if CurTime() > 60 then
 	loadOres()
 else
-
-	local invready = false
-	local entsready = false
-
-	hook.Add("InventoryReady", "SpawnOres", function()	--only after inventory is ready
-		if entsready then loadOres() end
-		invready = true
-	end)
-
-	hook.Add("InitPostEntity", "SpawnOres", function()
-		if invready then loadOres() end
-		entsready = true
-	end)
+	hook.Add("InventoryReady", "SpawnOres", loadOres)
 end

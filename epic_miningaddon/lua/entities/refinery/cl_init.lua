@@ -41,7 +41,6 @@ function ENT:QueueOre(slot, it)
 	local nw = Inventory.Networking.Netstack()
 
 		nw:WriteEntity(self)
-		nw:WriteUInt(0, 4)
 		nw:WriteUInt(slot, 16)
 		nw:WriteInventory(it:GetInventory())
 		nw:WriteItem(it)

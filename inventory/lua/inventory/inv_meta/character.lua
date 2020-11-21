@@ -24,18 +24,16 @@ char:On("CanOpen", "NoOpen", function()
 end)
 
 char:On("CanAddItem", "ManualOnly", function(self, it)
-    return self.Allowed[it:GetUID()] -- you can only add items here through the :Equip() method
+	return self.Allowed[it:GetUID()] -- you can only add items here through the :Equip() method
 end)
 
 char:On("CanMoveItem", "FittingOnly", function(self, it, slot)
-	print("char can move item?", it, slot)
-
 	local can, why = Inventory.CanEquipInSlot(it, slot)
 	if can == false then return can, why end
 end)
 
 char:On("CanCreateItem", "ManualOnly", function(self, iid, dat, slot)
-    return false
+	return false
 end)
 
 function char:Initialize()

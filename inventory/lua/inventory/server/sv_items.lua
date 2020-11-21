@@ -60,7 +60,7 @@ function Inventory.CheckStackability(inv, iid, cb, dat)
 	local amt = dat.Amount
 
 	for k,v in pairs(inv:GetItems()) do
-		if v:GetItemID() ~= iid then printf("not same itemids (%s vs %s)", v:GetItemID(), iid) continue end
+		if v:GetItemID() ~= iid then continue end
 		if not equalData(dat, v:GetData()) then printf("not equal data (%s vs %s)", util.TableToJSON(dat), util.TableToJSON(v:GetData())) continue end --different-data'd items (except .Data.Amount) cannot be stacked
 
 		local max = v:GetMaxStack()
@@ -69,7 +69,7 @@ function Inventory.CheckStackability(inv, iid, cb, dat)
 		local canStack = math.min(max - cur, amt)
 		v:SetAmount(cur + canStack)
 		amt = amt - canStack
-		if amt == 0 then return true end
+		if amt == 0 then return true end -- stacked all in; return true
 		if amt < 0 then errorf("How the fuck did amount become less than 0: canStack %d, max %d, amt %d", canStack, max, amt) return true end
 	end
 

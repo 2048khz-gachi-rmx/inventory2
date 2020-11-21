@@ -29,16 +29,14 @@ function ENT:Initialize()
 	self:SHInit()
 
 	self.Queue = {}
-
-	hook.Once("CPPIAssignOwnership", ("cppiInv:%p"):format(self), function(ply, ent)
-		if ent ~= self then return end
-		self.OreInput.OwnerUID = ply:SteamID64()
-		self.OreOutput.OwnerUID = ply:SteamID64()
-	end)
 end
 
 util.AddNetworkString("OreRefinery")
 
+function ENT:RemoveOre(slot)
+	local it = self.OreInput[slot]
+	self.OreInput[slot]:Delete()
+end
 
 function ENT:Think()
 	local now = false
@@ -95,26 +93,20 @@ function ENT:QueueRefine(ply, item, slot)
 	end, slot, item:GetData(), true)
 end
 
+-- deposit request
 net.Receive("OreRefinery", function(len, ply)
 	if not ply:Alive() then return end
 
 	local ent = net.ReadEntity()
 	local self = ent
 
-	local typ = net.ReadUInt(4)
+	local slot = net.ReadUInt(16)
+	local inv = Inventory.Networking.ReadInventory()
+	local item = Inventory.Networking.ReadItem(inv)
 
-	if typ == 0 then --deposit
-		local slot = net.ReadUInt(16)
-		local inv = Inventory.Networking.ReadInventory()
-		local item = Inventory.Networking.ReadItem(inv)
-
-		if not inv.IsBackpack then print("inventory is not a backpack") return end
-		if not item then print("didn't get item") return end
-		ent:QueueRefine(ply, item, slot)
-
-	elseif typ == 1 then --withdraw
-
-	end
+	if not inv.IsBackpack then print("inventory is not a backpack") return end
+	if not item then print("didn't get item") return end
+	ent:QueueRefine(ply, item, slot)
 
 end)
 

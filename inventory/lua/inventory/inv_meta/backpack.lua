@@ -35,8 +35,8 @@ function bp:Initialize(ply)
 	self.Changes = {}
 
 	if ply then
-		print("Owner set")
 		self:SetOwner(ply)
+
 		if SERVER and self.AutoFetchItems then
 			Inventory.MySQL.FetchPlayerItems(self, ply)
 		end
@@ -63,13 +63,10 @@ function bp:SetSlot(it, slot)   --this is basically an accessor func;
 								--item:SetSlot() is preferred
 	for i=1, self.MaxItems do
 		if self.Slots[i] == it then
-			print("found past self @ slot", i, self.Slots[i]:GetAmount(), self.Slots[i]:GetUID())
 			self.Slots[i] = nil
 			--not breaking. just in case there's more.
 		end
 	end
-
-	print("setting", it, "@", slot, "in", self)
 
 	self.Slots[slot] = it
 

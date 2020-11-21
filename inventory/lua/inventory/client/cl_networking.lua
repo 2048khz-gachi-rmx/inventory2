@@ -2,6 +2,7 @@
 setfenv(0, _G)
 local nw = Inventory.Networking or {InventoryIDs = {}}
 Inventory.Networking = nw
+nw.Verbose = false
 
 local realLog = Inventory.Log
 
@@ -196,7 +197,6 @@ function nw.ReadConstants()
         conv.ToID[iname] = iid
     end
 
-    PrintTable(conv)
     hook.Run("InventoryIDReceived", conv.ToName, conv.ToID)
     log("CL-NW: Received & parsed inventory constants")
 end
