@@ -90,7 +90,7 @@ function bp:NewItemNetwork(who, iid, cb, slot, dat, nostack, cbanyway)
 	end
 
 	local real_cb = function(...)
-		cb(...)
+		if cb then cb(...) end
 
 		if IsValid(self:GetOwner()) then
 			Inventory.Networking.NetworkInventory(who, self, INV_NETWORK_UPDATE)
