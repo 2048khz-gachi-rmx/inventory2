@@ -74,7 +74,7 @@ function bp:SetSlot(it, slot)   --this is basically an accessor func;
 end
 
 --suppresserror if you're not sure the change was predicted (e.g receiving networked deletions)
-function bp:RemoveItem(it, suppresserror)
+function bp:RemoveItem(it, noChange, suppresserror)
 	--just removes an item from itself and networks the change
 	--if CLIENT then printf("---------\nRemoveItem called clientside, removing from inv %s, slot %s : traceback: %s", self, IsItem(it) and it:GetSlot() or "[uid provided]", debug.traceback()) end
 
@@ -120,7 +120,14 @@ function bp:RemoveItem(it, suppresserror)
 	foundit:SetSlot(nil)
 
 	--if the player doesn't know about the item, don't even tell him about the deletion
-	if foundit:GetKnown() then self:AddChange(foundit, INV_ITEM_DELETED) else self.Changes[foundit] = nil end
+	if foundit:GetKnown() and not noChange then
+		svprint("Adding deletion change")
+		self:AddChange(foundit, INV_ITEM_DELETED)
+	else
+		svprint("deleting change for", foundit, ("%p"):format(self))
+		self.Changes[foundit] = nil
+	end
+
 	self:Emit("Change")
 	self:Emit("RemovedItem", it, slot)
 	return foundit
@@ -130,7 +137,7 @@ function bp:DeleteItem(it, suppresserror)
 	--actually completely deletes an item, both from the backpack and from MySQL completely
 	local uid = (isnumber(it) and it) or it:GetUID()
 
-	local it = self:RemoveItem(it, suppresserror)
+	local it = self:RemoveItem(it, nil, suppresserror)
 
 	if SERVER then Inventory.MySQL.DeleteItem(it) end
 	self:Emit("Change")
@@ -158,7 +165,7 @@ function bp:GetItemInSlot(slot)
 	return self.Slots[slot]
 end
 
-function bp:AddItem(it, ignore_emitter)
+function bp:AddItem(it, ignore_emitter, nochange)
 	if not it:GetSlot() then errorf("Can't add an item without a slot set! Set a slot first!\nItem: %s", it) return end
 
 	if it:GetInventory() and it:GetInventory() ~= self then
@@ -182,7 +189,9 @@ function bp:AddItem(it, ignore_emitter)
 	end
 
 	self.Slots[it:GetSlot()] = it
-	self:AddChange(it, INV_ITEM_ADDED)
+	if not nochange then
+		self:AddChange(it, INV_ITEM_ADDED)
+	end
 
 	it:SetInventory(self)
 
@@ -225,7 +234,11 @@ function bp:HasAccess(ply, action)
 	return ply == self:GetOwner()
 end
 
---takes: item or uid, INV_ITEM_DELETED or INV_ITEM_MOVED
+function bp:RemoveChange(it, what)
+	if not self.Changes[it] then return end
+	self.Changes[it][what] = nil
+end
+
 function bp:AddChange(it, what)
 	local ch = self.Changes[it] or {}
 	self.Changes[it] = ch
@@ -239,6 +252,7 @@ function bp:Register(addstack)
 	Inventory.RegisterClass(self.Name, self, Inventory.Inventories, (addstack or 0) + 1)
 end
 
+ChainAccessor(bp, "Name", "Name")
 ChainAccessor(bp, "Items", "Items")
 ChainAccessor(bp, "Slots", "Slots")
 ChainAccessor(bp, "OwnerUID", "OwnerID")

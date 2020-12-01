@@ -8,18 +8,22 @@ local function load()
 		local inv, err = nw.ReadInventory()
 
 		if not inv then errorf("Failed to read inventory from %s: %q", ply, err) return end
-		if not ignoreaccess and not inv:HasAccess(ply, act) then errorf("Failed permission check %s from %s on inventory '%s'", act, ply, inv) return end
+
+		if not ignoreaccess and act and not inv:HasAccess(ply, act) then
+			errorf("Failed permission check %s from %s on inventory '%s'", act, ply, inv)
+			return
+		end
 
 		return inv
 	end
-	
+
 	local function readItem(ply, inv)
 		local it, err = nw.ReadItem(inv)
 		if not it then errorf("Failed to read item from %s: %q", ply, err) return end
 
 		return it
 	end
-	
+
 
 	nw.Actions = nw.Actions or {}
 
@@ -46,7 +50,7 @@ local function load()
 		if inv:Emit("CanMoveItem", it, where) == false then print("cannot move item") return end
 
 		local nw = inv:MoveItem(it, where) ~= false
-	
+
 		return true, nw, inv
 	end
 

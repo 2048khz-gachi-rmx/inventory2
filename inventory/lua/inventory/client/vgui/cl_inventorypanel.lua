@@ -70,6 +70,8 @@ function PANEL:MoveItem(rec, drop, item)
 	local recItem = rec:GetItem(true)
 
 	if crossinv then
+
+
 		local ok = item:GetInventory():RequestCrossInventoryMove(item, rec:GetInventory(), rec:GetSlot())
 
 		if ok then
@@ -286,6 +288,11 @@ end
 
 function PANEL:ItemDrop(rec, drop, item, ...)
 
+	if item:GetInventory().IsCharacterInventory then
+		drop:GetInventoryFrame():Emit("UnequipRequest", rec, drop, item)
+		return
+	end
+
 	if rec:GetItem() and rec:GetItem():GetItemID() == item:GetItemID() then --there was the same item in that slot;
 		self:StackItem(rec, drop, item)
 		return
@@ -307,13 +314,13 @@ end
 function PANEL:AddItemSlot()
 	local i = #self.Slots
 
-	local it = vgui.Create("ItemFrame", self.Scroll)
+	local it = vgui.Create("ItemFrame", self.Scroll, "ItemFrame for InventoryPanel")
 
 	local main = self:GetMainFrame()
-	
+
 	local x = i % main.FitsItems
 	local y = math.floor(i / main.FitsItems)
-	
+
 	it:SetPos( 	8 + x * (main.SlotSize + main.SlotPadding),
 				8 + y * (main.SlotSize + main.SlotPadding))
 

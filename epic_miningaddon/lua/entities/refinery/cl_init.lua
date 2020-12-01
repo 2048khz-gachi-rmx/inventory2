@@ -136,7 +136,7 @@ function ENT:OnOpenRefine(ref, pnl)
 
 	local main = vgui.Create("Panel", ref)
 	ref:PositionPanel(main)
-	-- INPUT 
+	-- INPUT
 	local p = vgui.Create("Panel", main)
 	--p:Debug()
 
@@ -187,7 +187,6 @@ function ENT:OnOpenRefine(ref, pnl)
 			icX = icX + row.slotW
 		end
 	end
-	--of all the auto-center-fit-buttons-on-rows algorithms i made, this ^ is probably the most elegant tbh
 
 
 	-- OUTPUT
@@ -320,6 +319,7 @@ function ENT:OpenMenu()
 		v:On("DragStart", "Refinery", function(...) self:OnInventorySlotPickup(...) end)
 		v:On("DragStop", "Refinery", function(...) self:OnInventorySlotDrop(...) end)
 	end
+
 	local ref = vgui.Create("NavFrame")
 	self.Frame = ref
 	ref:SetSize(450, inv:GetTall())

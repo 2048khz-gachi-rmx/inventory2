@@ -1,5 +1,3 @@
---e
-
 local iPan = Inventory.Panels
 
 iPan.FitsItems = 6
@@ -42,13 +40,13 @@ function iPan.CreateInventory(inv, multiple, set)
 	f.SlotSize = slotSize
 	f.SlotPadding = slotPad
 	f.FitsItems = fits
-	
-	
+
+
 
 	iPan.IFrame = f
 	f:SetMouseInputEnabled(true)
 
-	
+
 
 	--64 slot width + 4 slot padding + 16: 8 l,r padding + 4 from idfk where
 	f:SetSize((slotSize + slotPad) * fits + 16 + 4, 128)
@@ -84,7 +82,7 @@ function iPan.CreateInventory(inv, multiple, set)
 		tab.Inventory = inv
 		tab:Select(true)
 	end
-	
+
 	f:SetWide(f:GetWide() + 50 + 8)
 	f:SetTall(math.max(ScrH() * 0.4, 350))
 
@@ -110,7 +108,7 @@ function Inventory.Panels.ListenForItem(pnl)
 end
 
 hook.Add("PlayerButtonDown", "Inventory", function(p, k)
-	if k ~= KEY_F4 then return end
+	if k ~= KEY_F4 or not IsFirstTimePredicted() then return end
 	local f = iPan.CreateInventory()
 	f:SetFull(true)
 	--f:SetTall(math.max(ScrH() * 0.4, 350))

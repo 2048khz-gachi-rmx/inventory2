@@ -262,7 +262,7 @@ function nw.WriteHeader(typ, invs, ply)
 
 	header:WriteUInt(typ, 4).NetworkType = true
 	header:WriteUInt(invs, 8).InventoryAmt = true        --write amount of inventories we networked
-	header:WriteEntity(ply).InventoryOwner = true             --write the player whose inventories we're networking
+	header:WriteEntity(ply).InventoryOwner = true        --write the player whose inventories we're networking
 
 	return header
 end

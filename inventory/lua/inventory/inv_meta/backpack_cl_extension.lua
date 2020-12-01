@@ -2,6 +2,27 @@
 local bp = Inventory.Inventories.Backpack
 
 function bp:CanCrossInventoryMove(it, inv2, slot)
+	if it:GetInventory() ~= self then
+		errorf("Can't move an item from an inventory which it doesn't belong to! (item) %q vs %q (self)", it:GetInventory(), self)
+		return false
+	end
+
+	if self == inv2 then
+		errorf("Can't cross-inv between the same inventory! %s vs. %s", self, inv2)
+		return false
+	end
+
+	slot = slot or inv2:GetFreeSlot()
+	if not slot then
+		print("Can't cross-inventory-move cuz no slot", slot)
+		return false
+	end
+
+	if not inv2:IsSlotLegal(slot) then
+		print("Slot is illegal", self, slot)
+		return false
+	end
+
 	--check if inv2 can accept cross-inventory item
 	local can = inv2:Emit("CanCrossMoveTo", it, self)
 	if can == false then return false end
@@ -25,20 +46,20 @@ local function ActuallyMove(inv1, inv2, it, slot)
 end
 
 function bp:CrossInventoryMove(it, inv2, slot)
-	if it:GetInventory() ~= self then errorf("Can't move an item from an inventory which it doesn't belong to! (item) %q vs %q (self)", it:GetInventory(), self) return end
-	if self == inv2 then errorf("Can't cross-inv between the same inventory! %s vs. %s", self, inv2) end
-
-	slot = slot or inv2:GetFreeSlot()
-	if not slot then print("Can't cross-inventory-move cuz no slot", slot) return false end
-
 	local other_item = inv2:GetItemInSlot(slot)
 
+	if other_item and not inv2:CanCrossInventoryMove(other_item, self, it:GetSlot()) then
+		return false
+	end
+	print("brr", self, it, inv2, slot)
+	if not self:CanCrossInventoryMove(it, inv2, slot) then return false end
+
+
+
 	if other_item then
-		if not inv2:CanCrossInventoryMove(other_item, self) then return false end
 		ActuallyMove(inv2, self, other_item, it:GetSlot())
 	end
 
-	if not self:CanCrossInventoryMove(it, inv2) then return false end
 	ActuallyMove(self, inv2, it, slot)
 
 	return true
@@ -48,16 +69,12 @@ function bp:RequestCrossInventoryMove(it, inv2, slot)
 	if not self:CrossInventoryMove(it, inv2, slot) then return false end
 
 	local ns = Inventory.Networking.Netstack()
+		ns:WriteInventory(self)
+		ns:WriteItem(it, true)
 
-	ns:WriteInventory(self)
-	ns:WriteItem(it, true)
-
-	ns:WriteInventory(inv2)
-	ns:WriteUInt(slot, 16)
-
+		ns:WriteInventory(inv2)
+		ns:WriteUInt(slot, 16)
 	Inventory.Networking.PerformAction(INV_ACTION_CROSSINV_MOVE, ns)
-
-	_AAA = ns
 
 	return true
 end

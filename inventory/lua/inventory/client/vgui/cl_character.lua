@@ -29,6 +29,11 @@ function PANEL:Init()
 	self:CreateSlots()
 
 	self:On("GetMainFrame", self.SizeToMain)
+	self:On("UnequipRequest", self.UnequipItem)
+
+	self:GetInventory():On("Change", self, function(...)
+		self:Emit("Change", ...)
+	end)
 
 end
 
@@ -94,7 +99,8 @@ function PANEL.EquipItem(slot, self, itemfr, item)
 	local ns = Inventory.Networking.Netstack()
 	ns:WriteInventory(item:GetInventory())
 	ns:WriteItem(item)
-	ns:WriteUInt(slot.ID, 8)
+	ns:WriteBool(true)
+	ns:WriteUInt(slot.ID, 16)
 	Inventory.Networking.PerformAction(INV_ACTION_EQUIP, ns)
 
 	slot:SetItem(item)
@@ -105,6 +111,20 @@ function PANEL.EquipItem(slot, self, itemfr, item)
 	self:GetInventory():AddItem(item)
 	item:SetSlot(slot.ID)]]
 	itemfr:SetItem(nil)
+end
+
+function PANEL:UnequipItem(recslot, dropslot, item)
+	printf("Unequip item: dropped %s, receiver is %s, item is %s", dropslot, recslot, item)
+
+	local ns = Inventory.Networking.Netstack()
+		ns:WriteInventory(item:GetInventory())
+		ns:WriteItem(item)
+		ns:WriteBool(false)
+		ns:WriteUInt(recslot:GetSlot(), 16)
+		ns:WriteInventory(recslot:GetInventory())
+	Inventory.Networking.PerformAction(INV_ACTION_EQUIP, ns)
+
+	print("sent")
 end
 
 function PANEL:HighlightFit(btn, itemfr, item)
@@ -148,7 +168,7 @@ local function CreateSlots(self, tbl)
 
 		local side = v.side
 
-		local btn = vgui.Create("ItemFrame", self)
+		local btn = vgui.Create("ItemFrame", self, "ItemFrame for InventoryCharacter")
 		btn:SetSize(eqBtnSize, eqBtnSize)
 		btn:SetInventoryFrame(self)
 		btn.Rounding = 4
@@ -162,6 +182,12 @@ local function CreateSlots(self, tbl)
 
 		btn:On("Paint", "PaintSlotName", PaintSlotName)
 		btn:On("Drop", "EquipItem", self.EquipItem, self)
+
+		self:On("Change", btn, function(self, inv, ...)
+			if inv:GetItemInSlot(nwid) ~= btn:GetItem() then
+				btn:SetItem( inv:GetItemInSlot(btn:GetSlot()) )
+			end
+		end)
 
 		if char.Slots[nwid] then
 			btn:SetItem(char.Slots[nwid])

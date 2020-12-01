@@ -307,6 +307,7 @@ function ms.SetInventory(it, inv, slot, dat)
 	end
 
 	local ow, owuid = inv:GetOwner()
+	print(ow, owuid)
 	local puid = mysqloo.quote(ms.DB, owuid)
 	local q2
 

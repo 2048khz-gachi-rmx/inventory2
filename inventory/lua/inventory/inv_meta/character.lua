@@ -8,6 +8,7 @@ char.SQLName = "ply_charinv"
 char.NetworkID = 4
 char.Name = "Character"
 char.MaxItems = 50
+char.IsCharacterInventory = true
 --char.UseSlots = false
 
 char.SQLColumns = {
@@ -26,6 +27,12 @@ end)
 char:On("CanAddItem", "ManualOnly", function(self, it)
 	return self.Allowed[it:GetUID()] -- you can only add items here through the :Equip() method
 end)
+char:On("CanMoveTo", "EquipOnly", function(self, it, slot)
+	return self.Allowed[it:GetUID()]
+end)
+char:On("CanMoveFrom", "UnequipOnly", function(self, it, slot)
+	return self.Allowed[it:GetUID()]
+end)
 
 char:On("CanMoveItem", "FittingOnly", function(self, it, slot)
 	local can, why = Inventory.CanEquipInSlot(it, slot)
@@ -41,15 +48,20 @@ function char:Initialize()
 	self.Allowed = {}
 end
 
-function char:Unequip(slot, inv)
+function char:Unequip(it, slot, inv)
 	if not inv then error("Unequip where dude") return end
 
-	local it = self.Slots[slot]
+	--local it = self.Slots[slot]
 	if not IsItem(it) then error("What are you unequipping dude") return end
 
-	self.Allowed[it:GetUID()] = nil
+	print("Moving from", self, "to", inv)
+	local mem = self:CrossInventoryMove(it, inv, slot)
 
-	self:CrossInventoryMove(it, inv)
+	mem:Then(function()
+		self.Allowed[it:GetUID()] = nil
+	end)
+
+	return mem
 end
 
 function char:Equip(it, slot)
@@ -64,7 +76,6 @@ function char:Equip(it, slot)
 	local inv = it:GetInventory()
 	local mem = inv:CrossInventoryMove(it, self, slot)
 
-	it:SetSlot(slot)
 	self.Slots[slot] = it
 	self:AddChange(it, INV_ITEM_ADDED)
 	return mem

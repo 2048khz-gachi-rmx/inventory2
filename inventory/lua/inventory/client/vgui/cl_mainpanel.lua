@@ -82,7 +82,7 @@ function f:SetInventory(inv, pnl, noanim)
 		return pnl, true, true
 	end
 
-	local p = vgui.Create("InventoryPanel", self)
+	local p = vgui.Create("InventoryPanel", self, "InventoryPanel - " .. inv:GetName())
 
 	p:SetFull(self.FullInventory)
 	p:SetMainFrame(self)
@@ -249,7 +249,7 @@ function f:AddInventoryPanel(p, inv, posfunc)
 
 	if not isfunction(posfunc) then error("Required function for positioning panel.") return end
 	if isstring(p) then
-		p = vgui.Create(p)
+		p = vgui.Create(p, nil, p .. " - " .. inv:GetName() .. " (attached to " .. tostring(self) .. ")")
 		p:PopIn()
 	end
 

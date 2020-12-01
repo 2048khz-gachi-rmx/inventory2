@@ -10,11 +10,7 @@ local bp = Inventory.Inventories.Backpack
 
 		false + string - error
 ]]
--- returns true if the action was done without making a new item
--- returns table + number if the item was stackable and it didn't fit some in because no space or whatever (number is the remainder that didn't stack in)
--- returns false if failed
 
--- returns nil if callback will be called with the new item(s)
 function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
 	if not isstring(iid) and not isnumber(iid) then
 		errorf("Attempted to create item with IID: %s (%s)", iid, type(iid))
@@ -118,13 +114,16 @@ function bp:CanCrossInventoryMove(it, inv2, slot)
 	if slot and inv2:IsSlotLegal(slot) == false then return false end
 
 	-- check if inv2 can accept cross-inventory item
-	if inv2:Emit("CanMoveTo", it, self, slot) == false then print("CanMoveTo no") return false end
+	if inv2:Emit("CanMoveTo", it, self, slot) == false then print("CanMoveTo no", inv2) return false end
 
 	-- check if we can give out the item
 	if self:Emit("CanMoveFrom", it, inv2, slot) == false then print("CanMoveFrom no") return false end
 
 	-- check if inv2 can add an item to itself
 	if inv2:Emit("CanAddItem", it, it:GetUID(), slot) == false then print("CanAdd no") return false end
+
+	-- check if the item can be moved
+	if it:Emit("CanCrossMove", self, inv2, slot) == false then print("CanItemAdd no") return false end
 
 	return true
 end
@@ -134,15 +133,12 @@ local function ActuallyMove(inv1, inv2, it, slot)
 	local em = Inventory.MySQL.SetInventory(it, inv2, slot)
 
 
-	inv1:RemoveItem(it, true)
+	inv1:RemoveItem(it, true, true) -- don't write the change 'cause we have crossmoves as a separate change
 	it:SetSlot(slot)
-	inv2:AddItem(it, true)
+	inv2:AddItem(it, true, true) -- same shit
 
-	--has it moved successfully 100%?
-	if inv2.Changes[it][INV_ITEM_ADDED] then
-		inv1:AddChange(it, INV_ITEM_CROSSMOVED)
-		inv2.Changes[it][INV_ITEM_ADDED] = nil
-	end
+	inv2:AddChange(it, INV_ITEM_CROSSMOVED)
+
 	return em
 end
 
@@ -211,6 +207,7 @@ function bp:SerializeItems(typ, key)
 	local amt = 0
 
 	if typ == INV_NETWORK_FULLUPDATE or typ == nil then
+		print("emptying self changes", ("%p"):format(self))
 		table.Empty(self.Changes)
 
 		for k,v in pairs(self:GetItems()) do
@@ -263,7 +260,11 @@ function bp:SerializeItems(typ, key)
 
 			if self.Changes[v] then
 				for k,v in pairs(self.Changes[v]) do
-					if Inventory.RequiresNetwork[k] then req = true break end
+					if Inventory.RequiresNetwork[k] then
+						print("deleting changes for", v, ("%p"):format(self), k)
+						req = true
+						break
+					end
 				end
 			end
 
@@ -271,7 +272,7 @@ function bp:SerializeItems(typ, key)
 
 			v:Serialize(ns, typ)
 			v:SetKnown(true)
-
+			print("deleted change for", v, ("%p"):format(self))
 			self.Changes[v] = nil
 		end
 
@@ -291,8 +292,12 @@ function bp:WriteChanges(ns)
 	}
 
 	for item, enums in pairs(self.Changes) do
+
 		for enum, _ in pairs(enums) do
-			if not where[enum] then printf("Unknown change enum in %s! Ignoring... (%s: %q)", self.Name, item, enum == 2 and "2 (= added)" or enum) continue end
+			if not where[enum] then
+				printf("Unknown change enum in %s! Ignoring... (%s: %q)", self.Name, item, enum == 2 and "2 (= added)" or enum)
+				continue
+			end
 			where[enum][#where[enum] + 1] = item
 			allits[#allits + 1] = item
 		end
@@ -312,6 +317,19 @@ function bp:WriteChanges(ns)
 		end
 	end
 
+	local hascrossmoves = #crossmove > 0
+
+	ns:WriteBool(hascrossmoves).HasCrossMoved = true
+	print("sv: has crossmoves", hascrossmoves, #crossmove)
+	if hascrossmoves then
+		ns:WriteUInt(#crossmove, 16).CrossMovedAmt = true
+		for k,v in ipairs(crossmove) do
+			ns:WriteUID(v)
+			ns:WriteSlot(v)
+			--ns:WriteInventory(v:GetInventory())
+		end
+	end
+
 	local hasmoves = #moves > 0
 
 	ns:WriteBool(hasmoves).HasMoved = true
@@ -324,16 +342,4 @@ function bp:WriteChanges(ns)
 		end
 	end
 
-	local hascrossmoves = #crossmove > 0
-
-	ns:WriteBool(hascrossmoves).HasCrossMoved = true
-	if hascrossmoves then
-		ns:WriteUInt(#crossmove, 16).CrossMovedAmt = true
-		for k,v in ipairs(crossmove) do
-			print("Crossmoved:", v)
-			if not v:GetInventory() then print("didn't find inventory for", v, " expect errors") end
-			ns:WriteUID(v)
-			ns:WriteInventory(v:GetInventory())
-		end
-	end
 end

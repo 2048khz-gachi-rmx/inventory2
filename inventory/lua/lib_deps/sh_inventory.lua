@@ -1,8 +1,6 @@
 
 AddCSLuaFile()
 
-local existed = Inventory
-
 local verygood = Color(50, 150, 250)
 local verybad = Color(240, 70, 70)
 
@@ -24,14 +22,14 @@ function InventoryDefine()
 	end})
 
 	Inventory = {
-		ItemObjects = {}, 				--Objects stores all metas and extension of the Item (the items owned by players and entities)
+		ItemObjects = {}, 				-- Objects stores all metas and extension of the Item (the items owned by players and entities)
+		ItemPool = {}, 					-- pool of itemUID : itemObj
+		BaseItemObjects = {},			-- BaseItemObjects stores all metas and extension of the BaseItem (which all Items will use)
+		BaseItems = BaseItemsTable,					-- stores the actual base item instances
 
-		BaseItemObjects = {},			--BaseItemObjects stores all metas and extension of the BaseItem (which all Items will use)
-		BaseItems = BaseItemsTable,					--stores the actual base item instances
+		Inventories = {},				-- inventory metas
 
-		Inventories = {},				--inventory metas
-
-		Util = {}, 						--utility functions
+		Util = {}, 						-- utility functions
 
 		Networking = { InventoryIDs = {} },
 

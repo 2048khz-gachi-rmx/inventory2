@@ -24,27 +24,18 @@ function ENT:Initialize()
 		phys:EnableMotion(true)
 	end
 
-	me[self] = {}
-	local me = me[self]
-
 end
+
 util.AddNetworkString("Workbench")
+
 function ENT:SendInfo(ply)
 
-	local me = RefineryTbl[self]
-	
 	net.Start("Workbench")
 		net.WriteEntity(self)
 	net.Send(ply)
 
-
 end
 
 function ENT:Use(ply)
-
-	local me = me[self]
-	if not me then self:Initialize() return end
-
 	self:SendInfo(ply)
-	
 end
