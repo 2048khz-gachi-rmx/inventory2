@@ -7,7 +7,7 @@ function Inventory.IncludeClass(fold, name)
 	FInc.Recursive("inventory/" .. fold:gsub("/$", "") .. "/*", _SH, nil, function(path)
 		local fn = path:match(name .. "[%.lua]*$")
 		if not fn then return false, false end --returning false stops the inclusion (twice for shared inclusion)
-
+		print("recursive: including", path, debug.traceback())
 		included = included + 1
 		Inventory.Included[path] = true --so we don't re-include it in main inclusion script (the one in autorun)
 	end)

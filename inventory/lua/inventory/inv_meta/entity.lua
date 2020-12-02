@@ -11,9 +11,20 @@ ent.UseSlots = false
 ent.MaxItems = 10
 ent.AutoFetchItems = false
 ent.MultipleInstances = true --there can be multiple inventory instances of the same class in a single table
+ent.EntityOwner = NULL
+ent.IsEntityInventory = true
 
 ent:Register()
 
+ChainAccessor(ent, "EntityOwner", "EntityOwner")
+
+function ent:SetOwner(ent)
+	if ent:IsPlayer() then error("A player can't be the owner of an Entity inventory!") return end
+
+	self.Owner = ent
+	self.EntityOwner = ent
+	self:Emit("OwnerAssigned", ent)
+end
 
 ent:On("OwnerAssigned", "StoreEntity", function(self, ow)
 	print("OwnerAssigned emitter fired")
@@ -21,6 +32,7 @@ ent:On("OwnerAssigned", "StoreEntity", function(self, ow)
 	print("Added hook", hookid)
 	hook.OnceRet("CPPIAssignOwnership", hookid, function(ply, ent)
 		if ent ~= self then return false end
+		self.Owner = ply
 		self.OwnerUID = ply:SteamID64()
 	end)
 end)
