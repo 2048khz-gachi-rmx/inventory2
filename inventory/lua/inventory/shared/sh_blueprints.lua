@@ -62,16 +62,77 @@ pool["Assault Rifle"] = {
 	"arccw_aug",
 	"arccw_augpara",
 	"arccw_m4a1",
+
+	"arccw_go_ace",
+	"arccw_go_ak47",
+	"arccw_go_ar15",
+	"arccw_go_aug",
+	"arccw_go_famas",
+	"arccw_go_m4",
+	"arccw_go_sg556",
+
+	"arccw_fml_fas_m4a1",
+	"arccw_fml_fas_akm15_whyphonemademedothis",
+	"arccw_fml_fas_famas",
+	"arccw_fml_fas_g36c",
+	"arccw_fml_fas_m16a2",
+}
+
+pool["SMG"] = {
+	"arccw_go_mac10",
+	"arccw_go_mp5",
+	"arccw_go_mp7",
+	"arccw_go_mp9",
+	"arccw_go_p90",
+	"arccw_go_bizon",
+	"arccw_go_ump",
+
+	"arccw_fml_fas_mp5",
+	"arccw_fml_fas_m11",
+
+	"arccw_bizon",
+	"arccw_vector",
+	"arccw_mp7",
+	"arccw_fml_fas_sterling",
+
 }
 
 pool["Sniper Rifle"] = {
-	"arccw_awm",
-	"arccw_sg550",
+	"arccw_go_awp",
+	"arccw_go_ssg08",
 
-	"arccw_m14", --DMRs are sniper rifles in my book, don't @ me
-	"arccw_g3a3",
+	"arccw_fml_fas_m82",
+	"arccw_fml_fas_m24",
+
+	"arccw_m107",
+	"arccw_m14",
 }
+
+pool["DMR"] = {
+	"arccw_g3a3",
+
+	"arccw_fml_fas_m14",
+	"arccw_fml_fas_g3a3",
+	"arccw_fml_fas_sr25",
+
+	"arccw_go_g3",
+	"arccw_go_scar",
+	"arccw_fml_fas_sg550",
+}
+
 pool["Pistol"] = {
-	"arccw_g18",
-	"arccw_m9"
+
+	"arccw_deagle50",
+	"arccw_deagle357",
+	"arccw_ragingbull",
+	"arccw_makarov",
+
+	"arccw_go_deagle",
+	"arccw_go_fiveseven",
+	"arccw_go_cz75",
+	"arccw_go_r8",
+	"arccw_go_tec9",
+
+	"arccw_fml_fas_deagle",
+
 }
