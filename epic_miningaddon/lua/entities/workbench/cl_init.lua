@@ -78,6 +78,7 @@ function ENT:OpenMenu()
 	self.Frame = main
 	main.Inventory = inv
 	main:SetCloseable(false, true)
+	main.Navbar:Expand()
 
 	inv:SetDeleteOnClose(false)
 
@@ -96,7 +97,7 @@ function ENT:OpenMenu()
 
 	main.Shadow = {}
 	main:SetRetractedSize(40)
-	main:SetExpandedSize(200)
+	main:SetExpandedSize(230)
 	main.BackgroundColor = Color(50, 50, 50)
 	inv:Bond(main)
 	main:Bond(inv)
@@ -113,7 +114,13 @@ function ENT:OpenMenu()
 	end)
 
 	mainTab:SetTall(60)
-	mainTab:Select(true)
+
+	local bpTab = main:AddTab("Craft from blueprint", function(_, _, pnl)
+		self:CraftThingsMenu(true, main)
+	end, function()
+		self:CraftThingsMenu(false, main)
+	end)
+	--mainTab:Select(true)
 end
 
 net.Receive("Workbench", function()
