@@ -71,7 +71,6 @@ Items = Items
 local function shouldIncludeItem(path)
 	local is_sv = path:match("_sv")
 	local ext = path:match("_extension")
-
 	local cl, sv = true, true
 
 	if is_sv then cl = false end
@@ -95,9 +94,9 @@ local function ContinueLoading(db)
 
 	FInc.Recursive("inventory/shared/*", _SH)
 
-	FInc.Coroutine("inventory/inv_meta/*", _SH, nil, shouldIncludeItem)
-	FInc.Coroutine("inventory/base_items/*", _SH, nil, shouldIncludeItem)
-	FInc.Coroutine("inventory/item_meta/*", _SH, nil, shouldIncludeItem)
+	FInc.Recursive("inventory/inv_meta/*", _SH, nil, shouldIncludeItem)
+	FInc.Recursive("inventory/base_items/*", _SH, nil, shouldIncludeItem)
+	FInc.Recursive("inventory/item_meta/*", _SH, nil, shouldIncludeItem)
 
 	FInc.Recursive("inventory/server/*", _SV)
 	FInc.Recursive("inventory/client/*", _CL)
@@ -129,8 +128,9 @@ function LoadInventory(force)
 	AddCSLuaFile("inventory/load.lua")
 
 	if SERVER then
-		hook.Add("InventoryMySQLConnected", "ProceedInclude", ContinueLoading)
+		--hook.Add("InventoryMySQLConnected", "ProceedInclude", ContinueLoading)
 		include("inventory/inv_mysql.lua")
+		ContinueLoading()
 	else
 		ContinueLoading()
 	end
