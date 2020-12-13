@@ -1,5 +1,9 @@
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
+
+AddCSLuaFile("bp_menu.lua")
+AddCSLuaFile("recipe_menu.lua")
+
 include("shared.lua")
 
 ENT.Model = "models/props/CS_militia/table_shed.mdl"

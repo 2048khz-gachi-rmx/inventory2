@@ -25,24 +25,6 @@ function ENT:Draw()
 	cam.End3D2D()
 end
 
-function ENT:CraftThingsMenu(open, main)
-
-	local dicon = vgui.Create("SearchLayout", main)
-
-	main:PositionPanel(dicon)
-
-	local btnSize = 64
-	local btnPad = 4
-
-	for i=1, 10 do
-		local b = dicon:Add(vgui.Create("FButton"), "test" .. i)
-		b:SetSize(btnSize, btnSize)
-		b.Label = "test" .. i
-	end
-
-	return dicon
-end
-
 function ENT:OpenMenu()
 	if IsValid(self.Frame) then
 		self.Frame:PopInShow()
@@ -107,8 +89,14 @@ function ENT:OpenMenu()
 
 	inv:MoveRightOf(main, 8)
 
+	local initial = true
+
 	local mainTab = main:AddTab("Craft garbage", function(_, _, pnl)
 		self:CraftThingsMenu(true, main)
+		if initial then
+			main.Navbar:Retract()
+			initial = false
+		end
 	end, function()
 		self:CraftThingsMenu(false, main)
 	end)
@@ -116,9 +104,13 @@ function ENT:OpenMenu()
 	mainTab:SetTall(60)
 
 	local bpTab = main:AddTab("Craft from blueprint", function(_, _, pnl)
-		self:CraftThingsMenu(true, main)
+		self:CraftFromBlueprintMenu(true, main)
+		if initial then
+			main.Navbar:Retract()
+			initial = false
+		end
 	end, function()
-		self:CraftThingsMenu(false, main)
+		self:CraftFromBlueprintMenu(false, main)
 	end)
 	--mainTab:Select(true)
 end
@@ -128,3 +120,6 @@ net.Receive("Workbench", function()
 
 	ent:OpenMenu()
 end)
+
+include("bp_menu.lua")
+include("recipe_menu.lua")
