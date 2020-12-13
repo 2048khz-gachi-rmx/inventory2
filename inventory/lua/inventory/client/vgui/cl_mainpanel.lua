@@ -75,10 +75,21 @@ function f:GetSlots()
 	return self.InvPanel:GetSlots()
 end
 
+function f:GetInventory()
+	return self.CurrentInventory
+end
+
+function f:GetInventoryPanel()
+	return self.InvPanel
+end
+
 function f:SetInventory(inv, pnl, noanim)
 	if pnl then
 		self:Emit("SwitchInventory", inv, pnl)
 		self:AppearInventory(pnl)
+		self.CurrentInventory = inv
+		self.InvPanel = pnl
+
 		return pnl, true, true
 	end
 
@@ -89,6 +100,7 @@ function f:SetInventory(inv, pnl, noanim)
 	p:SetInventory(inv)
 
 	self.InvPanel = p
+	self.CurrentInventory = inv
 
 	local slots = {}
 	local uids = {}
