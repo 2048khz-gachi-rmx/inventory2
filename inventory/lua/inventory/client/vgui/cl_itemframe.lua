@@ -106,6 +106,7 @@ function ITEM:Init()
 	self:Droppable("Item")
 	self:SetCursor("arrow") --"none" causes flicker wtf
 	self.DropFrac = 0
+	self.Highlighted = true
 
 	self:Receiver("Item", function(self, tbl, drop)
 
@@ -131,8 +132,10 @@ function ITEM:Init()
 	self:On("Drop", "ItemDrop", self.OnItemDrop)
 
 	self:On("ItemInserted", "Alpha", function(self, slot, item)
-		self:SetAlpha(255)
-		self.TransparentModel = false
+		if self.TransparentModel then
+			self:SetAlpha(255)
+			self.TransparentModel = false
+		end
 	end)
 
 	self:On("FakeItem", "Alpha", function(self)
@@ -220,11 +223,18 @@ function ITEM:OpenOptions()
 end
 
 function ITEM:CreateModelPanel(it)
-	if IsValid(self.ModelPanel) and it:GetModel() then
-		self.ModelPanel:SetModel(it:GetModel())
-		self.ModelPanel.Item = it
+	if IsValid(self.ModelPanel) then
 
-		BestGuess(nil, self.ModelPanel)
+		if it:GetModel() then
+			self.ModelPanel:SetModel(it:GetModel())
+			self.ModelPanel.Item = it
+
+			BestGuess(nil, self.ModelPanel)
+		else
+			self.ModelPanel:Remove()
+			self.ModelPanel = nil
+		end
+
 		return
 	end
 
@@ -242,17 +252,19 @@ function ITEM:CreateModelPanel(it)
 
 		function mdl.Paint(me, w, h)
 
-			if self.PaintingDragging or self.TransparentModel then
+			--[[if self.PaintingDragging or self.TransparentModel then
 				render.OverrideAlphaWriteEnable( true, false )
-				render.OverrideBlend(true, BLEND_SRC_COLOR, BLEND_ZERO, BLENDFUNC_MAX, 0, 0, 5)
-			end
+				render.SetWriteDepthToDestAlpha( false )
+				render.OverrideBlend(true, BLEND_SRC_COLOR, BLEND_SRC_ALPHA, BLENDFUNC_MIN, 0, 0, 5)
+			end]]
 
 			pnt(me, w, h)
 
-			if self.PaintingDragging or self.TransparentModel then
+			--[[if self.PaintingDragging or self.TransparentModel then
 				render.OverrideBlend(false)
 				render.OverrideAlphaWriteEnable( false )
-			end
+				render.SetWriteDepthToDestAlpha( true )
+			end]]
 
 		end
 
@@ -346,11 +358,19 @@ end
 function ITEM:PostPaint()
 end
 
+function ITEM:Dehighlight()
+	self.Highlighted = false
+end
+
+function ITEM:Highlight()
+	self.Highlighted = true
+end
+
 local hovCol = Color(130, 130, 130)
 
 function ITEM:MaskHoverGrad(w, h)
 	draw.RoundedPolyBox(self.Rounding - 2, 0, 0, w, h, color_black)
-	surface.SetDrawColor(self.HoverGradientColor or hovCol) --sets the color for the gradient border
+	surface.SetDrawColor(self.HoverGradientColor or hovCol) --sets the color for the gradient border (since that's a meta function, not ours)
 end
 
 function ITEM:DrawBorder(w, h, col)
@@ -370,23 +390,36 @@ function Inventory.Panels.ItemDraw(self, w, h)
 
 		local base = it:GetBaseItem()
 
-		self.FakeBorderColor = self.FakeBorderColor or self.BorderColor:Copy()
+		--self.FakeBorderColor = self.FakeBorderColor or self.BorderColor:Copy() -- copy the color so we dont modify the original, and use it for drawing the border
 
-		local col = self.FakeBorderColor
-		local realcol = self.BorderColor
-		local ch, cs, cv = ColorToHSV(realcol)
+		local drawcol = self:CopiedColor(self.Color or Colors.Gray, "draw")
+		local bordcol = self:CopiedColor(self.BorderColor, "border")
+
+		--local col = self.FakeBorderColor
+		--local realcol = self.BorderColor
 
 		self:To("BorderLight", self:IsHovered() and 1 or 0, 0.2, 0, 0.2)
-
 		local add_val = self.BorderLight or 0
 
-		draw.ColorModHSV(col, ch, cs, cv + add_val / 15)
 
-		--print(cv + add_val / 10, col)
-		self:DrawBorder(w, h, col) --draw.RoundedBox(rnd, 0, 0, w, h, col)
-		draw.RoundedBox(rnd, 2, 2, w-4, h-4, self.Color or Colors.Gray)
+		self:To("DrawColDim", self.Highlighted and 0 or 1, 0.3, 0, 0.3)
 
-		base:Emit("Paint", self.Item, self, self.ModelPanel)
+		local bh, bs, bv = ColorToHSV(self.BorderColor)
+		local ch, cs, cv = ColorToHSV(self.Color or Colors.Gray)
+		local dim = self.DrawColDim or 0
+
+		bordcol:SetHSV(bh, bs, bv + add_val / 15 - cv * dim * 0.3)
+		drawcol:SetHSV(ch, cs, cv - cv * dim * 0.3)
+
+
+		self:DrawBorder(w, h, bordcol)
+		draw.RoundedBox(rnd, 2, 2, w-4, h-4, drawcol)
+
+		local preMult = surface.GetAlphaMultiplier()
+
+		surface.SetAlphaMultiplier(preMult - dim * 0.6 * preMult)
+			base:Emit("Paint", self.Item, self, self.ModelPanel)
+		surface.SetAlphaMultiplier(preMult)
 	else
 		local x, y, w, h = 0, 0, w, h
 
@@ -450,6 +483,10 @@ end
 
 local amtCol = Color(120, 120, 120)
 local boxCol = Color(30, 30, 30, 220)
+
+local initA = boxCol.a
+local initAA = amtCol.a
+
 function ITEM:PaintOver(w, h)
 	local it = self.Item or self.FakeItem
 
@@ -457,6 +494,11 @@ function ITEM:PaintOver(w, h)
 		draw.SimpleText(it:GetUID(), "OS16", w/2, 0, Colors.DarkerRed, 1, 5)
 
 		if it:GetCountable() then
+			local dim = self.DrawColDim or 0
+
+			boxCol.a = initA * (1 - dim) * 0.3 + initA * 0.7
+			amtCol.a = initAA * (1 - dim) * 0.3 + initAA * 0.7
+
 			local amt = self:GetAmount()
 			if amt then
 				surface.SetFont("MR18")
