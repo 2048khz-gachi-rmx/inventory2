@@ -1,5 +1,5 @@
 --?
-print("generic included")
+
 local Base = Inventory.BaseItemObjects.Generic or Emitter:callable()
 Base.BaseName = "Generic"
 Base.ItemClass = "Generic"
@@ -164,12 +164,13 @@ function Base:SetCountable(b)
 		if self.NetworkedVars[1] and self.NetworkedVars[1].what == "Amount" then return self end --already countable or somethin'?
 
 		local len = self:GetMaxStack() and bit.GetLen(self:GetMaxStack())
-		print("Len for", self.Name, len)
+
 		table.insert(self.NetworkedVars, 1, {
 			type = "UInt",
 			what = "Amount",
 			args = {len or 32}
 		})
+
 		self:AddDefaultData("Amount", 1)
 
 	elseif self.Countable and b == false and self.NetworkedVars[1] and self.NetworkedVars[1].what == "Amount" then

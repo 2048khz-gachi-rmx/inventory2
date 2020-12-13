@@ -2,7 +2,7 @@
 
 local basebp = Inventory.BaseItemObjects.Generic("base_bp")
 basebp 	:SetName("Empty Blueprint")
-		
+
 		:On("Paint", "PaintBlueprint", function(base, item, slot, w, h)
 			local w, h = slot:GetSize()
 			surface.SetDrawColor(color_white)
@@ -21,7 +21,7 @@ basebp 	:SetName("Empty Blueprint")
 
 local blueprint = Inventory.BaseItemObjects.Blueprint("blueprint")
 blueprint 	:SetName("Blueprint -- you're not supposed to see this!")
-		
+
 		:On("Paint", "PaintBlueprint", function(base, item, slot, w, h)
 			local w, h = slot:GetSize()
 			surface.SetDrawColor(Colors.Red)

@@ -1,5 +1,4 @@
 --don't construct item objects directly; use Inventory.NewItem instead
-
 local it = Inventory.ItemObjects.Generic or Emitter:extend()
 it.ClassName = "Generic"
 it.IsItem = true

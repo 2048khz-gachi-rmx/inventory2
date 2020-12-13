@@ -1,4 +1,3 @@
-
 local bp = Inventory.Inventories.Backpack
 
 --[[

@@ -183,6 +183,8 @@ end
 local newItems = {}
 
 function nw.NetworkItemNames(ply, ids)
+	if istable(ply) and #ply == 0 then return end -- um
+
 	log("Networking constants for %s", ply)
 
 	if istable(ply) and IsPlayer(select(2, next(ply))) then
@@ -191,8 +193,6 @@ function nw.NetworkItemNames(ply, ids)
 		end
 	elseif IsPlayer(ply) then
 		ply.KnowsItemNames = true
-	else
-		print("what did i receive", ply, select(2, next(ply)), IsPlayer(select(2, next(ply))))
 	end
 
 	local dat = von.serialize(ids or Inventory.IDConversion.ToName)
