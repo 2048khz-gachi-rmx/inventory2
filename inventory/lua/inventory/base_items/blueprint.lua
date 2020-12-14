@@ -5,7 +5,6 @@ local bp = Inventory.BaseItemObjects.Blueprint or gen:callable("Blueprint", "Blu
 
 bp:NetworkVar("NetStack", function(it, write)
 	local ns = netstack:new()
-	print("networkvar called")
 
 	if write then
 		-- encode result
@@ -33,6 +32,7 @@ bp:NetworkVar("NetStack", function(it, write)
 		local res = net.ReadString()
 		it.Data.Result = res
 
+
 		-- tier
 		local tier = net.ReadUInt(4)
 		it.Data.Tier = tier
@@ -45,15 +45,16 @@ bp:NetworkVar("NetStack", function(it, write)
 			local iid = net.ReadUInt(16)
 			local name = Inventory.Util.ItemIDToName(iid)
 			local amt = net.ReadUInt(32)
-			print(iid, name)
+
 			it.Data.Recipe[name] = amt
 		end
 
 		-- modifiers
 		local mods = net.ReadUInt(8)
+
 		it.Data.Modifiers = {}
 
-		for i=1, amt do
+		for i=1, mods do
 			local id = net.ReadUInt(16)
 			local name = Inventory.Modifiers.IDToName(id)
 			local tier = net.ReadUInt(16)
