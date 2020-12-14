@@ -21,7 +21,7 @@ function nw.ReadItem(uid_sz, iid_sz, slot_sz, inventory)
     local slot = slot_sz and net.ReadUInt(slot_sz)
 
     local item = inventory:HasItem(uid)
-
+    log("       Read item UID: %s (sz: %d); IID: %s (sz: %d); Slot: %s", uid, uid_sz, iid, iid_sz, slot)
     if not item then
         local meta = Inventory.Util.GetMeta(iid)
         item = meta:new(uid, iid)
@@ -35,8 +35,6 @@ function nw.ReadItem(uid_sz, iid_sz, slot_sz, inventory)
     --item:SetInventory(inventory)
 
     Inventory.ItemPool[uid] = item
-
-    log("       Read item UID: %s; IID: %s; Slot: %s", uid, iid, slot)
     return item
 end
 

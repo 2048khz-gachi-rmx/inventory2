@@ -12,12 +12,12 @@ function it:WriteNetworkedVars(ns, typ)
 			local ret = v.what(self, true) --true means write, false means read
 			if not IsNetStack(ret) then ns:WriteBool(false) continue end
 
-			ns:WriteBool(true)
+			ns:WriteBool(true).PacketName = "Has NetworkedVar as function - " .. tostring(self)
 			ret:MergeInto(ns)
 		else
 			if not self.Data[v.what] or (typ ~= INV_NETWORK_FULLUPDATE and self.LastNetworkedVars[v.what] == self.Data[v.what]) then ns:WriteBool(false) continue end
 
-			ns:WriteBool(true)
+			ns:WriteBool(true).PacketName = "Has NetworkedVar as predefined"
 			print("NetworkedVars: networking", v.what, "for", self:GetName(), "with args:", self.Data[v.what], unpack(v.args))
 			ns["Write" .. v.type] (ns, self.Data[v.what], unpack(v.args)).PacketName = "NetworkedVar - " .. v.what
 			self.LastNetworkedVars[v.what] = self.Data[v.what]
