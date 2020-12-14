@@ -3,11 +3,13 @@ local it = Inventory.ItemObjects.Generic
 function it:GenerateText(cloud)
 	cloud:SetFont("OS24")
 	cloud:SetText(self:GetName())
+	cloud.MaxW = 250
 
 	local lwid = cloud.LabelWidth
 
 	local mup = vgui.Create("MarkupText", cloud)
 	mup:SetPaintedManually(true)
+	mup:SetWide(cloud:GetCurWidth())
 
 	self:Emit("GenerateText", cloud, mup)
 
@@ -27,7 +29,3 @@ function it:GenerateText(cloud)
 
 	cloud:SetColor(Colors.Gray:Copy())
 end
-
-it:On("GenerateText", 1, function(self, cloud)
-	cloud.MaxW = 250
-end)

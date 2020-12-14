@@ -6,31 +6,52 @@ mods.Pool = mods.Pool or {}
 
 mods.Pool.Blazing = {
 	MaxTier = 4,
+	Markup = function(it, cl, mup)
+		local mod = mup:AddPiece()
+		mod:AddText("Blazing")
+		mod.IgnoreVisibility = true
+		local bcol = Color(180, 150, 60)
+		mod:SetColor(bcol)
+
+		mod:On("Think", function()
+			bcol.r = 210 + math.abs(math.sin(CurTime() * 1.4) * 40)
+			bcol.g = 120 + math.abs(math.sin(CurTime() * 1.1) * 20)
+		end)
+		local desc = mup:AddPiece()
+		desc.Font = "OS16"
+		desc:DockMargin(8, 0, 0, 0)
+		desc:SetColor(Color(180, 150, 60))
+		desc:AddText("BRrrrrrrrrrrrt and you're ~ablaze~")
+		desc.IgnoreVisibility = true
+	end
 }
 
 mods.Pool.Crippling = {
 	MaxTier = 3,
 	Markup = function(it, cl, mup)
+		--mup:Debug()
 		local mod = mup:AddPiece()
 		mod.Font = "OS72"
 		mod:AddTag(MarkupTags("scale", 0.35, 0.35))
 		local t = mod:AddTag(MarkupTags("rotate", -10, 0))
-		mod:AddText("Crip")
+		mod:AddText("Crip", nil, 1)
 		mod:EndTag(t)
 		mod:AddTag(MarkupTags("rotate", 10, 0))
-		mod:AddText("pling", 15)
-
-		local recalced = false
-
-		mod:On("ShouldRecalculateHeight", "ThisIsAHack", function(self, buf)
-			if recalced then return end
-			recalced = true
+		mod:AddText("pling", 15, 1)
+		mod.IgnoreVisibility = true
+		mod:On("RecalculateHeight", "ThisIsAHack", function(self, buf, maxh)
+			surface.SetFont(mod.Font)
+			local tw, th = surface.GetTextSize("pling")
+			local bw, bh = math.AABBRectSize(tw * 0.35, th * 0.35 * 0.875, 10)	-- OpenSans has a 12.5% padding on top/bottom of letters
+			return math.ceil(bh)
 		end)
 
-		mod:On("RecalculateHeight", "ThisIsAHack", function(self, buf)
-			self:SetTall(40)
-			return true
-		end)
+		local desc = mup:AddPiece()
+		desc.Font = "OS16"
+		desc:DockMargin(8, 0, 0, 0)
+		desc:SetColor(Color(130, 130, 130))
+		desc:AddText("It does some kewl shit, ya feel me? Like it can slow down ppl and shit, thats really cool i guess")
+		desc.IgnoreVisibility = true
 	end,
 }
 
