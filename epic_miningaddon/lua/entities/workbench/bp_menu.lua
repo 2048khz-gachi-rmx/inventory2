@@ -71,6 +71,10 @@ function ENT:CraftFromBlueprintMenu(open, main)
 		if item.IsBlueprint then
 			dragBP = false
 		end
+
+		if isHov then
+			pnl:DropBlueprint()
+		end
 	end)
 
 	local desCol = Color(10, 10, 10)
@@ -103,7 +107,6 @@ function ENT:CraftFromBlueprintMenu(open, main)
 		local sz = self.GradSz or 0
 		surface.SetDrawColor(curCol:Unpack())
 		self:DrawGradientBorder(w, h, 3 + sz, 3 + sz)
-		
 
 		local rgb = 255
 		local a = 60 - self.DragFrac * 30
@@ -117,5 +120,11 @@ function ENT:CraftFromBlueprintMenu(open, main)
 
 		surface.SetTextColor(rgb, rgb, rgb, a)
 		draw.SimpleText2("AAA", "OS24", w/2, h/2, nil, 1, 1)
+
+		self:Emit("Paint", w, h)
+	end
+
+	function pnl:DropBlueprint()
+
 	end
 end
