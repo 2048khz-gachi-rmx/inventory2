@@ -4,6 +4,14 @@ local zeroClamp = function(a)
 	return math.max(a, 0)
 end
 
+local chances = {
+	pistol = 1.25,
+	--shotgun = 1.1,
+	sr = 0.75,
+	dmr = 0.75,
+	smg = 1.1,
+}
+
 Inventory.Blueprints.TierMods = {
 	[1] = function(ply) return math.random() > 0.85 and 1 or 0 end, --15% of 1 mod
 	[2] = function(ply) return math.random() > 0.75 and 2 or 1 end, --75% of 1 mod, 25% of 2 mods
@@ -43,9 +51,9 @@ function bp.GetRandomType()
 	local typs = {}
 	local total = 0
 	for name, dat in pairs(Inventory.Blueprints.Types) do
-		local chance = dat.Chance
+		local chance = dat.Chance or chances[name] or 1
 
-		if not chance or name == "Random" then continue end
+		if name == "Random" then continue end
 		if not bp.WeaponPool[name] then continue end --??
 
 		typs[#typs + 1] = {name, total + chance}
@@ -84,7 +92,7 @@ function bp.GenerateMods(amt)
 end
 
 function bp.Generate(tier, typ)
-	if typ == "Random" then
+	if typ == "random" then
 		typ = bp.GetRandomType()
 	end
 

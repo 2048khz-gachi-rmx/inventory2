@@ -14,39 +14,114 @@ Inventory.Blueprints.Costs = {
 
 Inventory.Blueprints.Types = {
 
-	["Pistol"] = {CostMult = 1, Chance = 0.3, Order = 1},
-	["Assault Rifle"] = {CostMult = 1.75, Chance = 0.2},
+	["pistol"] = {
+		Name = "Pistol",
+		CostMult = 1,
+		Order = 1,
 
-	["Shotgun"] = {CostMult = 1.25, Chance = 0.3, Icon = {
-			IconURL = "https://i.imgur.com/hTA3WB7.png",
-			IconName = "trash.png",
+		BPIcon = {
+			IconURL = "https://i.imgur.com/nf4lmzF.png",
+			IconName = "bp_icons/pistol_big.png",
+
+			IconW = 92,
+			IconH = 64,
+			IconScale = 0.9
 		}
 	},
 
-	["Sniper Rifle"] = {CostMult = 1.75, Chance = 0.2, Icon = {
+	["ar"] = {
+		Name = "Assault Rifle",
+		CostMult = 1.75,
+
+		BPIcon = {
+			IconURL = "https://i.imgur.com/T9biQqd.png",
+			IconName = "bp_icons/ar_big.png",
+
+			IconW = 290,
+			IconH = 108
+		}
+	},
+
+	["smg"] = {
+		Name = "SMG",
+		CostMult = 1.75,
+
+		BPIcon = {
+			IconURL = "https://i.imgur.com/4Fz3Le9.png",
+			IconName = "bp_icons/smg_big.png",
+
+			IconW = 176,
+			IconH = 74,
+		}
+	},
+
+	["shotgun"] = {
+		Name = "Shotgun",
+		CostMult = 1.25,
+		CatIcon = {
+			IconURL = "https://i.imgur.com/hTA3WB7.png",
+			IconName = "trash.png",
+		},
+
+		BPIcon = {
+			IconURL = "https://i.imgur.com/eUr9whr.png",
+			IconName = "bp_icons/sg_big.png",
+
+			IconW = 230,
+			IconH = 57,
+		}
+	},
+
+	["sr"] = {
+		Name = "Sniper Rifle",
+		CostMult = 1.75,
+		CatIcon = {
 			IconURL = "https://i.imgur.com/85zETmx.png",
 			IconName = "pepebugh.png",
 			IconW = 64,
 			IconH = 48
 		},
+
+		BPIcon = {
+			IconURL = "https://i.imgur.com/sY19kWY.png",
+			IconName = "bp_icons/sr_big.png",
+
+			IconW = 349,
+			IconH = 85,
+		}
 	},
 
-	["Random"] = {CostMult = 1, Default = true, Order = 2,
+	["dmr"] = {
+		Name = "DMR",
+		CostMult = 1.75,
 
-		Icon = {
+		BPIcon = {
+			IconURL = "https://i.imgur.com/guESdWb.png",
+			IconName = "bp_icons/dmr_big.png",
 
+			IconW = 294,
+			IconH = 74,
+		}
+	},
+
+	["random"] = {
+		Name = "Random",
+		CostMult = 1,
+		Default = true,
+		Order = 2,
+
+		CatIcon = {
 			Render = function(w, h)
 				draw.SimpleText("?", "MRB72", w/2, h/2, color_white, 1, 1)
 			end,
 
 			RenderW = 48,
 			RenderH = 48,
-			RenderName = "bp_random",
+			RenderName = "bp_small_random",
 
 			IconW = 24,
 			IconPad = 4
 		},
-
 	}
 }
 
@@ -54,7 +129,7 @@ Inventory.Blueprints.WeaponPool = {}
 
 local pool = Inventory.Blueprints.WeaponPool
 
-pool["Assault Rifle"] = {
+pool.ar = {
 	"arccw_famas",
 	"arccw_galil556",
 	"arccw_sg552",
@@ -78,7 +153,7 @@ pool["Assault Rifle"] = {
 	"arccw_fml_fas_m16a2",
 }
 
-pool["SMG"] = {
+pool.smg = {
 	"arccw_go_mac10",
 	"arccw_go_mp5",
 	"arccw_go_mp7",
@@ -97,7 +172,7 @@ pool["SMG"] = {
 
 }
 
-pool["Sniper Rifle"] = {
+pool.sr = {
 	"arccw_go_awp",
 	"arccw_go_ssg08",
 
@@ -108,7 +183,7 @@ pool["Sniper Rifle"] = {
 	"arccw_m14",
 }
 
-pool["DMR"] = {
+pool.dmr = {
 	"arccw_g3a3",
 
 	"arccw_fml_fas_m14",
@@ -120,7 +195,7 @@ pool["DMR"] = {
 	"arccw_fml_fas_sg550",
 }
 
-pool["Pistol"] = {
+pool.pistol = {
 
 	"arccw_deagle50",
 	"arccw_deagle357",
@@ -136,3 +211,10 @@ pool["Pistol"] = {
 	"arccw_fml_fas_deagle",
 
 }
+
+Inventory.Blueprints.WeaponPoolReverse = {}
+for k,v in pairs(pool) do
+	for _, gun in ipairs(v) do
+		Inventory.Blueprints.WeaponPoolReverse[gun] = k
+	end
+end
