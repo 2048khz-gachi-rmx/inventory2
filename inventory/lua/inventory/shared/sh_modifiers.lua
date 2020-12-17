@@ -42,7 +42,7 @@ mods.Pool.Crippling = {
 		mod:On("RecalculateHeight", "ThisIsAHack", function(self, buf, maxh)
 			surface.SetFont(mod.Font)
 			local tw, th = surface.GetTextSize("pling")
-			local bw, bh = math.AABBRectSize(tw * 0.35, th * 0.35 * 0.875, 10)	-- OpenSans has a 12.5% padding on top/bottom of letters
+			local bw, bh = math.AARectSize(tw * 0.35, th * 0.35 * 0.875, 10)	-- OpenSans has a 12.5% padding on top/bottom of letters
 			return math.ceil(bh)
 		end)
 
