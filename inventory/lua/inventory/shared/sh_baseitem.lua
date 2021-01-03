@@ -8,28 +8,30 @@ function ToUID(it)
 
 end
 
+-- returns BaseItemMeta's name ( metas in base_items/*.lua )
+function Inventory.Util.GetBaseMetaName(iid)
+	local base = Inventory.Util.GetBase(iid)
+	return base.BaseName
+end
 
+-- returns BaseItemMeta ( metas in base_items/*.lua )
 function Inventory.Util.GetBaseMeta(iid)
-	local base = Inventory.BaseItems[iid]
-	if not base then print("no base for iid", iid) return false end
-
-	local class = base.BaseName
-	if not class then print("no base name") return false end
-
-    return Inventory.BaseItemObjects[class]
+	local name = Inventory.Util.GetBaseMetaName(iid)
+	return name and Inventory.BaseItemObjects[name]
 end
 
 
+-- returns ItemMeta ( metas in item_meta/*.lua )
 function Inventory.Util.GetMeta(iid)
-	local base = Inventory.Util.GetBaseMeta(iid)
+	local base = Inventory.Util.GetBaseMetaName(iid)
 	if not base then return false end
 
-	return Inventory.ItemObjects[base.ItemClass]
+	return Inventory.ItemObjects[base]
 end
 
-
-function Inventory.Util.GetBase(id)
-	return Inventory.BaseItems[id]
+-- returns BaseItem (eg. Iron Ore or Copper Bar)
+function Inventory.Util.GetBase(iid)
+	return Inventory.BaseItems[iid]
 end
 
 function Inventory.Util.GetInventory(id)

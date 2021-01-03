@@ -1,12 +1,13 @@
 
 AddCSLuaFile()
 
-local verygood = Color(50, 150, 250)
-local verybad = Color(240, 70, 70)
-
-
-
 local InventoryDefine
+
+local shortRealm = SERVER and "SV" or "CL"
+local logName = "Inv-" .. shortRealm
+local logCol = CLIENT and Color(255, 195, 50) or Color(70, 200, 250)
+
+local verybad = Color(210, 70, 70)
 
 function InventoryDefine()
 
@@ -42,12 +43,10 @@ function InventoryDefine()
 
 		Initted = (Inventory and Inventory.Initted) or false,
 
-		Log = function(str, ...)
-			MsgC(verygood, "[Inventory] ", color_white, str:format(...), "\n")
-		end,
+		Log = Logger(logName, logCol),
 
 		LogError = function(str, ...)
-			MsgC(verygood, "[Inventory ", verybad, "ERROR!", verygood, "] ", color_white, str:format(...), "\n")
+			MsgC(logCol, "[" .. logName, verybad, "ERROR!", logCol, "] ", color_white, str:format(...), "\n")
 		end,
 
 		Included = {},
