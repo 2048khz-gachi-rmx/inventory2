@@ -9,7 +9,7 @@ local nw = Inventory.Networking
 local invnet = netstack:extend()
 _G.invnet = invnet
 
-local log = Inventory.Log
+local log = function(...) Inventory.Log(...) end
 
 local names = {
 	UsesUID = {
@@ -242,8 +242,11 @@ function nw.NetStack(uid, iid)
 	return ns
 end
 
+nw.DebugNetworking = (nw.DebugNetworking ~= nil and false) or nw.DebugNetworking
+
 function nw.SendNetStack(ns, ply)
 	net.Start("Inventory")
+		if nw.DebugNetworking then print(ns) end
 		net.WriteNetStack(ns)
 	net.Send(ply)
 end
@@ -253,6 +256,7 @@ function nw.SendNetStacks(nses, ply)
 	net.Start("Inventory")
 		for k,v in ipairs(nses) do
 			net.WriteNetStack(v)
+			if nw.DebugNetworking then print(v) end
 		end
 	net.Send(ply)
 end
