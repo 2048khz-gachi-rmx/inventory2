@@ -1,6 +1,6 @@
 
 local gen = Inventory.GetClass("base_items", "generic_item")
-local eq = Inventory.BaseItemObjects.Equipment or gen:callable("Equipment", "Equippable")
+local eq = gen:ExtendItemClass("Equipment", "Equippable")
 
 eq.IsEquippable = true
 

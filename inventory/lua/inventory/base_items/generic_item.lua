@@ -30,7 +30,16 @@ function Base:OnExtend(new, name, class)
 
 	--if name ~= self.BaseName then
 		self.Extensions[name] = new
+		Inventory.BaseItemObjects[name] = self
 	--end
+end
+
+function Base:ExtendItemClass(name, class, forceNew)
+	if forceNew or not Inventory.BaseItemObjects[name] then
+		return self:callable(name, class)
+	else
+		return Inventory.BaseItemObjects[name]
+	end
 end
 
 --Initialize = a BaseItem instance is being constructed (e.g. 'Watermelon' from 'Generic')
@@ -53,7 +62,7 @@ function Base:Initialize(name)
 	self.ItemName = name --ID as a string
 	self.Name = name --nice name, can be overridden
 
-	self.BaseName = self.BaseName -- stop __indexes and make it show up when rawprinting the item
+	self.BaseName = self.BaseName
 	self.ItemClass = self.ItemClass
 
 	self:PullItemID()

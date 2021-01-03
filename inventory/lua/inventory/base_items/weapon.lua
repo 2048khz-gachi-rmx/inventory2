@@ -1,7 +1,7 @@
 --?
 
 local eq = Inventory.GetClass("base_items", "equipment")
-local wep = Inventory.BaseItemObjects.Weapons or eq:callable("Weapon", "Weapon")
+local wep = eq:ExtendItemClass("Weapon", "Weapon")
 
 wep.Uses = 150
 

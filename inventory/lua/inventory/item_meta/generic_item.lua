@@ -35,6 +35,7 @@ function it:Initialize(uid, iid, ...)
 	self.LastNetworkedVars = {}
 
 	local base = Inventory.BaseItems[iid]
+
 	if not base then
 		errorf("Failed to find Base Item for Item: UID: %s, IID: %d", uid or "[none]", iid)
 	end
@@ -109,7 +110,7 @@ BaseItemAccessor(it, "MaxStack", "MaxStack")
 
 
 function it:GetBaseItem()
-	return Inventory.BaseItems[self.ItemID]
+	return Inventory.Util.GetBase(self.ItemID)
 end
 it.GetBase = it.GetBaseItem
 

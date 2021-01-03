@@ -1,7 +1,7 @@
 --?
 
 local gen = Inventory.GetClass("base_items", "generic_item")
-local Mineable = Inventory.BaseItemObjects.Mineable or gen:callable("Mineable", "Generic")
+local Mineable = gen:ExtendItemClass("Mineable", "Generic")
 
 Mineable.OreColor = color_white
 Mineable.IsOre = true

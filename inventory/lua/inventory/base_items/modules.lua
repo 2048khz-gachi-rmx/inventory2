@@ -1,5 +1,5 @@
 local gen = Inventory.GetClass("base_items", "generic_item")
-local mod = Inventory.BaseItemObjects.EntityModule or gen:callable("EntityModule", "EntityModule")
+local mod = gen:ExtendItemClass("EntityModule", "EntityModule")
 
 mod.IsModule = true
 

@@ -1,12 +1,11 @@
 local gen = Inventory.GetClass("base_items", "generic_item")
-local bp = Inventory.BaseItemObjects.Blueprint or gen:callable("Blueprint", "Blueprint")
-
-
+local bp = gen:ExtendItemClass("Blueprint", "Blueprint")
 
 bp:NetworkVar("NetStack", function(it, write)
-	local ns = netstack:new()
 
 	if write then
+		local ns = netstack:new()
+
 		-- encode result
 		ns:WriteString(it:GetResult())
 
@@ -27,6 +26,8 @@ bp:NetworkVar("NetStack", function(it, write)
 			ns:WriteUInt(Inventory.Modifiers.NameToID(k), 16)
 			ns:WriteUInt(v, 16)
 		end
+
+		return ns
 	else
 		-- result
 		local res = net.ReadString()
@@ -40,30 +41,29 @@ bp:NetworkVar("NetStack", function(it, write)
 		-- recipe
 		local amt = net.ReadUInt(8)
 		it.Data.Recipe = {}
-
+		--printf("Recipe of %d components:", amt)
 		for i=1, amt do
 			local iid = net.ReadUInt(16)
 			local name = Inventory.Util.ItemIDToName(iid)
-			local amt = net.ReadUInt(32)
-
-			it.Data.Recipe[name] = amt
+			local needs = net.ReadUInt(32)
+			--printf("	#%d: %s x%d", i, name, needs)
+			it.Data.Recipe[name] = needs
 		end
 
 		-- modifiers
 		local mods = net.ReadUInt(8)
-
+		--printf("%d modifiers:", mods)
 		it.Data.Modifiers = {}
 
 		for i=1, mods do
 			local id = net.ReadUInt(16)
 			local name = Inventory.Modifiers.IDToName(id)
 			local tier = net.ReadUInt(16)
-
+			--printf("	#%d: %s %s", i, name, ("I"):rep(tier))
 			it.Data.Modifiers[name] = tier
 		end
 	end
 
-	return ns
 end, 'EncodeBlueprint')
 
 bp:Register()
