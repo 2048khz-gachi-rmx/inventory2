@@ -1,7 +1,7 @@
-
 local ms = Inventory.MySQL
-
 local db = ms.DB
+
+--FInc.FromHere("mysql_funcs/itemids.lua", _SV)
 
 local qerr = function(self, err, q)
 	ms.LogError("\n	Query: '%s'\n	Error: '%s'\n 	Trace: %s", q, err, debug.traceback("", 2))
@@ -147,6 +147,7 @@ selIDs.onSuccess = function(self, dat)
 	for k,v in ipairs(dat) do
 		ids[v.id] = v.name
 		names[v.name] = v.id
+		print("Created pair: ", v.id .. ":" .. v.name)
 	end
 
 	Inventory:Emit("ItemIDsReceived", ids, names)
@@ -190,6 +191,22 @@ function ms.AssignItemID(name, cb, arg)
 
 		Inventory:Emit("ItemIDAssigned", name, id)
 		hook.Run("InventoryItemIDAssigned", name, id)
+	end
+
+	qobj.onError = qerr
+
+	qobj:start()
+end
+
+local delete_id_query = db:prepare("DELETE FROM itemids WHERE id = ?;")
+function ms.DeleteItemID(id, cb, ...)
+
+	local qobj = delete_id_query
+	qobj:setNumber(1, id)
+	local args = {...}
+
+	qobj.onSuccess = function(self, dat)
+		if cb then cb(unpack(args)) end
 	end
 
 	qobj.onError = qerr
@@ -353,7 +370,10 @@ function ms.FetchPlayerItems(inv, ply)
 
 		for k,v in ipairs(dat) do
 			local it = Inventory.Util.GetMeta(v.iid)
-			if not it then ErrorNoHalt("Failed to reconstruct item with ItemID: " .. v.iid) continue end
+			if not it then
+				ErrorNoHalt("Failed to reconstruct item with ItemID: " .. v.iid .. " (didn't find meta)\n")
+				continue
+			end
 
 			it = it:new(v.uid, v.iid)
 
