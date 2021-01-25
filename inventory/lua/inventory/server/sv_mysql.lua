@@ -1,8 +1,6 @@
 local ms = Inventory.MySQL
 local db = ms.DB
 
---FInc.FromHere("mysql_funcs/itemids.lua", _SV)
-
 local qerr = function(self, err, q)
 	ms.LogError("\n	Query: '%s'\n	Error: '%s'\n 	Trace: %s", q, err, debug.traceback("", 2))
 end
@@ -16,8 +14,6 @@ local trerr = function(tr, err)
 	end
 	ms.LogError("\n	Transaction error: '%s'\n Errors: %s \n Trace: %s", err, table.concat(errs, ";\n"), debug.traceback("", 2))
 end
-
-_G.IQError = qerr
 
 local log = ms.Log
 
@@ -130,10 +126,17 @@ hook.Add("InventoryTypeRegistered", "CreateInventoryTables", function(inv)
 	if not inv.SQLName and inv.UseSQL ~= false then errorf("Inventory %s is missing an SQLName!", inv.Name) return end
 	if inv.UseSQL == false then return end
 
-	ms.CreateInventoryTable(inv.SQLName, inv.UseSlots, inv.SQLColumns, inv.SQLConstraints)
+	Inventory.MySQL.WaitStates(
+		Curry(ms.CreateInventoryTable, inv.SQLName, inv.UseSlots, inv.SQLColumns, inv.SQLConstraints),
+		"items"
+	)
+
 end)
 
 
+--[[
+	Filling ItemID cache
+]]
 
 local selIDs = ms.DB:query("SELECT * FROM itemids")
 
@@ -159,12 +162,14 @@ selIDs.onError = qerr
 
 selIDs:start()
 
-local assign_query = ms.DB:prepare("SELECT GetBaseItemID(?) AS id;")
 
--- 'arg' provided for easy chaining
--- e.g. ms.AssignItemID(it.Name, it.SetUID, it)
--- 			is basically
--- 		ms.AssignItemID(it.Name, function(uid) it:SetUID(uid) end)
+local function getID(it)
+	local id = it:GetID() or it:GetItemName()
+	return (isstring(id) or isnumber(id)) and id
+		or errorf("ItemID is not valid (IID: %q, ItemName: %q)", it:GetID(), it:GetItemName())
+end
+
+local assign_query = ms.DB:prepare("SELECT GetBaseItemID(?) AS id;")
 
 function ms.AssignItemID(name, cb, arg)
 	local conv = Inventory.IDConversion
@@ -215,27 +220,26 @@ function ms.DeleteItemID(id, cb, ...)
 end
 
 
-local newitem_name_query 	= ms.DB:prepare("SELECT InsertByItemName(?) AS uid LIMIT 1;")
 local newitem_inv_query 	= ms.DB:prepare("CALL InsertByItemNameInInventory(?, ?, ?, ?);")
-
-local newitem_id_query 		= ms.DB:prepare("INSERT INTO items(iid) VALUES (?)")--; SELECT last_insert_id() AS uid;")
 local newitem_idinv_query 	= ms.DB:prepare("CALL InsertByIDInInventory(?, ?, ?, ?);")
 
-function ms.NewItem(item, inv, ply, cb)
+-- takes an item object and sticks it in the inventory
+function ms.NewInventoryItem(item, inv, ply)
 
 	local qobj
 
 	local invname = inv and (inv.SQLName)-- or errorf("Inventory.MySQL.NewItem: No SQLName for inventory %s!", inv.Name))
-	local iid = item.ItemID or item.ItemName
+	local iid = getID(item)
 
 	if not invname then
-		if isstring(iid) then
+		errorf("Failed to find inventory (inv = %q, invname = %q).", tostring(inv), tostring(invname))
+		--[[if isstring(iid) then
 			newitem_name_query:setString(1, iid)
 			qobj = newitem_name_query
 		else
 			newitem_id_query:setNumber(1, iid)
 			qobj = newitem_id_query
-		end
+		end]]
 	else
 		local sid = (IsPlayer(ply) and ply:SteamID64()) or (isstring(ply) and ply) or errorf("Inventory.MySQL.NewItem: expected player or steamid64 as arg #3, got %q instead", type(ply))
 		if isstring(iid) then
@@ -252,8 +256,7 @@ function ms.NewItem(item, inv, ply, cb)
 		local slot = item:GetSlot()
 		if not slot then
 			slot = inv:GetFreeSlot()
-			--qobj:clearParameters()
-			if not slot then errorf("Inventory.MySQL.NewItem: Expected a free slot for item %s, but got nuffin' instead", item) return end
+			if not slot then errorf("Inventory.MySQL.NewItem: Failed to find a free slot for item %s.", item) return end
 			item:SetSlot(slot)
 		end
 
@@ -261,18 +264,12 @@ function ms.NewItem(item, inv, ply, cb)
 
 	end
 
-	--[[qobj.onSuccess = function(self, dat, e)
-		local uid = dat[1].uid
-		cb(uid)
-	end
-
-	qobj.onError = qerr]]
 
 	local qem = MySQLEmitter(qobj, true):Catch(qerr)
 
 	qem:Once("Success", "AssignData", function(_, qobj, res)
 		local uid = qobj:lastInsert()
-		if uid == 0 then uid = res[1].uid end
+		if uid == 0 then uid = res[1].uid end -- What
 
 		local dat = item:GetPermaData()
 		if not table.IsEmpty(dat) then
@@ -284,6 +281,38 @@ function ms.NewItem(item, inv, ply, cb)
 	return qem
 	--qobj:start()
 
+end
+
+local newitem_name_query 	= ms.DB:prepare("SELECT InsertByItemName(?) AS uid LIMIT 1;")
+local newitem_id_query 		= ms.DB:prepare("INSERT INTO items(iid) VALUES (?)")
+
+-- takes an item object and stores it in the items table
+-- it is freefloating, meaning it isn't tied to any inventories, slots, and isn't owned by anyone
+function ms.NewFloatingItem(item)
+	local iid = getID(item)
+	local qobj
+
+	if isstring(iid) then
+		newitem_name_query:setString(1, iid)
+		qobj = newitem_name_query
+	else
+		newitem_id_query:setNumber(1, iid)
+		qobj = newitem_id_query
+	end
+
+	local qem = MySQLEmitter(qobj, true):Catch(qerr)
+
+	qem:Once("Success", "AssignData", function(_, qobj, res)
+		local uid = qobj:lastInsert()
+		if uid == 0 then uid = res[1].uid end -- What
+
+		local dat = item:GetPermaData()
+		if not table.IsEmpty(dat) then
+			ms.ItemWriteData(item, dat)
+		end
+	end)
+
+	return qem
 end
 
 local delete_query = ms.DB:prepare("DELETE FROM items WHERE uid = ?")
