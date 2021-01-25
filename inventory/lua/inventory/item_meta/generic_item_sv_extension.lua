@@ -45,7 +45,7 @@ function it:Insert(invobj, cb)
 
 	local sid = invobj and invobj:GetOwnerID()
 
-	local qobj = Inventory.MySQL.NewItem(self, invobj, sid)
+	local qobj = Inventory.MySQL.NewInventoryItem(self, invobj, sid)
 
 	qobj:Once("Success", function(_, query, dat)
 		local uid = query:lastInsert()

@@ -14,7 +14,6 @@ local function load(act)
 			--if it:Emit("CanEquip", ply, slot) == false then print("item refused to equip") return end
 
 			local slotName = Inventory.EquipmentSlots[slot]
-			_REC = it
 
 			local can, why = it:Emit("CanEquip", ply, slotName)
 			if can == false then print("cant equip :(", why) return false end

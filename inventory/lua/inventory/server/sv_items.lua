@@ -1,7 +1,6 @@
 
 --[[
-	Creates a brand new item and waits until you stick it into SQL with all the stats necessary.
-	Don't use this for creating items pulled from SQL!
+	Creates a brand new item and waits until you stick it into SQL with all the data necessary.
 ]]
 
 function Inventory.NewItem(iid, invobj, dat)
