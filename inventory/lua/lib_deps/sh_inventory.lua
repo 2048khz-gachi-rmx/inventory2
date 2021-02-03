@@ -46,7 +46,7 @@ function InventoryDefine()
 		Log = Logger(logName, logCol),
 
 		LogError = function(str, ...)
-			MsgC(logCol, "[" .. logName, verybad, "ERROR!", logCol, "] ", color_white, str:format(...), "\n")
+			MsgC(logCol, "[" .. logName, verybad, " ERROR!", logCol, "] ", color_white, str:format(...), "\n")
 		end,
 
 		Included = {},
@@ -84,31 +84,41 @@ local function shouldIncludeItem(path)
 	return cl, sv
 end
 
---CLIENT: called instantly, no args
---SERVER: called after loading MySQL with db as the database
+local function shouldIncludeCore(path, realm)
+	local ext = path:match("_extension")
 
+	local cl, sv = realm == _CL or realm == _SH, realm == _SV or realm == _SH
 
-local function ContinueLoading(db)
+	if ext then --extensions get included manually
+		cl = cl and 1 or false
+		sv = false
+	end
+
+	return cl, sv
+end
+
+-- ContinueLoading:
+-- 		CLIENT: called instantly, no args
+-- 		SERVER: called after loading MySQL with db as the database
+
+local function ContinueLoading()
 	Inventory.Loading = true --prevent infinite looping in inventory/load.lua
 
-	FInc.Recursive("inventory/shared/*", _SH)
+	FInc.Recursive("inventory/shared/*", _SH, nil, shouldIncludeCore)
 
 	FInc.Recursive("inventory/inv_meta/*", _SH, nil, shouldIncludeItem)
 	FInc.Recursive("inventory/base_items/*", _SH, nil, shouldIncludeItem)
 	FInc.Recursive("inventory/item_meta/*", _SH, nil, shouldIncludeItem)
 
-	FInc.Recursive("inventory/server/*", _SV)
-	FInc.Recursive("inventory/client/*", _CL)
+	FInc.Recursive("inventory/server/*", _SV, nil, shouldIncludeCore)
+	FInc.Recursive("inventory/client/*", _CL, nil, shouldIncludeCore)
 
 	include("inv_items/load.lua") --that will handle the loading itself
-	hook.Run("OnInventoryLoad")
 
 	Inventory.Loading = false
 
 	hook.Run("InventoryReady")
 	Inventory.Initted = true
-
-	hook.Remove("InventoryMySQLConnected", "ProceedInclude")
 end
 
 local LoadInventory --pre-definition
@@ -127,7 +137,6 @@ function LoadInventory(force)
 	AddCSLuaFile("inventory/load.lua")
 
 	if SERVER then
-		--hook.Add("InventoryMySQLConnected", "ProceedInclude", ContinueLoading)
 		include("inventory/inv_mysql.lua")
 		ContinueLoading()
 	else

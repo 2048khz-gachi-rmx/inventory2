@@ -16,8 +16,6 @@ BEGIN
 -- </Body>
 END;]]
 
-print("_init ran!!")
-
 
 local function tblToArgs(args)
 	if not isstring(args) and not IsArgList(args) then errorf("Unrecognized type: %q.", type(args)) return end

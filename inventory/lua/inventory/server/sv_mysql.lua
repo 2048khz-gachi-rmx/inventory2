@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS %s (
 local slot_str = "`slotid` MEDIUMINT UNSIGNED NULL,"
 local slot_constr = "UNIQUE KEY `uq_slot_puid` (`puid`,`slotid`),"
 
+
 --tbl_name: mandatory, table name to create in MySQL
 --use_slots: false to not create `slotid` column, optional
 --more_columns: table of columns or a string, optional (see below for table structure)

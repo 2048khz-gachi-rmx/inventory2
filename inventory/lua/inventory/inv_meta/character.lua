@@ -9,7 +9,7 @@ char.NetworkID = 4
 char.Name = "Character"
 char.MaxItems = 50
 char.IsCharacterInventory = true
---char.UseSlots = false
+char.UseSlots = false
 
 char.SQLColumns = {
 	{
