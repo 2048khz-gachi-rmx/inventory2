@@ -5,9 +5,9 @@ include("shared.lua")
 
 ENT.Model = "models/props/cs_militia/militiarock0%s.mdl"
 
-local OreRespawnTime = 5 --seconds
-local OreInvisibleTime = 5 -- has to be invisible for X to everyone to disappear
-local OreVisibleTime = 120 -- if it's X seconds past it's time to remove it'll be removed regardless of people seeing
+local OreRespawnTime = 180 	--seconds
+local OreInvisibleTime = 5 	-- has to be invisible for X to everyone to disappear
+local OreVisibleTime = 120 	-- if it's X seconds past it's time to remove it'll be removed regardless of people seeing
 
 local sizes = {
 	[1] = 3,
