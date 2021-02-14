@@ -113,7 +113,10 @@ end
 
 function TOOL:LeftClick(tr)
 	local where = tr.HitPos
+
 	local ply = self:GetOwner()
+	if not ply:IsSuperAdmin() then error("HOW ARE YOU EVEN ALLOWED") return end
+
 	bufs:Insert(where, ply)
 
 	if SERVER then
@@ -130,6 +133,7 @@ end
 
 function TOOL:RightClick(tr)
 	local ply = self:GetOwner()
+	if not ply:IsSuperAdmin() then error("HOW ARE YOU EVEN ALLOWED") return end
 
 	if ply:KeyDown(IN_WALK) and not ply:KeyDown(IN_SPEED) then
 
@@ -183,6 +187,7 @@ end
 
 function TOOL:Reload()
 	local ow = self:GetOwner()
+	if not ow:IsSuperAdmin() then error("HOW ARE YOU EVEN ALLOWED") return end
 
 	local newPoses = bufs[ow]
 	if not newPoses then return end

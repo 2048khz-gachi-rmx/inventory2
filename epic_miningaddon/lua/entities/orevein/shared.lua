@@ -20,6 +20,6 @@ end
 AddCSLuaFile("oremark_cl.lua")
 
 hook.Add("LibItUp", "LoadOremark", function(lib)
-	print(lib)
-	lib.OnInitEntity(Curry(include, "oremark" .. (SERVER and "_sv" or "_cl") .. ".lua"))
+
+	lib.OnInitEntity(Curry(include, file.Here() .. "oremark" .. (SERVER and "_sv" or "_cl") .. ".lua"))
 end)
