@@ -57,8 +57,6 @@ LibItUp.SQLArgList()
     SELECT id INTO ret FROM itemids WHERE name = comp_name;
 	RETURN 1;]])
 
-
-
 ---------------------
 
 local amt = #queries

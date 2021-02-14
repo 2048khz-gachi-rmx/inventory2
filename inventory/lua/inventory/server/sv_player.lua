@@ -25,4 +25,4 @@ hook.Add("InventoryItemIDsReceived", "PlayerInitInventories", function()
 	UnionTable(player.GetAll()):InitializeInventories()
 end)
 
-UnionTable(player.GetAll()):InitializeInventories()
+-- UnionTable(player.GetAll()):InitializeInventories()

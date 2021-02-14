@@ -51,7 +51,7 @@ local function load()
 
 		local nw = inv:MoveItem(it, where) ~= false
 
-		return true, nw, inv
+		return nw, inv
 	end
 
 	nw.Actions[INV_ACTION_SPLIT] = function(ply)
@@ -85,7 +85,7 @@ local function load()
 			end)
 		end)
 
-		return true, true, inv
+		return true, inv
 	end
 
 	nw.Actions[INV_ACTION_MERGE] = function(ply)
@@ -108,7 +108,7 @@ local function load()
 		inv:AddChange(it, INV_ITEM_DATACHANGED)
 		inv:AddChange(it2, INV_ITEM_DATACHANGED)
 
-		return true, true, inv
+		return true, inv
 	end
 
 	nw.Actions[INV_ACTION_CROSSINV_MOVE] = function(ply, inv, it, invto)
@@ -202,7 +202,8 @@ local function load()
 	net.Receive("Inventory", function(len, ply)
 		local act = net.ReadUInt(16)
 		if not nw.Actions[act] then errorf("Failed to find action for enum %d from player %s", act, ply) return end
-		local _, needs_nw, inv = nw.Actions[act](ply)
+
+		local needs_nw, inv = nw.Actions[act](ply)
 
 		if needs_nw then
 			ply:NetworkInventory(inv, INV_NETWORK_UPDATE)
@@ -212,9 +213,4 @@ local function load()
 	hook.Run("InventoryActionsLoaded", nw.Actions)
 end
 
-
-if Inventory.Initted then
-	load()
-else
-	hook.Add("InventoryReady", "InventoryActionsLoad", load)
-end
+load()

@@ -1,5 +1,5 @@
 local bp = Inventory.Inventories.Backpack
-
+ChainAccessor(bp, "LastResync", "LastResync")
 --[[
 	returns:
 		true - action was done without making new items
@@ -206,7 +206,6 @@ function bp:SerializeItems(typ, key)
 	local amt = 0
 
 	if typ == INV_NETWORK_FULLUPDATE or typ == nil then
-		print("emptying self changes", ("%p"):format(self))
 		table.Empty(self.Changes)
 
 		for k,v in pairs(self:GetItems()) do
@@ -244,8 +243,6 @@ function bp:SerializeItems(typ, key)
 	end
 
 	ns:WriteUInt(amt, 16).ItemsAmount = true
-
-	print("!!! Backpack:SerializeItems: typ", typ)
 
 	if typ == INV_NETWORK_FULLUPDATE then
 		for k,v in pairs(self:GetItems()) do

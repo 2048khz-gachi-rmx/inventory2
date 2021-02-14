@@ -279,8 +279,9 @@ function nw.NetworkInventory(ply, inv, typ, just_return, key) --mark 'just_retur
 	if inv and IsInventory(inv) and not inv.NetworkID then errorf("Cannot send inventory %q as it doesn't have a network ID!", inv.Name) return end
 	if typ == nil then typ = INV_NETWORK_FULLUPDATE end
 
+	-- make sure they know the item enums
 	if istable(ply) then
-		nw.NetworkItemNames(Filter(ply, true):Invert(knows))
+		nw.NetworkItemNames(Filter(ply, true):Invert(knows)) 
 	elseif IsPlayer(ply) then
 		if not knows(ply) then nw.NetworkItemNames(ply) end
 	end
@@ -288,8 +289,11 @@ function nw.NetworkInventory(ply, inv, typ, just_return, key) --mark 'just_retur
 	hook.Run("InventoryNetwork", ply, inv)
 
 	if IsInventory(inv) then
+		inv:SetLastResync(CurTime()) -- track when we last resynced the inventory
 
-		if inv.MultipleInstances and not key then
+		if inv.MultipleInstances and not key then 	-- if there can exist multiple instances of the same type of inventory
+													-- then you need a key with which to differentiate which one it is
+													-- if we weren't given one, we try to find it
 			for k,v in pairs(inv:GetOwner().Inventory) do
 				if v == inv then
 					key = k
@@ -299,9 +303,12 @@ function nw.NetworkInventory(ply, inv, typ, just_return, key) --mark 'just_retur
 			if not key then errorf("Couldn't find key for inventory: %s", inv) return end
 		end
 
+		-- serialize this inventory's items into a netstack
 		local ns = inv:SerializeItems(typ, key)
 		nw.CurrentInventory = ns
 
+		-- serialize inventory changes into the same netstack
+		-- inventory changes = item moves, item deletions etc.
 		if typ == INV_NETWORK_UPDATE then
 			inv:WriteChanges(ns)
 		end
@@ -314,17 +321,20 @@ function nw.NetworkInventory(ply, inv, typ, just_return, key) --mark 'just_retur
 			nw.SendNetStacks(st, ply)
 		end
 
-	else --no inventory was specified;
-		 --either it was a table of multiple inventories
-		 --or we're networking to the player himself
+	else -- no inventory was specified;
+		 -- either it was a table of multiple inventories
+		 -- or we're networking to the owner himself (meaning we network all their inventories)
 
 		local invs = (istable(inv) and inv) or ply.Inventory
-		if istable(inv) and not typ then typ = INV_NETWORK_UPDATE end --if we were given just a few inventories then it's most likely it's just an update
+		--if we were given just a few inventories then it's most likely it's just an update
+		if istable(inv) and not typ then typ = INV_NETWORK_UPDATE end
 
 		local stacks = {}
 		local owner
 
-		for k,v in pairs(invs) do --recursively network every inventory
+		-- recursively call this function for every inventory
+		-- with `just_return` = true, so we get netstacks back
+		for k,v in pairs(invs) do 
 			stacks[#stacks + 1] = nw.NetworkInventory(ply, v, typ, true, k)
 			local iown = v:GetOwner()
 			if owner and iown ~= owner then errorf("Cannot send multiple inventories with different owners in one net! (%s ~= %s)", owner, iown) return end
@@ -332,7 +342,7 @@ function nw.NetworkInventory(ply, inv, typ, just_return, key) --mark 'just_retur
 			nw.CurrentInventory = nil
 		end
 
-		local header = nw.WriteHeader(typ, #stacks, owner)
+		local header = nw.WriteHeader(typ, #stacks, owner) -- write the header and then the stacks
 		table.insert(stacks, 1, header)
 
 		if just_return then

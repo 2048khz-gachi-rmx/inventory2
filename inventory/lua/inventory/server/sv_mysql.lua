@@ -151,7 +151,6 @@ selIDs.onSuccess = function(self, dat)
 	for k,v in ipairs(dat) do
 		ids[v.id] = v.name
 		names[v.name] = v.id
-		print("Created pair: ", v.id .. ":" .. v.name)
 	end
 
 	Inventory:Emit("ItemIDsReceived", ids, names)

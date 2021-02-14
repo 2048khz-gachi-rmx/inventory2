@@ -142,7 +142,7 @@ local inc = function()
 end
 
 if not ms._Connected then
-	hook.Add("InventoryMySQLConnected", "InitializeDB", inc)
+	hook.Once("InventoryMySQLConnected", "InitializeDB", inc)
 else
 	inc()
 end
