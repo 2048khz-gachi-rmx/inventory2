@@ -25,7 +25,7 @@ function SWEP:ValidatePanel()
 		p.HeaderSize = 16
 		p.Shadow = {alpha = 240, blur = 4}
 
-		p.Animatable = Animatable:new()
+		p.Animatable = Animatable:new(false)
 
 		p.PostPaint = OrePanel.PostPaint
 		PickaxePanel = p
@@ -40,7 +40,8 @@ function SWEP:Deploy()
 	self:ValidatePanel()
 end
 
-function OrePanel:PaintOreBar(w, h, vein, ores)
+
+function OrePanel:PaintOreBar(w, h, vein, ores, initOres)
 	local x = 4
 	local y = self.HeaderSize + 4
 
@@ -51,21 +52,27 @@ function OrePanel:PaintOreBar(w, h, vein, ores)
 
 	local i = 0
 	local anim = self.Animatable
+	anim:AnimationThink()
+	
+	local andat = anim[vein:EntIndex()] or {}
+	anim[vein:EntIndex()] = andat
 
-	for name, dat in pairs(ores) do
+	for name, dat in pairs(initOres) do
 		i = i + 1
+		local curDat = ores[name] -- not guaranteed to exist, eg the ore was drained out
+
 		local ore = dat.ore
-		local amt = dat.amt
-		local start = dat.startamt
+		local amt = curDat and curDat.amt or 0
+		local start = dat.amt
 
 		local cost = ore:GetCost()
 		local costamt = amt * cost
 
 		local rectw = costw * costamt
 
-		anim:MemberLerp(dat, "RectW", rectw, 0.3, 0, 0.4)
+		anim:MemberLerp(andat, ore:GetName() .. "RectW", rectw, 0.3, 0, 0.3)
 
-		rectw = math.floor(dat.RectW or rectw)
+		rectw = math.floor(andat[ore:GetName() .. "RectW"] or rectw)
 
 		local missingw = (costw * start * cost) - rectw
 
@@ -175,8 +182,11 @@ function OrePanel:PostPaint(w, h)
 	local ores = (vein and vein.Ores) or self.Ores
 	if not ores then return end --kk
 
-	OrePanel.PaintOreBar(self, w, h, vein, ores)
-	OrePanel.PaintOreText(self, w, h, vein, ores)
+	local initOres = (vein and vein.InitialOres) or self.InitialOres
+	if not initOres then return end --kk
+
+	OrePanel.PaintOreBar(self, w, h, vein, ores, initOres)
+	OrePanel.PaintOreText(self, w, h, vein, ores, initOres)
 end
 
 function OrePanel:Reposition(w, h)
@@ -208,10 +218,7 @@ function SWEP:DrawHUD()
 			end)
 		end
 
-		if self.Ore and self.Ore:IsValid() then
-			self.Ores = self.Ore.Ores
-			self.TotalAmount = self.Ore.TotalAmount or 1
-		else
+		if not self.Ore or not self.Ore:IsValid() then
 			self.Ore = nil
 			self.Ores = nil
 		end
@@ -228,5 +235,10 @@ function SWEP:DrawHUD()
 	end
 
 	pnl.Ore = tr.Entity
+	self.Ore = tr.Entity
 
+	self.Ores = self.Ore.Ores
+	self.InitialOres = self.Ore.InitialOres
+
+	self.TotalAmount = self.Ore.TotalAmount or 1
 end

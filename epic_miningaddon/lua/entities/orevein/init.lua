@@ -63,6 +63,14 @@ local function sCurve(x) --x is 0-1
 	return x
 end
 
+function ENT:FullReroll() -- mostly a debug function
+	self.Ores = {}
+	self.LastActivity = CurTime()
+
+	self:RandomizeStats()
+	self:GenerateOres()
+end
+
 function ENT:RandomizeStats()
 	local rand = math.random(1, 4)
 	if rand == 4 then rand = 5 end --lmao
@@ -240,7 +248,8 @@ function ENT:GenerateOres(tries)
 	else
 		--now we randomize the ore richness
 		self:RandomizeOreRichness(spawned)
-		self:NetworkOres()
+		self.InitialOres = table.Copy(self.Ores)
+		self:NetworkOres(true)
 	end
 
 end
@@ -282,7 +291,7 @@ function ENT:RandomizeOreRichness(ores)
 		--print("cost for", ore:GetName(), cost)
 		local amt = math.ceil(a[i] * rich / cost)
 		--print("	spawned:", amt)
-		result[ore:GetItemName()] = {ore = ore, amt = amt, startamt = amt}
+		result[ore:GetItemName()] = {ore = ore, amt = amt}
 	end
 
 	self.Ores = result
@@ -307,14 +316,22 @@ function ENT:MineOut(orename, ply)
 	end
 end
 
-function ENT:NetworkOres()
+function ENT:NetworkOres(init)
 	local t = {}
 	for name, dat in pairs(self.Ores) do
-		t[#t + 1] = {dat.ore:GetItemID(), dat.amt, dat.startamt}
+		t[#t + 1] = {dat.ore:GetItemID(), dat.amt}
 	end
 
-	--self:SetResources(math.random(500, 1000))
 	self:SetResources(von.serialize(t))
+
+	if init then
+		local it = {}
+		for name, dat in pairs(self.InitialOres) do
+			it[#it + 1] = {dat.ore:GetItemID(), dat.amt}
+		end
+
+		self:SetInitialResources(von.serialize(t))
+	end
 end
 
 local function readOreData()
@@ -345,7 +362,7 @@ local function rollOrePos(num)
 	while #ret < num do
 		local key = math.random(1, #posCopy)
 		pos = posCopy[key]
-		if not pos then print(key, posCopy[key]) error("no available position to spawn a rock...?") break end
+		if not pos then break end
 
 		for _, ent in ipairs(ActiveOres) do
 			if ent:GetPos():DistToSqr(pos) < 4 then goto nextPos end -- we already have a rock at pretty much that location; reroll
@@ -366,6 +383,7 @@ local entClass = "orevein"
 
 local function createOre(pos)
 	pos = pos or rollOrePos()
+	if not pos then return end
 
 	local ore = ents.Create(entClass)
 	ore:SetPos(pos)
@@ -375,6 +393,11 @@ local function createOre(pos)
 end
 
 function OresRespawn(amt)
+	for i=#ActiveOres, 1, -1 do
+		local e = ActiveOres[i]
+		if not e:IsValid() then table.remove(ActiveOres, i) end
+	end
+
 	amt = amt or 4 - #ActiveOres
 	if amt <= 0 then return end
 

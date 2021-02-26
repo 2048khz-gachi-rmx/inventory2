@@ -26,11 +26,10 @@ function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
 		local its, left = Inventory.CheckStackability(self, iid, cb, dat)
 
 		if istable(its) then
-			printf("checkstackability created %d items", table.Count(its))
+
 			for k,v in ipairs(its) do
 				v:Insert(self)
 				v:On("AssignUID", "InsertIntoInv", function(v, uid)
-					print("inserted; adding item and change")
 					self:AddItem(v, true)
 					self:AddChange(v, INV_ITEM_ADDED)
 					cb(it, slot)
@@ -39,7 +38,7 @@ function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
 
 			return its, left
 		end
-		print("checkstackability stacked all items")
+
 		if its == true then
 			if cbanyway then cb() end
 			return true
@@ -257,7 +256,6 @@ function bp:SerializeItems(typ, key)
 			if self.Changes[v] then
 				for k,v in pairs(self.Changes[v]) do
 					if Inventory.RequiresNetwork[k] then
-						print("deleting changes for", v, ("%p"):format(self), k)
 						req = true
 						break
 					end
@@ -268,7 +266,7 @@ function bp:SerializeItems(typ, key)
 
 			v:Serialize(ns, typ)
 			v:SetKnown(true)
-			print("deleted change for", v, ("%p"):format(self))
+
 			self.Changes[v] = nil
 		end
 
@@ -316,7 +314,7 @@ function bp:WriteChanges(ns)
 	local hascrossmoves = #crossmove > 0
 
 	ns:WriteBool(hascrossmoves).HasCrossMoved = true
-	print("sv: has crossmoves", hascrossmoves, #crossmove)
+
 	if hascrossmoves then
 		ns:WriteUInt(#crossmove, 16).CrossMovedAmt = true
 		for k,v in ipairs(crossmove) do

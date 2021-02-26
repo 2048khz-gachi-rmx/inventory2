@@ -164,9 +164,9 @@ selIDs:start()
 
 
 local function getID(it)
-	local id = it:GetID() or it:GetItemName()
+	local id = it:GetItemID() or it:GetItemName()
 	return (isstring(id) or isnumber(id)) and id
-		or errorf("ItemID is not valid (IID: %q, ItemName: %q)", it:GetID(), it:GetItemName())
+		or errorf("ItemID is not valid (IID: %q, ItemName: %q)", it:GetItemID(), it:GetItemName())
 end
 
 local assign_query = ms.DB:prepare("SELECT GetBaseItemID(?) AS id;")

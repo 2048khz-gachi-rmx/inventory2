@@ -23,10 +23,10 @@ end
 
 -- returns ItemMeta ( metas in item_meta/*.lua )
 function Inventory.Util.GetMeta(iid)
-	local base = Inventory.Util.GetBaseMetaName(iid)
+	local base = Inventory.Util.GetBaseMeta(iid)
 	if not base then return false end
 
-	return Inventory.ItemObjects[base]
+	return Inventory.ItemObjects[base.ItemClass]
 end
 
 -- returns BaseItem (eg. Iron Ore or Copper Bar)

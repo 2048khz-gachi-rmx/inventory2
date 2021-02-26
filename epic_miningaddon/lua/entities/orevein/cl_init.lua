@@ -3,58 +3,74 @@ include("shared.lua")
 local me = {}
 
 function ENT:Initialize()
-	if #self:GetResources() > 0 then --bweh
-		self:UpdateOres(nil, "from init; none", self:GetResources())
-	end
+	--self:CheckDTs()
 
-
+	self.Ores = {}
+	self.InitialOres = {}
 end
 
-
-function ENT:UpdateOres(_, old, new)
-
-	if #new > 0 and new:sub(1, 1) ~= "{" then
-		-- https://discordapp.com/channels/565105920414318602/589120351238225940/727586576552558683
-		-- in the gmod discord
-
-		print("if you see this, blame the gmod devs")
-		return
-	end
-
+function ENT:DecodeCurrentResources(new)
 	local rec = von.deserialize(new)
-	local ores = self.Ores or {}
-	local fullamt = 0
 
-	local tick = FrameNumber()
+	table.Empty(self.Ores)
+	local ores = self.Ores
 
 	for k,v in ipairs(rec) do
 		local id = v[1]
 		local amt = v[2]
 
 		local base = Inventory.Util.GetBase(id)
-		fullamt = fullamt + (v[3] * base:GetCost())
+		if not base then ErrorNoHalt("Failed to find ore ID @ " .. (id or "No ID?") .. "\n" .. new .. "\n") continue end
 
-		local ore = ores[base:GetItemName()] or {ore = base, startamt = v[3]} -- don't recreate table if it existed b4
-		ore.amt = amt
-		ore.tick = tick
+		local ore = ores[base:GetItemName()] or {ore = base, amt = amt} -- don't recreate table if it existed b4
 
 		ores[base:GetItemName()] = ore
 	end
 
-	for k,v in pairs(ores) do
-		if v.tick ~= tick then
-			-- this ore wasn't included in the update; probably gone
-			-- set amt to 0
-			v.amt = 0
-		end
+end
+
+function ENT:DecodeInitialResources(new)
+	local rec = von.deserialize(new)
+	local fullamt = 0
+
+	table.Empty(self.InitialOres)
+	local ores = self.InitialOres
+
+	for k,v in ipairs(rec) do
+		local id = v[1]
+		local amt = v[2]
+
+		local base = Inventory.Util.GetBase(id)
+		if not base then ErrorNoHalt("Failed to find ore ID @ " .. (id or "No ID?") .. "\n" .. new .. "\n") continue end
+
+		fullamt = fullamt + (amt * base:GetCost())
+
+		local ore = ores[base:GetItemName()] or {ore = base, amt = amt} -- don't recreate table if it existed b4
+		ore.amt = amt
+
+		ores[base:GetItemName()] = ore
 	end
 
-	self.Ores = ores
-
-	if not self.TotalAmount then self.TotalAmount = fullamt end
+	self.TotalAmount = fullamt 
 end
+
+function ENT:UpdateOres(key, old, new)
+	if not isstring(new) then return end
+
+	if #new > 0 and new:sub(1, 1) ~= "{" then
+		error("if you see this, blame the gmod devs: " .. new)
+		return
+	end
+
+	if key == "Resources" then
+		self:DecodeCurrentResources(new)
+	elseif key == "InitialResources" then
+		self:DecodeInitialResources(new)
+	end
+end
+
+ENT.OnDTChanged = ENT.UpdateOres
 
 function ENT:Draw()
 	self:DrawModel()
-
 end

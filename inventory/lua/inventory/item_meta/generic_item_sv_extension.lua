@@ -18,7 +18,7 @@ function it:WriteNetworkedVars(ns, typ)
 			if not self.Data[v.what] or (typ ~= INV_NETWORK_FULLUPDATE and self.LastNetworkedVars[v.what] == self.Data[v.what]) then ns:WriteBool(false) continue end
 
 			ns:WriteBool(true).PacketName = "Has NetworkedVar as predefined"
-			print("NetworkedVars: networking", v.what, "for", self:GetName(), "with args:", self.Data[v.what], unpack(v.args))
+
 			ns["Write" .. v.type] (ns, self.Data[v.what], unpack(v.args)).PacketName = "NetworkedVar - " .. v.what
 			self.LastNetworkedVars[v.what] = self.Data[v.what]
 		end
@@ -45,6 +45,7 @@ function it:Insert(invobj, cb)
 
 	local sid = invobj and invobj:GetOwnerID()
 
+	print(self, invobj, sid, "Wtf?")
 	local qobj = Inventory.MySQL.NewInventoryItem(self, invobj, sid)
 
 	qobj:Once("Success", function(_, query, dat)
