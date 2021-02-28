@@ -172,8 +172,14 @@ end
 local assign_query = ms.DB:prepare("SELECT GetBaseItemID(?) AS id;")
 
 function ms.AssignItemID(name, cb, arg)
-	local conv = Inventory.IDConversion
+	if not ms.IDsReceived then
+		-- first wait until we get the itemIDs, then we try to lookup the item
+		Inventory:On("ItemIDsReceived", coroutine.Resumer())
+		coroutine.yield()
+	end
 
+
+	local conv = Inventory.IDConversion
 	local id_exists = conv.ToID[name]
 
 	if id_exists then
@@ -202,6 +208,8 @@ function ms.AssignItemID(name, cb, arg)
 
 	qobj:start()
 end
+
+ms.AssignItemID = coroutine.Creator(ms.AssignItemID)
 
 local delete_id_query = db:prepare("DELETE FROM itemids WHERE id = ?;")
 function ms.DeleteItemID(id, cb, ...)

@@ -58,6 +58,7 @@ LibItUp.SQLArgList()
 	RETURN 1;]])
 
 ---------------------
+ms.RegisterState("procedures")
 
 local amt = #queries
 for k,v in ipairs(queries) do

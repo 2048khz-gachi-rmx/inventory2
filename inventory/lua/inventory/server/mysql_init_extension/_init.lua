@@ -107,6 +107,19 @@ end
 function ms.SetState(state, b)
 	ms._States[state] = b
 	Inventory.MySQL:Emit("StatesChanged", state)
+
+	for k,v in pairs(ms._States) do
+		if v == false then return end
+	end
+
+	-- all registered states were set
+	hook.Run("InventoryMySQLInitialized") -- procedures & tables & all that good stuff was initialized
+end
+
+function ms.RegisterState(state)
+	if not ms._States[state] then
+		ms._States[state] = false
+	end
 end
 
 function ms.WaitStates(cb, ...)

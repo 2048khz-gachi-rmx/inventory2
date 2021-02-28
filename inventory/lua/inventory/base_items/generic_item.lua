@@ -78,7 +78,12 @@ function Base:SetID(id)
 	self.ItemID = id
 	Inventory.BaseItems[id] = self
 
-	self:Emit("AssignedID")
+	self:Emit("AssignedID", id)
+	self:_MakeReady()
+end
+
+function Base:_MakeReady()
+
 end
 
 function Base:PullItemID()
@@ -198,10 +203,6 @@ end
 
 Base.GetCountable = Base.IsCountable
 
-Base:On("CreatedInstance", "Stackable", function(self, item)
-
-end)
-
 ChainAccessor(Base, "MaxStack", "MaxStack")
 
 function Base:SetUsable(b, func)
@@ -238,7 +239,7 @@ function Base:Register(addstack)
 
 	if old then
 		-- we existed before registering, that means the script
-		-- that registered this file got updated, so also update everyone 
+		-- that registered this file got updated, so also update everyone
 		-- that depended on this class
 
 		for k,v in pairs(self.Extensions) do
@@ -260,6 +261,7 @@ Base:Register(-1)
 
 
 
+-- hey past me, wtf is this?
 
 local its = muldim()
 _ITS = its

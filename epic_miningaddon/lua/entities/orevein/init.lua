@@ -20,8 +20,7 @@ ActiveOres = ActiveOres or {}
 
 function ENT:Initialize()
 	ActiveOres[#ActiveOres + 1] = self
-
-	self:RandomizeStats()
+	self.Ores = {}
 
 	self:PhysicsInit(SOLID_VPHYSICS)
 	self:SetMoveType(MOVETYPE_VPHYSICS)
@@ -30,16 +29,12 @@ function ENT:Initialize()
 
 	self:DrawShadow(false)
 
-	self.Ores = {}
-
 	local phys = self:GetPhysicsObject()
 
 	if (phys:IsValid()) then
 		phys:Wake()
 		phys:EnableMotion(true)
 	end
-
-	self:GenerateOres()
 
 	self:CallOnRemove("UntrackOre", function()
 		table.RemoveByValue(ActiveOres, self)
@@ -48,6 +43,10 @@ function ENT:Initialize()
 	self.LastActivity = CurTime()
 	self.LastThink = CurTime()
 	self.InvisiblePVS = 0
+
+	self:RandomizeStats()
+	self:GenerateOres()
+
 end
 
 local drop_start = 0.5
@@ -317,8 +316,14 @@ function ENT:MineOut(orename, ply)
 end
 
 function ENT:NetworkOres(init)
+
 	local t = {}
 	for name, dat in pairs(self.Ores) do
+		if not dat.ore:GetItemID() then -- safeguard
+			errorf("Ore doesn't have ID!!! %s/%s/%s = %s", dat.ore, dat.ore:GetName() or "no name", dat.ore:GetItemID() or "no id")
+			return
+		end
+
 		t[#t + 1] = {dat.ore:GetItemID(), dat.amt}
 	end
 

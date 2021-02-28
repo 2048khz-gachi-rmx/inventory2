@@ -1,5 +1,3 @@
-if Inventory.Loading then return end --no infinite loops today sir
-
 Inventory.MySQL = Inventory.MySQL or Emitter:new()
 
 local verygood = Color(50, 150, 250)

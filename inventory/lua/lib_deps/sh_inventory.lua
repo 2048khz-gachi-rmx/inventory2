@@ -97,12 +97,36 @@ local function shouldIncludeCore(path, realm)
 	return cl, sv
 end
 
--- ContinueLoading:
--- 		CLIENT: called instantly, no args
--- 		SERVER: called after loading MySQL with db as the database
+local states = {}
+local requiredStates = {
+	["InventoryItemIDsReceived"] 	= SERVER,
+	["InventoryActionsLoaded"] 		= SERVER,
+	["InventoryMySQLInitialized"]	= SERVER
+}
+
+local function addState(k)
+	states[k] = true
+	requiredStates[k] = nil
+
+	if table.IsEmpty(requiredStates) then
+		hook.Run("InventoryReady")
+		Inventory.Initted = true
+	end
+end
+
+local function listenState(k)
+	if requiredStates[k] == false then -- not our realm; just mark it as 'loaded'
+		addState(k)
+		return
+	end
+
+	hook.Add(k, "InventoryTrackLoadState", Curry(addState, k))
+end
 
 local function ContinueLoading()
-	Inventory.Loading = true --prevent infinite looping in inventory/load.lua
+	for k,v in pairs(requiredStates) do
+		listenState(k)
+	end
 
 	FInc.Recursive("inventory/shared/*", _SH, nil, shouldIncludeCore)
 
@@ -114,11 +138,6 @@ local function ContinueLoading()
 	FInc.Recursive("inventory/client/*", _CL, nil, shouldIncludeCore)
 
 	include("inv_items/load.lua") --that will handle the loading itself
-
-	Inventory.Loading = false
-
-	hook.Run("InventoryReady")
-	Inventory.Initted = true
 end
 
 local LoadInventory --pre-definition
@@ -138,11 +157,9 @@ function LoadInventory(force)
 
 	if SERVER then
 		include("inventory/inv_mysql.lua")
-		ContinueLoading()
-	else
-		ContinueLoading()
 	end
 
+	ContinueLoading()
 end
 
 local function reload()
