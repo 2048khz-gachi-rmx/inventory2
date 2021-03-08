@@ -10,19 +10,17 @@ local function readOreData(force)
 
 	if not dat then
 		file.Write("inventory/ore_positions.dat", "")
-		return
+		return {}
 	end
 
-	_OreData = util.JSONToTable(dat)
+	_OreData = util.JSONToTable(dat) or {}
 	return _OreData
 end
 
 readOreData(true)
 
 local function writeOreData()
-	print("writingg")
 	file.Write("inventory/ore_positions.dat", util.TableToJSON(_OreData))
-
 end
 
 local nw = Networkable("Orepositions")

@@ -3,14 +3,17 @@ StartTool("OreMark")
 	local nw = Networkable("Orepositions")
 
 	nw:On("ReadChangeValue", 1, function(self, k)
-		if not IsPlayer(k) and k ~= "Positions" then return end
+		if not IsPlayer(k) and k ~= "Positions" then print("Hell no", k) return end
 		local isPos = k == "Positions"
 
 		local amt = net.ReadUInt(isPos and 16 or 8)
 
-		self:Set(k, self:Get(k) or {})
-
 		local poses = self:Get(k)
+
+		if not istable(poses) then
+			self:Set(k, {})
+			poses = {}
+		end
 
 		for i=1, amt do
 			local k = net.ReadUInt(isPos and 16 or 8)
@@ -36,6 +39,7 @@ StartTool("OreMark")
 
 	local function closestIntersection(t, ep, fw)
 		local hit, hitDist, key = nil, math.huge
+		if not istable(t) then return end
 
 		for k, v in pairs(t) do
 
@@ -84,6 +88,8 @@ hook.Add("PostDrawTranslucentRenderables", "OresRender", function(a, b)
 	local fw = LocalPlayer():EyeAngles():Forward() * 512
 
 	local exPos = nw:Get("Positions") or {}
+	if not istable(exPos) then return end
+
 	local hit = closestIntersection(exPos, ep, fw)
 
 	for k,v in pairs(exPos) do
