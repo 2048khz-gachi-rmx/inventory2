@@ -86,6 +86,10 @@ function iPan.CreateInventory(inv, multiple, set)
 	f:SetWide(f:GetWide() + 50 + 8)
 	f:SetTall(math.max(ScrH() * 0.4, 350))
 
+	f:PopIn()
+	f.Y = f.Y - 24
+	f:MoveBy(0, 24, 0.2, 0, 0.3)
+
 	return f
 end
 

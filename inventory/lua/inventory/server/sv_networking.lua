@@ -281,7 +281,7 @@ function nw.NetworkInventory(ply, inv, typ, just_return, key) --mark 'just_retur
 
 	-- make sure they know the item enums
 	if istable(ply) then
-		nw.NetworkItemNames(Filter(ply, true):Invert(knows)) 
+		nw.NetworkItemNames(Filter(ply, true):Invert(knows))
 	elseif IsPlayer(ply) then
 		if not knows(ply) then nw.NetworkItemNames(ply) end
 	end
