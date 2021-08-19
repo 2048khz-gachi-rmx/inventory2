@@ -85,7 +85,7 @@ local function shouldIncludeItem(path)
 end
 
 local function shouldIncludeCore(path, realm)
-	local ext = path:match("_extension")
+	local ext = path:match("_extension") or path:match("_ext")
 
 	local cl, sv = realm == _CL or realm == _SH, realm == _SV or realm == _SH
 

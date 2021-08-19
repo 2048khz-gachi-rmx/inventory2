@@ -74,6 +74,7 @@ StartTool("OreMark")
 
 	end
 
+	TOOL.IsOreMark = true
 EndTool()
 
 
@@ -83,6 +84,11 @@ local an = Animatable("Vectahs")
 
 hook.Add("PostDrawTranslucentRenderables", "OresRender", function(a, b)
 	if a or b then return end
+
+	if not LocalPlayer():IsSuperAdmin() then print("Not sa") return end
+
+	local tool = LocalPlayer():GetTool()
+	if not tool or not tool.IsOreMark then return end
 
 	local ep = LocalPlayer():EyePos()
 	local fw = LocalPlayer():EyeAngles():Forward() * 512

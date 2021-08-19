@@ -334,7 +334,7 @@ function nw.NetworkInventory(ply, inv, typ, just_return, key) --mark 'just_retur
 
 		-- recursively call this function for every inventory
 		-- with `just_return` = true, so we get netstacks back
-		for k,v in pairs(invs) do 
+		for k,v in pairs(invs) do
 			stacks[#stacks + 1] = nw.NetworkInventory(ply, v, typ, true, k)
 			local iown = v:GetOwner()
 			if owner and iown ~= owner then errorf("Cannot send multiple inventories with different owners in one net! (%s ~= %s)", owner, iown) return end

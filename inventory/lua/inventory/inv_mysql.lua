@@ -1,3 +1,9 @@
+if CLIENT then
+	hook.Add("Think", "verybad", function()
+		error("FUCKING MYSQL INCLUDED CLIENTSIDE")
+	end)
+end
+
 Inventory.MySQL = Inventory.MySQL or Emitter:new()
 
 local verygood = Color(50, 150, 250)
@@ -54,3 +60,5 @@ else
 	incHelper()
 	hook.Run("InventoryMySQLConnected", ms.DB)
 end
+
+include("server/sv_mysql_ext.lua")
