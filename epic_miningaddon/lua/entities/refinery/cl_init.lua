@@ -35,19 +35,30 @@ function ENT:WithdrawItem(slot, to)
 
 end
 
-function ENT:QueueOre(slot, it)
+function ENT:QueueOre(slot, it, bulk)
 	if not it then return end
 
 	local nw = Inventory.Networking.Netstack()
 
 		nw:WriteEntity(self)
-		nw:WriteUInt(slot, 16)
 		nw:WriteInventory(it:GetInventory())
 		nw:WriteItem(it)
+		nw:WriteBool(bulk and true or false)
+		if not bulk then nw:WriteUInt(slot, 16) end
 
 	nw:Send("OreRefinery")
 
-	it:SetAmount(it:GetAmount() - 1)
+	if bulk then
+		local free = 0
+		for i=1, self.MaxQueues do
+			local slIt = self.OreInput.Slots[i]
+			if not slIt then free = free + 1 end
+		end
+
+		it:SetAmount( math.max(it:GetAmount() - free, 0))
+	else
+		it:SetAmount(it:GetAmount() - 1)
+	end
 end
 
 function ENT:CreateInputSlot(slot)
@@ -230,14 +241,14 @@ function ENT:OnOpenRefine(ref, pnl)
 	Inventory.Panels.ListenForItem(qAll)
 
 	qAll:On("Drop", function(self, slot, item)
-		for i=1, ent.MaxQueues do
+		--[[for i=1, ent.MaxQueues do
 			local it = ent.OreInput.Slots[i]
 			if it then continue end
 
-			ent:QueueOre(i, item)
-
 			if item:GetAmount() <= 0 then break end
-		end
+		end]]
+
+		ent:QueueOre(i, item, true)
 	end)
 
 	qAll.Frac = 0

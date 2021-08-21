@@ -76,16 +76,13 @@ local function load()
 		new:SetOwner(ply)
 		new:SetInventory(inv)
 		new:SetSlot(where)
+		new:SetData(dat)
 
-		new:Insert(inv):Then(function()
-			local em = new:SetData(dat)
+		inv:InsertItem(new):Then(function(...)
+			if IsValid(ply) then ply:UpdateInventory(inv) end
+		end, GenerateErrorer("SplitActionInsert"))
 
-			em:Then(function()
-				if IsValid(ply) then ply:NetworkInventory(inv, INV_NETWORK_UPDATE) end
-			end)
-		end)
-
-		return true, inv
+		return false, inv
 	end
 
 	nw.Actions[INV_ACTION_MERGE] = function(ply)

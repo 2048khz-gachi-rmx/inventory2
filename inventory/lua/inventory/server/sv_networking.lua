@@ -295,6 +295,7 @@ function nw.NetworkInventory(ply, inv, typ, just_return, key) --mark 'just_retur
 													-- then you need a key with which to differentiate which one it is
 													-- if we weren't given one, we try to find it
 			for k,v in pairs(inv:GetOwner().Inventory) do
+				printf("searching: %p vs. %p", v, inv)
 				if v == inv then
 					key = k
 					break
@@ -327,7 +328,7 @@ function nw.NetworkInventory(ply, inv, typ, just_return, key) --mark 'just_retur
 
 		local invs = (istable(inv) and inv) or ply.Inventory
 		--if we were given just a few inventories then it's most likely it's just an update
-		if istable(inv) and not typ then typ = INV_NETWORK_UPDATE end
+		if istable(inv) then typ = INV_NETWORK_UPDATE end
 
 		local stacks = {}
 		local owner
@@ -355,6 +356,13 @@ end
 
 PLAYER.NetworkInventory = nw.NetworkInventory
 PLAYER.NI = nw.NetworkInventory
+
+function nw.UpdateInventory(ply, inv)
+	return nw.NetworkInventory(ply, inv, INV_NETWORK_UPDATE)
+end
+
+PLAYER.UpdateInventory = nw.UpdateInventory
+PLAYER.UI = nw.UpdateInventory
 
 function nw.ReadInventory()
 	local ent = net.ReadEntity()

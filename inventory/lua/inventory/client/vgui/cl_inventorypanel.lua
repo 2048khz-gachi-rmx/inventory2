@@ -152,7 +152,7 @@ function PANEL:CreateSplitSelection(rec, drop, item)
 	no:SetPos(4, sl:GetTall())
 	no:SetSize(cl:GetWide()/2 - 4 - 2 - 32, 20)
 	no:SetColor(Color(170, 50, 50))
-	no:SetIcon("https://i.imgur.com/vNRPWWn.png", "backarrow.png", 16, 16, nil, 180)
+	no:SetIcon("https://i.imgur.com/vNRPWWn.png", "backarrow.png", 16, 16)
 
 	no.DoClick = function()
 		cl:PopOut()
@@ -174,6 +174,8 @@ function PANEL:SplitItem(rec, drop, item)
 	local crossinv = rec:GetInventory() ~= item:GetInventory()
 	local act_enum = crossinv and INV_ACTION_CROSSINV_SPLIT or INV_ACTION_SPLIT
 	--if crossinv then print("cross-inv splitting is not supported yet :(") return end
+
+	local inv = self:GetInventory()
 
 	if self.IsWheelHeld then
 		local amt = math.floor(item:GetAmount() / 2)
@@ -212,6 +214,7 @@ function PANEL:SplitItem(rec, drop, item)
 		new = math.floor(new)
 		newitem:SetAmount(new)
 		yes.Label = ("%s -> %s / %s"):format(item:GetAmount(), item:GetAmount() - new, new)
+		inv:Emit("Change")
 	end
 
 	function yes:DoClick()
@@ -236,6 +239,8 @@ function PANEL:SplitItem(rec, drop, item)
 	end
 
 	rec:SetFakeItem(newitem)
+
+	self:GetInventory():Emit("Change")
 end
 
 function PANEL:StackItem(rec, drop, item, amt)
@@ -247,6 +252,7 @@ function PANEL:StackItem(rec, drop, item, amt)
 
 	if not input.IsControlDown() then
 		rec:GetInventory():RequestStack(item, rec:GetItem(), amt)
+		rec:GetInventory():Emit("Change")
 	else
 
 		local max = rec:GetItem():CanStack(item, item:GetAmount())
@@ -279,7 +285,7 @@ function PANEL:StackItem(rec, drop, item, amt)
 			Inventory.Networking.PerformAction(act_enum, ns)]]
 
 			rec:GetInventory():RequestStack(item, rec:GetItem(), val)
-
+			rec:GetInventory():Emit("Change")
 			--[[item:SetAmount(item:GetAmount() - val)
 			rec:GetItem():SetAmount(rec:GetItem():GetAmount() + val)]]
 		end
@@ -331,9 +337,12 @@ function PANEL:AddItemSlot()
 	it:On("ItemInserted", self.OnItemAddedIntoSlot, self)
 
 	self:On("Change", it, function(self, inv, ...)
-		if inv:GetItemInSlot(i + 1) ~= it:GetItem() then
+		print(i + 1, inv:GetItemInSlot(i + 1), it:GetItem(true))
+		if inv:GetItemInSlot(i + 1) ~= it:GetItem(true) then
 			it:SetItem(inv:GetItemInSlot(it:GetSlot()))
 		end
+
+		it:OnInventoryUpdated()
 	end)
 
 	it:On("Drop", "FrameItemDrop", function(...) self:ItemDrop(...) end)

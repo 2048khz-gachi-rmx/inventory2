@@ -57,40 +57,95 @@ function ENT:Think()
 		end
 	end
 
+	local prs = {}
+
 	for name, amt in pairs(fin_amt) do
-		local insta = self.OreOutput:NewItem(name, function() self:SendInfo() end, nil, {Amount = amt})
-		if insta then now = true end
+		local pr = self.OreOutput:NewItem(name, function() self:SendInfo() end, nil, {Amount = amt})
+		if pr then
+			table.insert(prs, pr)
+		end
 	end
 
-	if now then self:SendInfo() end
+	Promise.OnAll(prs, function()
+		if IsValid(self) then self:SendInfo() end
+	end)
+
 	if anythingSmelted then self.Status:Network() end
 
 	self:NextThink(CurTime() + 0.2)
 	return true
 end
 
-function ENT:QueueRefine(ply, item, slot)
-	if slot > self.OreInput.MaxItems then print("slot higher than max", slot, self.OreInput.MaxItems) return end
-	if self.OreInput[slot] then print("there's already an item in that slot") return end
+function ENT:AddInputItem(inv, item, slot)
+	local meta = Inventory.Util.GetMeta(item:GetItemID())
+	local new = meta:new(nil, item:GetItemID())
+	--new:SetSlot(slot)
+	new:SetAmount(1)
+	new:SetOwner(inv:GetOwner())
+	new.StartedRefining = CurTime()
+	new.AllowedRefineryInsert = true
 
-	item:SetAmount(item:GetAmount() - 1)
+	return self.OreInput:InsertItem(new, slot)
+end
 
-	self.OreInput:NewItem(item:GetItemID(), function(new)
+function ENT:QueueRefine(ply, inv, item, slot, bulk)
+	if bulk then
+		local prs = {}
+		local amt = item:GetAmount()
+		local ins = 0
 
-		self.Status:Set(slot, CurTime())
+		for i=1, self.OreInput.MaxItems do
+			if self.OreInput.Slots[i] then print("nope") continue end
+			if ins >= amt or not item:IsValid() then print("Item invalid") break end
 
-		timer.Create(("NetworkRefinery:%p"):format(self), 0, 1, function()
-			if not IsValid(self) then print(self, "not valid") return end
+			local ok, pr = xpcall(self.AddInputItem, GenerateErrorer("Refinery"),
+				self, inv, item, i)
+			if not ok then print("couldn't add input item to #" .. i) continue end
 
+			prs[#prs + 1] = pr
+
+			ins = ins + 1
+			pr:Then(function()
+				self.Status:Set(i, CurTime())
+			end)
+
+			item:SetAmount(item:GetAmount() - 1)
+		end
+
+		Promise.OnAll(prs):Then(function()
+			if not IsValid(self) then return end
+
+			local plys = Filter(ents.FindInPVS(self), true):Filter(IsPlayer)
+			Inventory.Networking.NetworkInventory(plys, self.OreInput)
+			Inventory.Networking.UpdateInventory(ply, inv)
+			self.Status:Network()
+		end, GenerateErrorer("RefineryPromise"))
+	else
+
+		if slot > self.OreInput.MaxItems then print("slot higher than max", slot, self.OreInput.MaxItems) return end
+		if self.OreInput.Slots[slot] then print("there's already an item in that slot") return end
+
+		local ok, pr = xpcall(self.AddInputItem, GenerateErrorer("Refinery"),
+			self, inv, item, slot)
+		if not ok then return end
+
+		pr:Then(function()
+			if not IsValid(self) then return end
+
+			self.Status:Set(slot, CurTime())
+			item:SetAmount(item:GetAmount() - 1)
 			local plys = Filter(ents.FindInPVS(self), true):Filter(IsPlayer)
 			self.Status:Network()
 
 			Inventory.Networking.NetworkInventory(plys, self.OreInput)
-		end)
+			Inventory.Networking.UpdateInventory(ply, inv)
+		end, GenerateErrorer("RefineryPromise"))
 
-		new.StartedRefining = CurTime()
+	end
 
-	end, slot, item:GetData(), true)
+	--[[self.OreInput:NewItem(item:GetItemID(), function(new)
+
+	end, slot, item:GetData(), true)]]
 end
 
 -- deposit request
@@ -100,17 +155,26 @@ net.Receive("OreRefinery", function(len, ply)
 	local ent = net.ReadEntity()
 	local self = ent
 
-	local slot = net.ReadUInt(16)
 	local inv = Inventory.Networking.ReadInventory()
 	local item = Inventory.Networking.ReadItem(inv)
 
 	if not inv.IsBackpack then print("inventory is not a backpack") return end
 	if not item then print("didn't get item") return end
-	ent:QueueRefine(ply, item, slot)
+
+	local bulk = net.ReadBool()
+
+	if bulk then
+		ent:QueueRefine(ply, inv, item, nil, bulk)
+		return
+	end
+
+	local slot = net.ReadUInt(16)
+	ent:QueueRefine(ply, inv, item, slot, bulk)
 
 end)
 
 function ENT:SendInfo()
+	print("SendInfo called", CurTime())
 	Inventory.Networking.NetworkInventory(Filter(ents.FindInPVS(self), true):Filter(IsPlayer), self.Inventory, INV_NETWORK_FULLUPDATE)
 end
 

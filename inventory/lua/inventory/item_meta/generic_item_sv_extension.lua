@@ -45,8 +45,8 @@ function it:Insert(invobj, cb)
 
 	local sid = invobj and invobj:GetOwnerID()
 
-	print(self, invobj, sid, "Wtf?")
 	local qobj = Inventory.MySQL.NewInventoryItem(self, invobj, sid)
+	if not qobj then return end
 
 	qobj:Once("Success", function(_, query, dat)
 		local uid = query:lastInsert()
@@ -56,9 +56,9 @@ function it:Insert(invobj, cb)
 		self:SetUID(uid)
 		self:SetUIDFake(false)
 
-		if not invobj:HasItem(self) then
+		--[[if not invobj:HasItem(self) then
 			invobj:AddItem(self)
-		end
+		end]]
 
 		self:Emit("AssignUID", uid)
 
@@ -101,3 +101,5 @@ function it:SetData(k, v)
 	self.Data[k] = v
 	return Inventory.MySQL.ItemSetData(self, {[k] = v})
 end
+
+ChainAccessor(it, "SQLExists", "SQLExists")

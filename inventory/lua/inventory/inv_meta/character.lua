@@ -4,7 +4,7 @@ if not bp then error("Something went wrong while loading Character inventory: ba
 
 local char = Inventory.Inventories.Character or bp:extend()
 
-char.SQLName = "ply_charinv"
+char.SQLName = "ply_char"
 char.NetworkID = 4
 char.Name = "Character"
 char.MaxItems = 50

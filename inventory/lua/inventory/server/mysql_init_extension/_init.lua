@@ -90,12 +90,12 @@ function ms.StateSetQuery(q, ...)
 	local states = {...}
 
 	for k,v in ipairs(states) do
-		ms._States[k] = false
+		ms._States[v] = false
 	end
 
 	q:Once("Success", function()
 		for k,v in ipairs(states) do
-			ms._States[k] = true
+			ms.SetState(v, true)
 		end
 
 		Inventory.MySQL:Emit("StatesChanged", unpack(states))
@@ -128,7 +128,7 @@ function ms.WaitStates(cb, ...)
 	local ready = true
 
 	for k,v in ipairs(states) do
-		if not ms._States[k] then ready = false break end
+		if not ms._States[v] then ready = false break end
 	end
 
 	if ready then
@@ -137,7 +137,7 @@ function ms.WaitStates(cb, ...)
 	else
 		local num; num = Inventory.MySQL:On("StatesChanged", function()
 			for k,v in ipairs(states) do
-				if not ms._States[k] then return end
+				if not ms._States[v] then return end
 			end
 
 			cb()

@@ -4,7 +4,7 @@ if not bp then error("Something went wrong while loading Permanent inventory: ba
 
 local prm = Inventory.Inventories.Permanent or bp:extend()
 
-prm.SQLName = "ply_permainv"
+prm.SQLName = "ply_perma"
 prm.NetworkID = 3
 prm.Name = "Permanent"
 prm.MaxItems = 50

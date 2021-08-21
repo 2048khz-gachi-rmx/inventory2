@@ -37,7 +37,9 @@ function ENT:SHInit()
 
 
 	self.OreInput:On("CanAddItem", "OresOnly", function(self, it)
-		return it.IsOre == true
+		local can = it.AllowedRefineryInsert
+		it.AllowedRefineryInsert = nil
+		return can or it.IsOre == true
 	end)
 
 	self.OreInput:On("CanMoveItem", "OresOnly", function(self, it)

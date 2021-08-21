@@ -4,7 +4,7 @@ Inventory.Inventories.Backpack = bp
 bp.IsInventory = true
 
 bp.Name = "Backpack"
-bp.SQLName = "ply_tempinv"
+bp.SQLName = "ply_temp"
 bp.NetworkID = 1
 bp.MaxItems = 20
 bp.UseSlots = true
@@ -18,7 +18,7 @@ function bp:__tostring()
 	return ("%s (owner: %s)"):format(
 		self.Name,
 		( IsValid(self.Owner) and tostring(self.Owner) .. ("[SID: %s] "):format(self.OwnerUID) ) 
-			or self.OwnerUIDx2
+			or self.OwnerUID
 	)
 
 end
@@ -49,7 +49,7 @@ end
 
 function bp:SetOwner(ply)
 	self.Owner = ply
-	if ply:IsPlayer() then self.OwnerUID = ply:SteamID64() end
+	if ply:IsPlayer() then self:SetOwnerUID(ply:SteamID64()) end
 	self:Emit("OwnerAssigned", ply)
 end
 
@@ -166,6 +166,7 @@ function bp:GetItemInSlot(slot)
 end
 
 function bp:AddItem(it, ignore_emitter, nochange)
+	print("additem called", it)
 	if not it:GetSlot() then errorf("Can't add an item without a slot set! Set a slot first!\nItem: %s", it) return end
 
 	if it:GetInventory() and it:GetInventory() ~= self then
@@ -175,7 +176,7 @@ function bp:AddItem(it, ignore_emitter, nochange)
 
 	if not ignore_emitter then
 		local can = self:Emit("CanAddItem", it, it:GetUID())
-		if can == false then return false end
+		if can == false then print("disallowed adding item, lol") return false end
 	end
 
 	if it:GetUID() then

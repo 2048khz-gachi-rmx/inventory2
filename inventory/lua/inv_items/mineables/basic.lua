@@ -14,7 +14,7 @@ local function makeOre(name, skin, bigamt)
 		:SetCamPos( Vector(26.9, 76.9, 28.3) )
 	    :SetLookAng( Angle(19.8, 250.7, 0.0) )
 	    :SetFOV( 8 )
-		:On("SetInSlot", "ResourceSkin", function(base, item, ipnl, imdl)
+		:On("UpdateProperties", "ResourceSkin", function(base, item, ipnl, imdl)
 			local ent = imdl:GetEntity()
 
 			if not skin or isnumber(skin) then

@@ -30,8 +30,9 @@ end
 function connectFunc(whomst)
 	if whomst and IsPlayer(whomst) and not whomst:IsSuperAdmin() then return false end
 
-	ms.INFO = {"127.0.0.1", "root", "31415", "inventory"}
+	--ms.INFO = {"127.0.0.1", "root", "31415", "inventory"}
 
+	ms.INFO = table.Copy(__MYSQL_INFO)
 	ms.DB = mysqloo.connect(unpack(ms.INFO))
 
 	ms.DB.onConnected = function(self)

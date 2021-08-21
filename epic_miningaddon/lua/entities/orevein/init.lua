@@ -320,7 +320,7 @@ function ENT:NetworkOres(init)
 	local t = {}
 	for name, dat in pairs(self.Ores) do
 		if not dat.ore:GetItemID() then -- safeguard
-			errorf("Ore doesn't have ID!!! %s/%s/%s = %s", dat.ore, dat.ore:GetName() or "no name", dat.ore:GetItemID() or "no id")
+			errorf("Ore doesn't have ID!!! %s / %s / %s", dat.ore, dat.ore:GetName() or "no name", dat.ore:GetItemID() or "no id")
 			return
 		end
 
@@ -423,7 +423,7 @@ local function loadOres()
 	Inventory.Ores.Create = createOre
 	Inventory.Ores.RollPosition = rollOrePos
 
-	OresRespawn()
+	Inventory.MySQL.WaitStates(OresRespawn, "itemids")
 end
 
 if CurTime() > 60 then

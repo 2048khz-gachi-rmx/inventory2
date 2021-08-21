@@ -103,7 +103,7 @@ local requiredStates = {
 	["InventoryActionsLoaded"] 		= SERVER,
 	["InventoryMySQLInitialized"]	= SERVER
 }
-
+_RequiredStates = requiredStates
 local function addState(k)
 	states[k] = true
 	requiredStates[k] = nil

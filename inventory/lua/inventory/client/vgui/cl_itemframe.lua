@@ -118,18 +118,13 @@ function ITEM:Init()
 
 		self.DropHovered = false
 
+		self:OnItemDrop(tbl[1], tbl[1].Item)
 		self:Emit("Drop", tbl[1], tbl[1].Item)
 	end)
 
 	self:On("DragHoverEnd", "DropHover", function()
 		self.DropHovered = false
 	end)
-
-	self:On("Think", "DropHover", function(self)
-		self:To("DropFrac", self.DropHovered and 1 or 0, self.DropHovered and 0.06 or 0.2, 0, 0.3)
-	end)
-
-	self:On("Drop", "ItemDrop", self.OnItemDrop)
 
 	self:On("ItemInserted", "Alpha", function(self, slot, item)
 		if self.TransparentModel then
@@ -143,6 +138,11 @@ function ITEM:Init()
 		self.TransparentModel = true
 	end)
 
+	self:On("FakeItemTakenOut", "Alpha", function(self)
+		self:SetAlpha(255)
+		self.TransparentModel = false
+	end)
+
 	self.Rounding = 4
 
 	self.BorderColor = Colors.LightGray:Copy()
@@ -151,6 +151,12 @@ function ITEM:Init()
 end
 
 ChainAccessor(ITEM, "Slot", "Slot")
+
+function ITEM:OnInventoryUpdated()
+	if self:GetItem() then
+		self:GetItem():GetBaseItem():Emit("UpdateProperties", self:GetItem(), self, self.ModelPanel)
+	end
+end
 
 function ITEM:OnDragStart()
 	self:Emit("DragStart")
@@ -170,6 +176,7 @@ function ITEM:OnItemDrop(slot, it)
 end
 
 function ITEM:Think()
+	self:To("DropFrac", self.DropHovered and 1 or 0, self.DropHovered and 0.06 or 0.2, 0, 0.3)
 	self:Emit("Think")
 end
 
@@ -300,7 +307,7 @@ end
 function ITEM:SetItem(it)
 
 	self:SetEnabled(Either(it, true, false))
-	if self.FakeItem then self:SetFakeItem(nil) end
+	if self.FakeItem then print("SetItem called with", it, debug.traceback()) self:SetFakeItem(nil) end
 
 	if it then
 
@@ -316,7 +323,7 @@ function ITEM:SetItem(it)
 
 		self:CreateModelPanel(it)
 
-		self.Item:GetBaseItem():Emit("SetInSlot", self.Item, self, self.ModelPanel)
+		self.Item:GetBaseItem():Emit("UpdateProperties", self.Item, self, self.ModelPanel)
 
 		--self:Emit("Item", it, true)
 
@@ -338,7 +345,7 @@ end
 
 
 function ITEM:GetItem(real)
-	return self.Item or (not real and self.FakeItem), (self.FakeItem ~= nil)
+	return self.Item or (not real and self.FakeItem) or nil, (self.FakeItem ~= nil)
 end
 
 function ITEM:SetFakeItem(it)
@@ -347,6 +354,7 @@ function ITEM:SetFakeItem(it)
 		self:Emit("FakeItem", it)
 		self:CreateModelPanel(it)
 	else
+		self:Emit("FakeItemTakenOut", it)
 		if not self.Item then
 			self.ModelPanel:Remove()
 		end
@@ -387,7 +395,6 @@ function Inventory.Panels.ItemDraw(self, w, h)
 	local it = self.Item or self.FakeItem
 
 	if it then
-
 		local base = it:GetBaseItem()
 
 		--self.FakeBorderColor = self.FakeBorderColor or self.BorderColor:Copy() -- copy the color so we dont modify the original, and use it for drawing the border

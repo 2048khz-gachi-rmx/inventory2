@@ -1,13 +1,11 @@
 local bp = Inventory.Inventories.Backpack
 ChainAccessor(bp, "LastResync", "LastResync")
 --[[
-	returns:
-		true - action was done without making new items
-		table + number - items were stackable OR new were created; if number is non-0 then it didn't fit this amount of items
-						 (maybe there were no slots or whatever) ; table can be empty if it didn't fit ANY items;
-						 REMINDER: the items don't have a UID yet! :Once("AssignUID") if you need to do something on them!
+	returns a promise (and maybe a number)
+		- resolved with a table of items = those items were added
+		- resolved with false and a table of items = those items got stacked into
 
-		false + string - error
+	the maybe number is the amount of items left which couldnt be stacked in anywhere
 ]]
 
 function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
@@ -18,6 +16,8 @@ function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
 
 	cb = cb or BlankFunc
 
+	local pr = Promise()
+
 	local can, why = self:Emit("CanCreateItem", iid, dat, slot)
 	if can == false then return false, ("Cannot create item (%s)"):format(why or "emit returned false") end
 
@@ -25,42 +25,60 @@ function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
 	if not nostack then
 		local its, left = Inventory.CheckStackability(self, iid, cb, dat)
 
+		-- table of new items given; now to insert them in SQL
 		if istable(its) then
-
+			local prs = {}
 			for k,v in ipairs(its) do
-				v:Insert(self)
-				v:On("AssignUID", "InsertIntoInv", function(v, uid)
-					self:AddItem(v, true)
-					self:AddChange(v, INV_ITEM_ADDED)
-					cb(it, slot)
-				end)
+				local newPr = Promise()
+				table.insert(prs, newPr)
+
+				if self.UseSQL ~= false then
+					v:Insert(self)
+					v:On("AssignUID", "InsertIntoInv", function(v, uid)
+						self:AddItem(v, true)
+						self:AddChange(v, INV_ITEM_ADDED)
+						cb(v, slot)
+						newPr:Resolve(v)
+					end)
+				else
+					newPr:Resolve(v)
+					cb(v, slot)
+				end
 			end
 
-			return its, left
+
+			return Promise.OnAll(prs), left
 		end
 
 		if its == true then
 			if cbanyway then cb() end
-			return true
+			pr:Resolve(false, left)
+			return pr, 0
 		end
 	end
 
 	slot = slot or self:GetFreeSlot()
 	if not slot or slot > self.MaxItems then
-		return false, ("Didn't find a slot where to put the item or it was above MaxItems! (%s > %d)"):format(slot, self.MaxItems)
+		pr:Reject( ("Didn't find a slot where to put the item or it was above MaxItems! (%s > %d)"):format(slot, self.MaxItems) )
+		return pr, dat and dat.Amount or 0
 	end
 
 	local it = Inventory.NewItem(iid, self)
 	it:SetSlot(slot)
 
-	--if self.UseSQL ~= false then
-	it:Insert(self)
-	it:Once("AssignUID", function()
-		self:AddItem(it, true)
+	if self.UseSQL ~= false then
+		it:Insert(self)
+		it:Once("AssignUID", function()
+			self:AddItem(it, true)
+			cb(it, slot)
+			pr:Resolve({it})
+		end)
+	else
 		cb(it, slot)
-	end)
+		pr:Resolve({it})
+	end
 
-	return {it}, 0
+	return pr, 0
 	--[[else
 		self:AddItem(it, true)
 		cb(it, slot)
@@ -91,18 +109,19 @@ function bp:NewItemNetwork(who, iid, cb, slot, dat, nostack, cbanyway)
 		end
 	end
 
-	local res = self:NewItem(iid, real_cb, slot, dat, nostack, cbanyway)
+	local pr = self:NewItem(iid, real_cb, slot, dat, nostack, cbanyway)
 
 	-- true is the only case where we need to call cb and network manually
 
-	if res == true then
+	pr:Then(function()
 		if cbanyway then
 			real_cb() --already takes care of networking
 		elseif IsValid(self:GetOwner()) then
 			Inventory.Networking.NetworkInventory(who, self, INV_NETWORK_UPDATE)
 		end
-	end
+	end)
 
+	return pr
 end
 
 -- can you move FROM this inv?
@@ -170,29 +189,42 @@ end
 function bp:InsertItem(it, slot, cb)
 	cb = cb or BlankFunc
 
-	if not slot then
+	if not slot and not it:GetSlot() then
 		slot = self:GetFreeSlot()
 		if not slot then print("Can't insert", it, "into", self, "cuz no slots") return false end
 	end
 
+	slot = slot or it:GetSlot()
 	it:SetSlot(slot)
 
 	local sqlemit = it:Insert(self)
+	local insSlot
+
+	local pr = Promise()
 
 	if it:GetUID() then
-		self:AddItem(it)
-		cb(it, slot)
-		self:AddChange(it, INV_ITEM_ADDED)
-	else
-
-		it:Once("AssignUID", function()
-			self:AddItem(it)
-			cb(it, slot)
+		insSlot = self:AddItem(it)
+		if insSlot then
+			cb(it, insSlot)
 			self:AddChange(it, INV_ITEM_ADDED)
+			pr:Resolve(it, insSlot)
+		else
+			pr:Reject(it, insSlot)
+		end
+	else
+		it:Once("AssignUID", function()
+			insSlot = self:AddItem(it)
+			if insSlot then
+				cb(it, insSlot)
+				self:AddChange(it, INV_ITEM_ADDED)
+				pr:Resolve(it, insSlot)
+			else
+				pr:Reject(it, insSlot)
+			end
 		end)
-
 	end
 
+	return pr
 end
 
 --[[------------------------------]]

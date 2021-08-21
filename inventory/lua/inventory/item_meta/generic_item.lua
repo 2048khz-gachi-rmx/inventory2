@@ -33,6 +33,7 @@ function it:Initialize(uid, iid, ...)
 	self.ItemUID = uid
 	self.Data = {}
 	self.LastNetworkedVars = {}
+	self:SetValid(true)
 
 	local base = Inventory.BaseItems[iid]
 
@@ -66,8 +67,12 @@ function it:Delete()
 	if self:GetInventory() then
 		self:GetInventory():RemoveItem(self)
 	end
+	self:SetValid(false)
 	if SERVER then Inventory.MySQL.DeleteItem(self) end
 end
+
+it.IsValid = it.GetValid
+
 function it:SetOwner(ply)
 	self.Owner = ply
 	self.OwnerUID = ply:SteamID64()
@@ -81,6 +86,7 @@ ChainAccessor(it, "UIDIsFake", "UIDFake")
 ChainAccessor(it, "ItemID", "ItemID")
 ChainAccessor(it, "ItemID", "IID")
 ChainAccessor(it, "Known", "Known")
+ChainAccessor(it, "_Valid", "Valid")
 
 function it:GetData() --only a getter
 	return self.Data
@@ -121,9 +127,13 @@ function it:SetSlot(slot)
 	self.Slot = slot
 
 	local inv = self:GetInventory()
-	if CLIENT then print("it:SetSlot called with current inv being and slot is", slot, inv) end
+
 	if inv then
 		inv:SetSlot(self, slot)
+
+		if SERVER and self:GetSQLExists() then
+			Inventory.MySQL.SetSlot(self, inv)
+		end
 	end
 
 end

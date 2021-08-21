@@ -90,7 +90,7 @@ function ms.CreateInventoryTable(tbl_name, use_slots, more_columns, more_constra
 					end
 
 				elseif isstring(uq) then
-					 		--V ourselves
+							--V ourselves
 								--  V the string
 					pair = ("`%s`, `%s`"):format(name, uq)
 				elseif isbool(uq) then
@@ -124,12 +124,13 @@ function ms.CreateInventoryTable(tbl_name, use_slots, more_columns, more_constra
 end
 
 hook.Add("InventoryTypeRegistered", "CreateInventoryTables", function(inv)
-	if not inv.SQLName and inv.UseSQL ~= false then errorf("Inventory %s is missing an SQLName!", inv.Name) return end
 	if inv.UseSQL == false then return end
+	if not inv.SQLName then errorf("Inventory %s is missing an SQLName!", inv.Name) return end
 
+	inv.SQLName = (inv.SQLName:match("^inv_") and inv.SQLName) or "inv_" .. inv.SQLName
 	Inventory.MySQL.WaitStates(
 		Curry(ms.CreateInventoryTable, inv.SQLName, inv.UseSlots, inv.SQLColumns, inv.SQLConstraints),
-		"items"
+		"items_table"
 	)
 
 end)
@@ -139,10 +140,8 @@ end)
 	Filling ItemID cache
 ]]
 
-local selIDs = ms.DB:query("SELECT * FROM itemids")
-
-selIDs.onSuccess = function(self, dat)
-
+local em = MySQLEmitter(ms.DB:query("SELECT * FROM itemids"))
+local selIDs = ms.StateSetQuery(em, "itemids"):Then(function(self, qry, dat)
 	local conv = Inventory.IDConversion
 
 	local names = conv.ToID
@@ -157,10 +156,12 @@ selIDs.onSuccess = function(self, dat)
 	hook.Run("InventoryItemIDsReceived", ids, names)
 
 	Inventory.MySQL.IDsReceived = true
-end
-selIDs.onError = qerr
+end)
 
-selIDs:start()
+ms.WaitStates(function()
+	em:Exec()
+end, "items_table")
+
 
 
 local function getID(it)
@@ -227,16 +228,30 @@ function ms.DeleteItemID(id, cb, ...)
 	qobj:start()
 end
 
+local setslot_query = "UPDATE %s SET slotid = %d WHERE uid = %s"
 
-local newitem_inv_query 	= ms.DB:prepare("CALL InsertByItemNameInInventory(?, ?, ?, ?);")
-local newitem_idinv_query 	= ms.DB:prepare("CALL InsertByIDInInventory(?, ?, ?, ?);")
+function ms.UpdateProperties(item, inv)
+	inv = item:GetInventory() or inv
+	if not item:GetSQLExists() then errorf("Attempted to update properties of an SQL-less item! %q", item) return end
+	if not item:GetUID() then errorf("Attempted to update properties of an item without a UID! %q", item) return end
+	if not inv.SQLName then errorf("Attempted to update properties of an item in an SQL-less inventory! %q, %q", item, inv) return end
+
+	local dat = not table.IsEmpty(item:GetData()) and item:GetData()
+
+	ms.SetSlot(item, inv)
+	if dat then ms.ItemWriteData(item, dat) end
+end
+
+local newitem_inv_query 	= ms.DB:prepare("CALL InsertByItemNameInInventory(?, ?, ?);")
+local newitem_idinv_query 	= ms.DB:prepare("CALL InsertByIDInInventory(?, ?, ?);")
 
 -- takes an item object and sticks it in the inventory
 function ms.NewInventoryItem(item, inv, ply)
+	if inv.UseSQL == false then print("cant use sql", inv) return end
 
 	local qobj
 
-	local invname = inv and (inv.SQLName)-- or errorf("Inventory.MySQL.NewItem: No SQLName for inventory %s!", inv.Name))
+	local invname = inv and inv.SQLName
 	local iid = getID(item)
 
 	if not invname then
@@ -261,30 +276,13 @@ function ms.NewInventoryItem(item, inv, ply)
 		qobj:setString(2, invname)
 		qobj:setString(3, sid)
 
-		local slot = item:GetSlot()
-		if not slot then
-			slot = inv:GetFreeSlot()
-			if not slot then errorf("Inventory.MySQL.NewItem: Failed to find a free slot for item %s.", item) return end
-			item:SetSlot(slot)
-		end
-
-		qobj:setNumber(4, slot)
-
+		--qobj:setNumber(4, slot)
 	end
 
-
-	local qem = MySQLEmitter(qobj, true):Catch(qerr)
-
-	qem:Once("Success", "AssignData", function(_, qobj, res)
-		local uid = qobj:lastInsert()
-		if uid == 0 then uid = res[1].uid end -- What
-
-		local dat = item:GetPermaData()
-		if not table.IsEmpty(dat) then
-			ms.ItemWriteData(item, dat)
-		end
+	local qem = MySQLEmitter(qobj, true):Catch(qerr):Then(function()
+		item:SetSQLExists(true)
+		ms.UpdateProperties(item, inv)
 	end)
-
 
 	return qem
 	--qobj:start()
@@ -310,7 +308,10 @@ function ms.NewFloatingItem(item)
 
 	local qem = MySQLEmitter(qobj, true):Catch(qerr)
 
-	qem:Once("Success", "AssignData", function(_, qobj, res)
+	qem:Then(function()
+		ms.UpdateProperties(item, inv)
+	end)
+	--[[qem:Once("Success", "AssignData", function(_, qobj, res)
 		local uid = qobj:lastInsert()
 		if uid == 0 then uid = res[1].uid end -- What
 
@@ -318,7 +319,7 @@ function ms.NewFloatingItem(item)
 		if not table.IsEmpty(dat) then
 			ms.ItemWriteData(item, dat)
 		end
-	end)
+	end)]]
 
 	return qem
 end
@@ -361,7 +362,7 @@ function ms.SetInventory(it, inv, slot, dat)
 	end
 
 	local ow, owuid = inv:GetOwner()
-	print(ow, owuid)
+
 	local puid = mysqloo.quote(ms.DB, owuid)
 	local q2
 
@@ -389,8 +390,8 @@ function ms.SetInventory(it, inv, slot, dat)
 end
 
 
- 																							 -- SQL inventory name | SteamID64 as an int
-																							    --  V 			 	 V
+																							 -- SQL inventory name | SteamID64 as an int
+																								--  V 			 	 V
 local fetchitems_query 	= "SELECT its.iid, its.uid, its.data, inv.slotid FROM items its INNER JOIN %s inv ON puid = %s AND its.uid = inv.uid"
 
 --mysqloo is fucking autistic so this can't be used as a prepared query :/
@@ -417,6 +418,7 @@ function ms.FetchPlayerItems(inv, ply)
 			it:SetOwner(ply)
 			it:SetSlot(v.slotid)
 			it:DeserializeData(v.data)
+			it:SetSQLExists(true)
 
 			inv:AddItem(it, true)
 		end
@@ -428,18 +430,20 @@ function ms.FetchPlayerItems(inv, ply)
 	q:start()
 end
 
-local setslot_query = "UPDATE %s SET slotid = %d WHERE uid = %s"
 function ms.SetSlot(it, inv)
+	if not it:GetUID() then return end
+
 	local slot = (IsItem(it) and it:GetSlot()) or (isnumber(it) and it)
 
-	if not slot then errorf("Failed to get slot for item %s", it) return end
+	if not slot then errorf("Failed to get slot for item %s", it) return false end
 
 	if not inv then inv = it:GetInventory() end
-	if not inv.SQLName then errorf("Failed to get SQLName for inventory %s", inv) return end
+	if not inv.SQLName then errorf("Failed to get SQLName for inventory %s", inv) return false end
+	if not inv.UseSlots then return false end
 
 	local q = setslot_query:format(inv.SQLName, slot, it:GetUID())
 
-	MySQLEmitter(ms.DB:query(q), true):Catch(qerr)
+	return MySQLEmitter(ms.DB:query(q), true):Catch(qerr)
 
 end
 
@@ -510,6 +514,8 @@ local new_dat_query = ms.DB:prepare("UPDATE items SET data = ? WHERE uid = ?")
 -- Accepts either a key-value as the second argument or automatically takes the item's .Data
 
 function ms.ItemWriteData(it, data)
+	if not it:GetUID() then return end
+
 	data = data or it:GetData()
 	local json = util.TableToJSON(data)
 
@@ -525,7 +531,8 @@ local patch_dat_query = ms.DB:prepare("UPDATE items SET data = JSON_MERGE_PATCH(
 
 function ms.ItemSetData(it, t)
 	t = t or it:GetData()
-	if not it:GetUID() then return end --perhaps not initialized yet?...
+	if not it:GetUID() then return end -- not initialized yet? ms.UpdateProperties will take care of it if so
+
 
 	local json = util.TableToJSON(t)
 	if not json then errorf("Failed to get JSON from arg: %s", t) return end --?

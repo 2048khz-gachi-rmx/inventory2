@@ -8,14 +8,13 @@ queries[#queries + 1] = ms.CreateProcedure("InsertByIDInInventory",
 	LibItUp.SQLArgList()
 		:AddArg("id", "INT UNSIGNED")
 		:AddArg("inv", "TEXT")
-		:AddArg("puid", "BIGINT")
-		:AddArg("slotid", "MEDIUMINT"),
+		:AddArg("puid", "BIGINT"),
 
 [[	DECLARE uid INT UNSIGNED;
 	INSERT INTO items(iid) VALUES(id);
     SET uid = last_insert_id();
 
-	SET @t1 = CONCAT('INSERT INTO ', inv ,'(uid, puid, slotid) VALUES(', uid, ", ", puid,", ", slotid, ')' ); # oh my fucking god actually kill me
+	SET @t1 = CONCAT('INSERT INTO ', inv ,'(uid, puid) VALUES(', uid, ", ", puid, ')' ); # oh my fucking god actually kill me
 	PREPARE stmt3 FROM @t1;
 	EXECUTE stmt3;
 	DEALLOCATE PREPARE stmt3;
@@ -28,8 +27,7 @@ queries[#queries + 1] = ms.CreateProcedure("InsertByItemNameInInventory",
 LibItUp.SQLArgList()
 	:AddArg("itemname",		"VARCHAR(254)")
 	:AddArg("inv",  		"TEXT")
-	:AddArg("puid",			"BIGINT")
-	:AddArg("slotid",		"MEDIUMINT"),
+	:AddArg("puid",			"BIGINT"),
 
 [[	DECLARE uid INT UNSIGNED;
     DECLARE iid INT UNSIGNED;
@@ -37,13 +35,14 @@ LibItUp.SQLArgList()
 	INSERT INTO items(iid) VALUES(iid);
     SET uid = last_insert_id();
 
-	SET @t1 = CONCAT('INSERT INTO ', inv ,'(uid, puid, slotid)
-		VALUES(', uid, ", ", puid,", ", slotid, ')' ); # oh my fucking god actually kill me
+	SET @t1 = CONCAT('INSERT INTO ', inv ,'(uid, puid)
+		VALUES(', uid, ", ", puid,')' ); # oh my fucking god actually kill me
 	PREPARE stmt3 FROM @t1;
 	EXECUTE stmt3;
 	DEALLOCATE PREPARE stmt3;
 
-	SELECT uid;]])
+	SELECT uid;
+]])
 
 
 queries[#queries + 1] = ms.CreateFunction("GetBaseItemID",
@@ -53,9 +52,15 @@ LibItUp.SQLArgList()
 
 "RETURNS INT MODIFIES SQL DATA DETERMINISTIC",
 
-[[	DECLARE ret INT;
+[[	DECLARE ret INT DEFAULT NULL;
     SELECT id INTO ret FROM itemids WHERE name = comp_name;
-	RETURN 1;]])
+
+    IF ( isnull(ret) ) THEN
+		INSERT INTO `itemids`(name) VALUES(comp_name);
+		RETURN LAST_INSERT_ID();
+	END IF;
+
+	RETURN ret;]])
 
 ---------------------
 ms.RegisterState("procedures")

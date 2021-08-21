@@ -59,11 +59,15 @@ function nw.ReadInventoryContents(invtbl, typ)
 
     if not inv then errorf("Didn't find inventory with NetworkID %s!", invID) end
 
+    if typ == INV_NETWORK_FULLUPDATE then
+        log("!!!!!DROPPING INVENTORY!!!!!")
+        inv:Reset()
+    end
+
     local its = net.ReadUInt(16)
 
     realLog("CL-NW: reading %d items for inventory %d", its, invID)
 
-    AAA = invtbl
     local slot_size = inv.MaxItems and bit.GetLen(inv.MaxItems)
 
     for i=1, its do
@@ -156,12 +160,6 @@ function nw.ReadUpdate(len, type)
     local invs_table = {} --map out all the entity's inventories into {[nwID] = obj} pairs
 
     for k,v in pairs(ent.Inventory) do
-
-        if type == INV_NETWORK_FULLUPDATE then
-            log("!!!!!DROPPING INVENTORY!!!!!")
-            v:Reset()
-        end
-
         if v.MultipleInstances then
             invs_table[k] = v
         else
