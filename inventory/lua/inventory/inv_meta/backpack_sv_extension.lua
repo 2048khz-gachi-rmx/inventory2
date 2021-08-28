@@ -180,6 +180,9 @@ function bp:CrossInventoryMove(it, inv2, slot)
 	end
 	local em = ActuallyMove(self, inv2, it, slot)
 
+	self:Emit("CrossInventoryMovedFrom", it, inv2, slot)
+	inv2:Emit("CrossInventoryMovedTo", it, self, slot)
+
 	return em
 end
 

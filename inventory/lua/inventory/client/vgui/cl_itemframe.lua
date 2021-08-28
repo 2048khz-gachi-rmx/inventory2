@@ -128,19 +128,9 @@ function ITEM:Init()
 
 	self:On("ItemInserted", "Alpha", function(self, slot, item)
 		if self.TransparentModel then
-			self:SetAlpha(255)
+			self:AlphaTo(255, 0.3, 0, 0.3)
 			self.TransparentModel = false
 		end
-	end)
-
-	self:On("FakeItem", "Alpha", function(self)
-		self:SetAlpha(120)
-		self.TransparentModel = true
-	end)
-
-	self:On("FakeItemTakenOut", "Alpha", function(self)
-		self:SetAlpha(255)
-		self.TransparentModel = false
 	end)
 
 	self.Rounding = 4
@@ -196,7 +186,7 @@ function ITEM:OnCursorEntered()
 	cl:SetRelPos(self:GetWide() / 2, 0)
 
 	if not existed then
-		cl:SetItem(it)
+		cl:SetItemFrame(self)
 	end
 
 	self.Cloud = cl
@@ -307,7 +297,7 @@ end
 function ITEM:SetItem(it)
 
 	self:SetEnabled(Either(it, true, false))
-	if self.FakeItem then print("SetItem called with", it, debug.traceback()) self:SetFakeItem(nil) end
+	if self.FakeItem then self:SetFakeItem(nil) end
 
 	if it then
 
@@ -345,17 +335,22 @@ end
 
 
 function ITEM:GetItem(real)
-	return self.Item or (not real and self.FakeItem) or nil, (self.FakeItem ~= nil)
+	local ret = self.Item or (not real and self.FakeItem) or nil
+	return ret, ret and ret == self.FakeItem
 end
 
 function ITEM:SetFakeItem(it)
 	self.FakeItem = it
 	if it ~= nil then
-		self:Emit("FakeItem", it)
+		self:SetAlpha(120)
+		self.TransparentModel = true
 		self:CreateModelPanel(it)
+		self:Emit("FakeItem", it)
 	else
+		self:AlphaTo(255, 0.3, 0, 0.3)
+		self.TransparentModel = false
 		self:Emit("FakeItemTakenOut", it)
-		if not self.Item then
+		if not self.Item and self.ModelPanel then
 			self.ModelPanel:Remove()
 		end
 	end
@@ -382,9 +377,9 @@ function ITEM:MaskHoverGrad(w, h)
 end
 
 function ITEM:DrawBorder(w, h, col)
+	if self:Emit("DrawBorder", w, h, col) == false then return end
 	local rnd = self.Rounding
 	draw.RoundedBox(rnd, 0, 0, w, h, col)
-	self:Emit("DrawBorder", w, h, col)
 end
 
 local emptyCol = Color(30, 30, 30)
@@ -425,7 +420,7 @@ function Inventory.Panels.ItemDraw(self, w, h)
 		local preMult = surface.GetAlphaMultiplier()
 
 		surface.SetAlphaMultiplier(preMult - dim * 0.6 * preMult)
-			base:Emit("Paint", self.Item, self, self.ModelPanel)
+			base:Emit("Paint", self:GetItem(), self, self.ModelPanel)
 		surface.SetAlphaMultiplier(preMult)
 	else
 		local x, y, w, h = 0, 0, w, h

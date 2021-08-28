@@ -122,6 +122,16 @@ Inventory.Blueprints.Types = {
 			IconW = 24,
 			IconPad = 4
 		},
+
+		BPIcon = {
+			IconURL = "https://i.imgur.com/IFKPusX.png",
+			IconName = "randombp.png",
+
+			IconW = 64,
+			IconH = 64,
+			IconAng = -20,
+			Flip = false
+		}
 	}
 }
 
@@ -152,6 +162,15 @@ pool.ar = {
 	"arccw_fml_fas_g36c",
 	"arccw_fml_fas_m16a2",
 }
+
+pool.shotgun = {
+	"arccw_go_mag7",
+	"arccw_go_870",
+	"arccw_go_nova",
+	"arccw_go_m1014",
+	"arccw_m1014",
+}
+
 
 pool.smg = {
 	"arccw_go_mac10",
@@ -217,4 +236,14 @@ for k,v in pairs(pool) do
 	for _, gun in ipairs(v) do
 		Inventory.Blueprints.WeaponPoolReverse[gun] = k
 	end
+end
+
+function Inventory.Blueprints.GetCost(tier, typ)
+	local baseCost = Inventory.Blueprints.Costs[tier]
+	if not baseCost then printf("!!! no cost for tier %s !!!", tier) return false end
+
+	local dat = Inventory.Blueprints.Types[typ]
+	if not dat then printf("!!! no data for type %s !!!", typ) return false end
+
+	return math.floor(baseCost * dat.CostMult)
 end

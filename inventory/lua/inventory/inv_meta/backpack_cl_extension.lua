@@ -7,6 +7,9 @@ function bp:CanCrossInventoryMove(it, inv2, slot)
 		return false
 	end
 
+	if not inv2:HasAccess(LocalPlayer(), "CrossInventoryTo") then return false end
+	if not self:HasAccess(LocalPlayer(), "CrossInventoryFrom") then return false end
+
 	if self == inv2 then
 		errorf("Can't cross-inv between the same inventory! %s vs. %s", self, inv2)
 		return false
@@ -14,14 +17,14 @@ function bp:CanCrossInventoryMove(it, inv2, slot)
 
 	slot = slot or inv2:GetFreeSlot()
 	if not slot then
-		print("Can't cross-inventory-move cuz no slot", slot)
 		return false
 	end
 
 	if not inv2:IsSlotLegal(slot) then
-		print("Slot is illegal", self, slot)
 		return false
 	end
+
+	-- todo: is this necessary?
 
 	--check if inv2 can accept cross-inventory item
 	local can = inv2:Emit("CanCrossMoveTo", it, self)
@@ -51,16 +54,17 @@ function bp:CrossInventoryMove(it, inv2, slot)
 	if other_item and not inv2:CanCrossInventoryMove(other_item, self, it:GetSlot()) then
 		return false
 	end
-	print("brr", self, it, inv2, slot)
+
 	if not self:CanCrossInventoryMove(it, inv2, slot) then return false end
-
-
 
 	if other_item then
 		ActuallyMove(inv2, self, other_item, it:GetSlot())
 	end
 
 	ActuallyMove(self, inv2, it, slot)
+
+	self:Emit("CrossInventoryMovedFrom", it, inv2, slot)
+	inv2:Emit("CrossInventoryMovedTo", it, self, slot)
 
 	return true
 end

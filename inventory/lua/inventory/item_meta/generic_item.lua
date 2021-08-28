@@ -55,10 +55,10 @@ local function equalData(dat1, dat2)
 	return true
 end
 
-function it:CanStack(it2, amt)
-	if not equalData(self.Data, it2.Data) then return false end
-	if self:GetItemID() ~= it2:GetItemID() then return false end
-	if self:GetAmount() == self:GetMaxStack() then return false end
+function it:CanStack(it2, amt, stackIn)
+	if not equalData(self.Data, it2.Data) then print("inequal data") return false end
+	if self:GetItemID() ~= it2:GetItemID() then print("not same iid") return false end
+	if self:GetAmount() == self:GetMaxStack() then print("already max", self:GetAmount(), self:GetMaxStack()) return false end
 
 	return math.min(self:GetMaxStack() - self:GetAmount(), it2:GetAmount(), amt or math.huge)
 end
@@ -123,7 +123,7 @@ it.GetBase = it.GetBaseItem
 
 ChainAccessor(it, "Inventory", "Inventory")
 
-function it:SetSlot(slot)
+function it:SetSlot(slot, sql)
 	self.Slot = slot
 
 	local inv = self:GetInventory()
@@ -131,7 +131,7 @@ function it:SetSlot(slot)
 	if inv then
 		inv:SetSlot(self, slot)
 
-		if SERVER and self:GetSQLExists() then
+		if SERVER and self:GetSQLExists() and sql ~= false then
 			Inventory.MySQL.SetSlot(self, inv)
 		end
 	end
@@ -147,12 +147,13 @@ function it:ReadNetworkedVars()
 
 	for k,v in ipairs(base.NetworkedVars) do
 		local read = net.ReadBool()
-		if not read then continue end
+		if not read then print("no networked vars") continue end
 
 		if isfunction(v.what) then
 			v.what(self, false)
 		else
 			self.Data[v.what] = net["Read" .. v.type] (unpack(v.args))
+			print("also read:", "Read" .. v.type, unpack(v.args))
 		end
 	end
 

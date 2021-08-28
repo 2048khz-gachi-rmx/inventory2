@@ -91,6 +91,29 @@ function bp.GenerateMods(amt)
 	return ret
 end
 
+function bp.GenerateRecipe(itm)
+	local tier = itm:GetTier()
+	local wep = itm:GetResult()
+	local mods = itm:GetModifiers()
+
+	local rec = {}
+
+	if tier == 1 then
+		rec.copper_bar = math.random(5, 15)
+		rec.iron_bar = math.random(10, 20)
+	elseif tier == 2 then
+		rec.copper_bar = math.random(5, 15)
+		rec.iron_bar = math.random(10, 20)
+		rec.gold_bar = math.random(5, 10)
+	else
+		rec.copper_bar = 999
+		rec.iron_bar = 999
+		rec.gold_bar = 999
+	end
+
+	return rec
+end
+
 function bp.Generate(tier, typ)
 	if typ == "random" then
 		typ = bp.GetRandomType()
@@ -103,12 +126,11 @@ function bp.Generate(tier, typ)
 	local mods = bp.GenerateMods(amtMods)
 
 	local item = Inventory.Blueprints.CreateBlank()
-	item:SetRecipe({
-		iron_bar = 50
-	})
 	item:SetModifiers(mods)
 	item:SetResult(wep)
 	item:SetTier(tier)
+
+	item:SetRecipe(bp.GenerateRecipe(item))
 
 	return item
 end

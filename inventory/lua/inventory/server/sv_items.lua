@@ -5,6 +5,7 @@
 
 function Inventory.NewItem(iid, invobj, dat)
 	local it = Inventory.Util.GetMeta(iid)
+	if not it then errorf("No item meta for IID %s", iid) return end
 
 	local item = it:new(nil, iid)
 	item:SetInventory(invobj)
@@ -95,4 +96,44 @@ function Inventory.CheckStackability(inv, iid, cb, dat)
 	end
 
 	return ret, amt
+end
+
+
+function Inventory.TakeItems(inv, iid, amt, filter)
+	filter = filter or BlankFunc
+	iid = Inventory.Util.ItemNameToID(iid)
+	if not iid then errorf("not an itemID or name: %s", iid) return end
+
+	local matches = {}
+	local have_amt = 0
+
+	for k,v in pairs(inv:GetItems()) do
+		if v:GetItemID() ~= iid then continue end
+		if filter(iid) ~= false then
+			matches[#matches + 1] = v
+			have_amt = have_amt + v:GetAmount()
+		end
+	end
+
+	if have_amt < amt then return false end
+	table.sort(matches, function(a, b)
+		if a:GetAmount() ~= b:GetAmount() then
+			return a:GetAmount() < b:GetAmount()
+		end
+
+		return a:GetSlot() > b:GetSlot()
+	end)
+
+	for k,v in ipairs(matches) do
+		local take = math.min(amt, v:GetAmount())
+		if take == v:GetAmount() then
+			v:Delete()
+		else
+			v:SetAmount(v:GetAmount() - take)
+		end
+
+		amt = amt - take
+	end
+
+	return true
 end

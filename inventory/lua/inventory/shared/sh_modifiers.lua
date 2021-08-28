@@ -6,7 +6,7 @@ mods.Pool = mods.Pool or {}
 
 mods.Pool.Blazing = {
 	MaxTier = 4,
-	Markup = function(it, cl, mup)
+	Markup = function(it, mup, tier)
 		local mod = mup:AddPiece()
 		mod:AddText("Blazing")
 		mod.IgnoreVisibility = true
@@ -19,16 +19,17 @@ mods.Pool.Blazing = {
 		end)
 		local desc = mup:AddPiece()
 		desc.Font = "OS16"
-		desc:DockMargin(8, 0, 0, 0)
+		desc:DockMargin(4, 0, 0, 0)
 		desc:SetColor(Color(180, 150, 60))
-		desc:AddText("BRrrrrrrrrrrrt and you're ~ablaze~")
+		local tx = desc:AddText("BRrrrrrrrrrrrt and you're ~ablaze~")
 		desc.IgnoreVisibility = true
+		--desc:Debug()
 	end
 }
 
 mods.Pool.Crippling = {
 	MaxTier = 3,
-	Markup = function(it, cl, mup)
+	Markup = function(it, mup, tier)
 		--mup:Debug()
 		local mod = mup:AddPiece()
 		mod.Font = "OS72"
@@ -39,10 +40,11 @@ mods.Pool.Crippling = {
 		mod:AddTag(MarkupTags("rotate", 10, 0))
 		mod:AddText("pling", 15, 1)
 		mod.IgnoreVisibility = true
+
 		mod:On("RecalculateHeight", "ThisIsAHack", function(self, buf, maxh)
 			surface.SetFont(mod.Font)
 			local tw, th = surface.GetTextSize("pling")
-			local bw, bh = math.AARectSize(tw * 0.35, th * 0.35 * 0.875, 10)	-- OpenSans has a 12.5% padding on top/bottom of letters
+			local bw, bh = math.AARectSize(tw * 0.35, th * 0.35 * 0.875, 10)
 			return math.ceil(bh)
 		end)
 
@@ -50,7 +52,7 @@ mods.Pool.Crippling = {
 		desc.Font = "OS16"
 		desc:DockMargin(8, 0, 0, 0)
 		desc:SetColor(Color(130, 130, 130))
-		desc:AddText("It does some kewl shit, ya feel me? Like it can slow down ppl and shit, thats really cool i guess")
+		local tx = desc:AddText("It does some kewl shit, ya feel me? Like it can slow down ppl and shit, thats really cool i guess")
 		desc.IgnoreVisibility = true
 	end,
 }
@@ -128,4 +130,9 @@ end
 
 function mods.NameToID(name)
 	return mods.IDConv.ToID[name]
+end
+
+function mods.Get(what)
+	local nm = mods.IDToName(what) or (isstring(what) and what)
+	return mods.Pool[what]
 end

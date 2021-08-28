@@ -11,7 +11,7 @@ end
 -- returns BaseItemMeta's name ( metas in base_items/*.lua )
 function Inventory.Util.GetBaseMetaName(iid)
 	local base = Inventory.Util.GetBase(iid)
-	return base.BaseName
+	return base and base.BaseName
 end
 
 -- returns BaseItemMeta ( metas in base_items/*.lua )

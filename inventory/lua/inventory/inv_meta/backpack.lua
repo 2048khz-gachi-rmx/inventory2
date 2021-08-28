@@ -13,6 +13,7 @@ bp.UseSQL = true
 
 bp.IsBackpack = true
 bp.AutoFetchItems = true
+bp.SupportsSplit = true
 
 function bp:__tostring()
 	return ("%s (owner: %s)"):format(
@@ -155,8 +156,8 @@ function bp:MoveItem(it, slot)	--this is a utility function which swaps slots if
 
 	if it == it2 or it:GetSlot() == slot then return false end
 
-	it:SetSlot(slot)
-	if it2 then it2:SetSlot(b4slot) end
+	it:SetSlot(slot, false)
+	if it2 then it2:SetSlot(b4slot, false) end
 
 	if SERVER then return Inventory.MySQL.SwitchSlots(it, it2) end
 end
@@ -230,7 +231,19 @@ end
 
 function bp:HasAccess(ply, action)
 	local allow = self:Emit("Can" .. action, ply)
-	if allow ~= nil then return allow end
+	if allow ~= nil then print("Can" .. action, "returned", allow) return allow end
+
+
+	if self["ActionCan" .. action] ~= nil then
+		local allow
+
+		if isfunction(self["ActionCan" .. action]) then
+			allow = self["ActionCan" .. action] (self, ply)
+		else
+			allow = self["ActionCan" .. action]
+		end
+		return allow
+	end
 
 	return ply == self:GetOwner()
 end

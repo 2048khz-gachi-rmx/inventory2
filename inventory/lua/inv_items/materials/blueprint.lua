@@ -1,6 +1,6 @@
 --
 
-local basebp = Inventory.BaseItemObjects.Generic("base_bp")
+local basebp = Inventory.BaseItemObjects.Generic("blank_bp")
 basebp 	:SetName("Empty Blueprint")
 
 		:On("Paint", "PaintBlueprint", function(base, item, slot, w, h)
@@ -24,12 +24,13 @@ blueprint
 	:SetName("Blueprint -- you're not supposed to see this!")
 	:On("Paint", "PaintBlueprint", function(base, item, slot, w, h)
 		local w, h = slot:GetSize()
+		local _, fake = slot:GetItem()
 
 		local padx = w * 0.05
 		local iw = w - padx*2
 		local ih = h - h * 0.3
 		local x, y = padx, h*0.2
-		item:PaintBlueprint(x, y, iw, ih)
+		item:PaintBlueprint(x, y, iw, ih, fake)
 	end)
 		--[[:On("Paint", "PaintBlueprint", function(base, item, slot, w, h)
 			local w, h = slot:GetSize()

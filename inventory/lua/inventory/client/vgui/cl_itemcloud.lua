@@ -10,13 +10,16 @@ function PANEL:SetItemFrame(fr)
 	self:SetItem(fr:GetItem(true))
 end
 
+function PANEL:GetItemFrame()
+	return self.Frame
+end
+
 function PANEL:SetItem(it)
 	self.Item = it
 
 	if it then
-		it:GenerateText(self)
+		it:_CallTextGenerators(self)
 	end
-
 end
 
 vgui.Register("ItemCloud", PANEL, "Cloud")

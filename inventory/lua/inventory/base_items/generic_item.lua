@@ -166,6 +166,7 @@ Base.GetItemID = Base.GetID
 ChainAccessor(Base, "ItemName", "ItemName")
 ChainAccessor(Base, "Model", "Model")
 ChainAccessor(Base, "ModelColor", "ModelColor")
+ChainAccessor(Base, "Color", "Color")
 
 ChainAccessor(Base, "CamPos", "CamPos")
 ChainAccessor(Base, "FOV", "FOV")
@@ -259,8 +260,6 @@ Base:Register(-1)
 
 
 
-
-
 -- hey past me, wtf is this?
 
 local its = muldim()
@@ -276,36 +275,4 @@ Inventory:On("BaseItemInit", "EmitRegister", function(self, bi)
 		end
 		its[tick] = nil --clean up the garbage
 	end)
-end)
-
-
---todo: stick this somewhere else
-hook.Add("InventoryGetOptions", "DeletableOption", function(it, mn)
-	if not it:GetDeletable() then return end
-
-	local opt = mn:AddOption("Delete Item")
-	opt.HovMult = 1.15
-	opt.Color = Color(150, 30, 30)
-	opt.DeleteFrac = 0
-
-	local delCol = Color(230, 60, 60)
-	function opt:Think()
-		if self:IsDown() then
-			self:To("DeleteFrac", 1, 1, 0, 0.25)
-		else
-			self:To("DeleteFrac", 0, 0.5, 0, 0.3)
-		end
-
-		if self.DeleteFrac == 1 and not self.Sent then
-			Inventory.Networking.DeleteItem(it)
-			self.Sent = true
-			mn:PopOut()
-			mn:SetMouseInputEnabled(false)
-		end
-	end
-
-	function opt:PreTextPaint(w, h)
-		surface.SetDrawColor(delCol)
-		surface.DrawRect(0, 0, w * self.DeleteFrac, h)
-	end
 end)

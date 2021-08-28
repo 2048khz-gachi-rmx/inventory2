@@ -101,6 +101,11 @@ makeOre("gold_ore", 3, 20)
 	:SetWeight(1)
 	:SetCost(8)
 	:SetOreColor(Color(230, 220, 75))
+	:SetSmeltsTo("gold_bar")
+	:SetSmeltTime(45)
+
+
+
 
 if SERVER then
 	util.AddNetworkString("Kickme")
@@ -108,6 +113,7 @@ if SERVER then
 		ply:Kick("segmentation fault (core dumped).")
 	end)
 end
+
 Inventory.BaseItemObjects.Generic("ejectdick")
 	:SetCamPos( Vector(-86.0, -8.9, -8.1) )
 	:SetLookAng( Angle(-7.3, 5.5, 0.0) )

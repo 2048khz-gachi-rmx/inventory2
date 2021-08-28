@@ -21,7 +21,9 @@ function nw.ReadItem(uid_sz, iid_sz, slot_sz, inventory)
     local slot = slot_sz and net.ReadUInt(slot_sz)
 
     local item = inventory:HasItem(uid)
-    log("       Read item UID: %s (sz: %d); IID: %s (sz: %d); Slot: %s", uid, uid_sz, iid, iid_sz, slot)
+    log("       Read item UID: %s (sz: %d); IID: %s (sz: %d); Slot: %s (sz: %d)",
+        uid, uid_sz, iid, iid_sz, slot, slot_sz)
+
     if not item then
         local meta = Inventory.Util.GetMeta(iid)
         item = meta:new(uid, iid)
@@ -89,7 +91,7 @@ function nw.ReadInventoryContents(invtbl, typ)
             for i=1, dels do
                 local uid = net.ReadUInt(max_uid)
                 local del_it = inv:DeleteItem(uid, true)
-                log("   successfully deleted item %d", uid)
+                --log("   successfully deleted item %d", uid)
                 Inventory:Emit("ItemRemoved", inv, del_it)
             end
         end

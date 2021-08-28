@@ -70,8 +70,6 @@ function PANEL:MoveItem(rec, drop, item)
 	local recItem = rec:GetItem(true)
 
 	if crossinv then
-
-
 		local ok = item:GetInventory():RequestCrossInventoryMove(item, rec:GetInventory(), rec:GetSlot())
 
 		if ok then
@@ -317,6 +315,20 @@ function PANEL:ItemDrop(rec, drop, item, ...)
 
 end
 
+function PANEL.CheckCanDrop(slotTo, invpnl, slotFrom, itm)
+	-- HoverGradientColor
+	local can = Inventory.GUICanAction(slotTo, invpnl:GetInventory(), itm)
+
+	if not can and not slotTo.HoverGradientColor then
+		slotTo.HoverGradientColor = Colors.DarkerRed
+		slotTo._BecauseCant = true
+	elseif can and slotTo._BecauseCant then
+		slotTo.HoverGradientColor = nil
+		slotTo._BecauseCant = false
+	end
+
+end
+
 function PANEL:AddItemSlot()
 	local i = #self.Slots
 
@@ -334,10 +346,10 @@ function PANEL:AddItemSlot()
 	it:SetInventoryFrame(self)
 	it:SetSlot(i + 1)
 	it:SetMainFrame(self:GetMainFrame())
-	it:On("ItemInserted", self.OnItemAddedIntoSlot, self)
+	it:On("ItemInserted", self, self.OnItemAddedIntoSlot, self)
+	it:On("ItemHover", self, self.CheckCanDrop, self)
 
 	self:On("Change", it, function(self, inv, ...)
-		print(i + 1, inv:GetItemInSlot(i + 1), it:GetItem(true))
 		if inv:GetItemInSlot(i + 1) ~= it:GetItem(true) then
 			it:SetItem(inv:GetItemInSlot(it:GetSlot()))
 		end

@@ -228,7 +228,7 @@ function ms.DeleteItemID(id, cb, ...)
 	qobj:start()
 end
 
-local setslot_query = "UPDATE %s SET slotid = %d WHERE uid = %s"
+local setslot_query = "UPDATE %s SET slotid = %d WHERE uid = %s AND puid = %s"
 
 function ms.UpdateProperties(item, inv)
 	inv = item:GetInventory() or inv
@@ -440,8 +440,9 @@ function ms.SetSlot(it, inv)
 	if not inv then inv = it:GetInventory() end
 	if not inv.SQLName then errorf("Failed to get SQLName for inventory %s", inv) return false end
 	if not inv.UseSlots then return false end
+	if not inv:GetOwnerUID() then errorf("No owner UID for inventory %s", inv) return false end
 
-	local q = setslot_query:format(inv.SQLName, slot, it:GetUID())
+	local q = setslot_query:format(inv.SQLName, slot, it:GetUID(), inv:GetOwnerUID())
 
 	return MySQLEmitter(ms.DB:query(q), true):Catch(qerr)
 
@@ -456,9 +457,9 @@ end
 local function swapSlots(tname, uid, sid, slot1, slot2)
 	local t = ms.DB:createTransaction()
 
-	local q1 = ("UPDATE %s SET slotid = NULL WHERE uid = %s"):format(tname, uid)
+	local q1 = ("UPDATE %s SET slotid = NULL WHERE uid = %s AND puid = %s"):format(tname, uid, sid)
 	local q2 = ("UPDATE %s SET slotid = %s WHERE slotid = %d AND puid = %s"):format(tname, slot2, slot1, sid)
-	local q3 = ("UPDATE %s SET slotid = %s WHERE uid = %s"):format(tname, slot1, uid)
+	local q3 = ("UPDATE %s SET slotid = %s WHERE uid = %s AND puid = %s"):format(tname, slot1, uid, sid)
 
 	local qo1 = db:query(q1)
 	local qo2 = db:query(q2)
