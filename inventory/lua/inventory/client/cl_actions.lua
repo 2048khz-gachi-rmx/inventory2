@@ -16,7 +16,11 @@ function Inv.GUIDesiredAction(slot, inv, itm)
 	local can_split = inv.SupportsSplit and inv2.SupportsSplit
 
 	if itm2 and itm:GetItemID() == itm2:GetItemID() then -- second item exists and is the same ID = stack
-		action = "Merge"
+		if not itm2:CanStack(itm) then -- if we can't stack then use "move"
+			action = "Move"
+		else
+			action = "Merge"
+		end
 	elseif itm2 then	-- second item exists and isn't the same ID = swap (or move)
 		action = "Move"
 	elseif (input.IsControlDown() or slot.IsWheelHeld) and can_split then -- second item doesnt exist, ctrl/mmb held = split

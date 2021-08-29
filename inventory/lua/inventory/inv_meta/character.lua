@@ -9,16 +9,15 @@ char.NetworkID = 4
 char.Name = "Character"
 char.MaxItems = 50
 char.IsCharacterInventory = true
-char.UseSlots = false
 
-char.SQLColumns = {
+--[[char.SQLColumns = {
 	{
 		name = "slotid",
 		type = "VARCHAR(64)",
 		attr = "NOT NULL",
 		unique = {"puid", "uid"}
 	}
-}
+}]]
 
 char:On("CanOpen", "NoOpen", function()
 	return false

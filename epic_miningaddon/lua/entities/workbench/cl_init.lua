@@ -61,6 +61,7 @@ function ENT:OpenMenu()
 	main.Inventory = inv
 	main:SetCloseable(false, true)
 	main.Navbar:Expand()
+	main:CacheShadow(2, 2, 2)
 
 	inv:SetDeleteOnClose(false)
 
@@ -81,8 +82,11 @@ function ENT:OpenMenu()
 	main:SetRetractedSize(40)
 	main:SetExpandedSize(230)
 	main.BackgroundColor = Color(50, 50, 50)
+
+	inv:Bond(self)
 	inv:Bond(main)
 	main:Bond(inv)
+	main:Bond(self)
 
 	main:PopIn()
 	inv:PopIn()
@@ -116,9 +120,13 @@ function ENT:OpenMenu()
 end
 
 net.Receive("Workbench", function()
-	local ent = net.ReadEntity()
-
-	ent:OpenMenu()
+	local is_reply = net.ReadBool()
+	if is_reply then
+		net.ReadPromise()
+	else
+		local ent = net.ReadEntity()
+		ent:OpenMenu()
+	end
 end)
 
 include("bp_menu.lua")

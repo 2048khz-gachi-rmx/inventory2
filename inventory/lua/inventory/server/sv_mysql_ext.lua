@@ -350,7 +350,8 @@ function ms.SetInventory(it, inv, slot, dat)
 		q1 = ("DELETE FROM %s WHERE uid = %s"):format(src_inv.SQLName, it:GetUID())
 	end
 
-	local columns, values = inv.UseSlots and ", slotid" or "", (slot and ", " .. slot) or (inv.UseSlots and "NULL") or ""
+	local columns = inv.UseSlots and ", slotid" or ""
+	local values = (inv.UseSlots and slot and ", " .. slot) or (inv.UseSlots and "NULL") or ""
 
 	if dat then
 		--we have more args on the way, add commas
@@ -361,6 +362,7 @@ function ms.SetInventory(it, inv, slot, dat)
 		end
 	end
 
+	print("columns, values", columns, values)
 	local ow, owuid = inv:GetOwner()
 
 	local puid = mysqloo.quote(ms.DB, owuid)
@@ -369,8 +371,11 @@ function ms.SetInventory(it, inv, slot, dat)
 	if it:GetUIDFake() then
 		q2 = ("INSERT IGNORE INTO %s (puid%s) VALUES (%s, %s%s)"):format(inv.SQLName, columns, puid, values )
 	else
-		q2 = ("INSERT IGNORE INTO %s (uid, puid%s) VALUES (%s, %s%s)"):format(inv.SQLName, columns, it:GetUID(), puid, values )
+		q2 = ("INSERT IGNORE INTO %s (uid, puid%s) VALUES (%s, %s%s)"):format(
+			inv.SQLName, columns, it:GetUID(), puid, values )
 	end
+
+	print(q1, q2)
 
 	local qo1, qo2
 

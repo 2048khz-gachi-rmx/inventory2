@@ -85,6 +85,10 @@ ChainAccessor(it, "UIDIsFake", "UIDFake")
 
 ChainAccessor(it, "ItemID", "ItemID")
 ChainAccessor(it, "ItemID", "IID")
+
+ChainAccessor(it, "ItemName", "ItemName")
+ChainAccessor(it, "ItemName", "IName")
+
 ChainAccessor(it, "Known", "Known")
 ChainAccessor(it, "_Valid", "Valid")
 

@@ -8,6 +8,7 @@ mods.Pool.Blazing = {
 	MaxTier = 4,
 	Markup = function(it, mup, tier)
 		local mod = mup:AddPiece()
+		mod:SetAlignment(1)
 		mod:AddText("Blazing")
 		mod.IgnoreVisibility = true
 		local bcol = Color(180, 150, 60)
@@ -30,21 +31,25 @@ mods.Pool.Blazing = {
 mods.Pool.Crippling = {
 	MaxTier = 3,
 	Markup = function(it, mup, tier)
-		--mup:Debug()
+
 		local mod = mup:AddPiece()
-		mod.Font = "OS72"
-		mod:AddTag(MarkupTags("scale", 0.35, 0.35))
+		mod:SetAlignment(1)
+		mod.Font = "OS24"
+
 		local t = mod:AddTag(MarkupTags("rotate", -10, 0))
-		mod:AddText("Crip", nil, 1)
+		local tx = mod:AddText("Crip")
+
 		mod:EndTag(t)
 		mod:AddTag(MarkupTags("rotate", 10, 0))
-		mod:AddText("pling", 15, 1)
+
+		tx = mod:AddText(" pling")
+
 		mod.IgnoreVisibility = true
 
-		mod:On("RecalculateHeight", "ThisIsAHack", function(self, buf, maxh)
+		mod:On("RecalculateHeight", "RotationCorrection", function(self, buf, maxh)
 			surface.SetFont(mod.Font)
 			local tw, th = surface.GetTextSize("pling")
-			local bw, bh = math.AARectSize(tw * 0.35, th * 0.35 * 0.875, 10)
+			local bw, bh = math.AARectSize(tw, th, 10)
 			return math.ceil(bh)
 		end)
 

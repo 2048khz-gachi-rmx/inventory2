@@ -242,7 +242,6 @@ function PANEL:SplitItem(rec, drop, item)
 end
 
 function PANEL:StackItem(rec, drop, item, amt)
-
 	local crossinv = rec:GetInventory() ~= item:GetInventory()
 	local act_enum = crossinv and INV_ACTION_CROSSINV_MERGE or INV_ACTION_MERGE
 
@@ -297,6 +296,17 @@ function PANEL:ItemDrop(rec, drop, item, ...)
 		return
 	end
 
+	local action = Inventory.GUICanAction(rec, self:GetInventory(), item)
+
+	if action == "Move" then
+		self:MoveItem(rec, drop, item)
+	elseif action == "Split" then
+		self:SplitItem(rec, drop, item)
+	elseif action == "Stack" then
+		self:StackItem(rec, drop, item)
+	end
+
+	--[=[
 	if rec:GetItem() and rec:GetItem():GetItemID() == item:GetItemID() then --there was the same item in that slot;
 		self:StackItem(rec, drop, item)
 		return
@@ -312,6 +322,7 @@ function PANEL:ItemDrop(rec, drop, item, ...)
 		if self:Emit("CanSplitItem", rec, drop, item) == false then return end
 		self:SplitItem(rec, drop, item)
 	end
+	]=]
 
 end
 

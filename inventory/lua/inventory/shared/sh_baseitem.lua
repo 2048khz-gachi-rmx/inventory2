@@ -43,16 +43,20 @@ function Inventory.Util.GetInventory(id)
 end
 
 function Inventory.Util.GetItemCount(inv, id)
-	local name = Inventory.Util.ItemIDToName(id)
+	id = Inventory.Util.ItemNameToID(id)
 	local amt = 0
 
 	for k,v in pairs(inv:GetItems()) do
-		if v.ItemName == name then
+		if v:GetItemID() == id then
 			amt = amt + (v:GetAmount() or 0)
 		end
 	end
 
 	return amt
+end
+
+function Inventory.Util.GetUsableInventories(ply)
+	return {ply.Inventory.Backpack}
 end
 
 function Inventory.Util.ItemNameToID(name)
