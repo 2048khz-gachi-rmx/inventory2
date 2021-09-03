@@ -5,6 +5,12 @@ local wep = Inventory.ItemObjects.Weapon or eq:Extend("Weapon")
 
 BaseItemAccessor(wep, "WeaponClass", "WeaponClass")
 BaseItemAccessor(wep, "Uses", "StartUses")
+
+function wep:Initialize()
+	self:SetModifiers({})
+	self:SetData("Uses", self:GetStartUses())
+end
+
 function wep:Equip(ply, slot)
 	local mem = eq.Equip(self, ply, slot)
 
@@ -17,10 +23,6 @@ end
 
 local allowed = table.KeysToValues({"primary", "secondary", "utility"})
 
-wep:On("CreatedNew", "AssignUses", function(self)
-	self:SetData("Uses", self:GetStartUses())
-end)
-
 local gray = Color(100, 100, 100)
 
 wep:On("GenerateText", "Uses", function(self, cloud, mup)
@@ -28,18 +30,6 @@ wep:On("GenerateText", "Uses", function(self, cloud, mup)
 	if uses then
 		cloud:AddFormattedText(uses .. " uses remaining", gray, "OS18")
 	end
-	--[[cloud:AddFormattedText("woah now this one is rly good!!!", Colors.Money)
-
-	local p2 = mup:AddPiece()
-	p2:SetFont("OSB20")
-
-	p2:AddTag(MarkupTags("color", 150, 60, 200))
-	local rand = function() return math.Rand(-0.55, 0.55) end
-
-	local trind = p2:AddTag(MarkupTags("chartranslate", rand, rand))
-
-	p2:AddText("[Menacing]")
-	p2:EndTag(trind)]]
 end)
 
 wep:On("CanEquip", "WeaponCanEquip", function(self, ply, slot)
@@ -52,4 +42,25 @@ wep:On("CanEquip", "WeaponCanEquip", function(self, ply, slot)
 	if self:GetInventory() and self:GetInventory():GetOwner() ~= ply then return false, ("Player is not owner: '%s' vs '%s'"):format(tostring(self:GetOwner()), tostring(ply)) end
 end)
 
+ChainAccessor(wep, "Modifiers", "Modifiers")
+ChainAccessor(wep, "Modifiers", "Mods")
+
 wep:Register()
+
+local invOnly = {
+	"fcg_accelerator"
+}
+
+for k,v in ipairs(invOnly) do
+	invOnly[v] = true
+end
+
+hook.Add("ArcCW_PlayerCanAttach", "InventoryRestrict", function(ply, wep, att, slot, detach)
+	if detach then return end
+end)
+
+
+-- cl hook
+hook.Add("ArcCW_ShouldShowAtt", "InventoryRestrict", function(att)
+	if invOnly[att] then return false end
+end)

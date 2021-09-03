@@ -31,3 +31,17 @@ function it:_CallTextGenerators(cloud)
 
 	cloud:SetColor(Colors.Gray:Copy())
 end
+
+
+function it:SetData(k, v)
+	if istable(k) then
+		for k2,v2 in pairs(k) do
+			self.Data[k2] = v2
+		end
+	elseif not k or not v then
+		errorf("it:SetData: expected table as arg #1 or key/value as #2 and #3: got %s, %s instead", type(k), type(v)) 
+		return
+	end
+
+	self.Data[k] = v
+end

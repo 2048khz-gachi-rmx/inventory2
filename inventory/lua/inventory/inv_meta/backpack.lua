@@ -58,10 +58,12 @@ function bp:GetOwner()
 	return self.Owner, self.OwnerUID
 end
 
-function bp:SetSlot(it, slot)   --this is basically an accessor func;
-								--it doesn't store the slot change in SQL and doesn't check if an item exists there
-								--use this when moving items as it will also write down the change, use :MoveItem() when moving items within one inventory
-								--item:SetSlot() is preferred
+function bp:_SetSlot(it, slot)
+	local emit = self:Emit("SetSlot", it, slot)
+	if emit ~= nil then
+		slot = emit
+	end
+
 	for i=1, self.MaxItems do
 		if self.Slots[i] == it then
 			self.Slots[i] = nil
@@ -72,12 +74,12 @@ function bp:SetSlot(it, slot)   --this is basically an accessor func;
 	self.Slots[slot] = it
 
 	if it:GetKnown() then self:AddChange(it, INV_ITEM_MOVED) end --if the player doesn't know about the item, don't replace the change
+	return slot
 end
 
---suppresserror if you're not sure the change was predicted (e.g receiving networked deletions)
+
 function bp:RemoveItem(it, noChange, suppresserror)
 	--just removes an item from itself and networks the change
-	--if CLIENT then printf("---------\nRemoveItem called clientside, removing from inv %s, slot %s : traceback: %s", self, IsItem(it) and it:GetSlot() or "[uid provided]", debug.traceback()) end
 
 	local uid = ToUID(it)
 
@@ -104,7 +106,7 @@ function bp:RemoveItem(it, noChange, suppresserror)
 
 	local slot = foundit:GetSlot()
 
-	if slot then
+	if slot and slots[slot] == foundit then
 		slots[slot] = nil
 	else
 
@@ -122,14 +124,15 @@ function bp:RemoveItem(it, noChange, suppresserror)
 
 	--if the player doesn't know about the item, don't even tell him about the deletion
 	if foundit:GetKnown() and not noChange then
-		svprint("Adding deletion change")
 		self:AddChange(foundit, INV_ITEM_DELETED)
 	else
-		svprint("deleting change for", foundit, ("%p"):format(self))
 		self.Changes[foundit] = nil
 	end
 
-	self:Emit("Change")
+	if not self.ReadingNetwork then
+		self:Emit("Change")
+	end
+
 	self:Emit("RemovedItem", it, slot)
 	return foundit
 end
@@ -141,7 +144,6 @@ function bp:DeleteItem(it, suppresserror)
 	local it = self:RemoveItem(it, nil, suppresserror)
 
 	if SERVER then Inventory.MySQL.DeleteItem(it) end
-	self:Emit("Change")
 	return it
 end
 
@@ -198,7 +200,10 @@ function bp:AddItem(it, ignore_emitter, nochange)
 	it:SetInventory(self)
 
 	self:Emit("AddItem", it, it:GetUID())
-	self:Emit("Change")
+	if not self.ReadingNetwork then
+		self:Emit("Change")
+	end
+
 	return it:GetSlot()
 end
 
@@ -232,7 +237,6 @@ end
 function bp:HasAccess(ply, action)
 	local allow = self:Emit("Can" .. action, ply)
 	if allow ~= nil then print("Can" .. action, "returned", allow) return allow end
-
 
 	if self["ActionCan" .. action] ~= nil then
 		local allow

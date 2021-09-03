@@ -8,10 +8,10 @@ queries[#queries + 1] = ms.CreateProcedure("InsertByIDInInventory",
 	LibItUp.SQLArgList()
 		:AddArg("id", "INT UNSIGNED")
 		:AddArg("inv", "TEXT")
-		:AddArg("puid", "BIGINT"),
-
-[[	DECLARE uid INT UNSIGNED;
-	INSERT INTO items(iid) VALUES(id);
+		:AddArg("puid", "BIGINT")
+		:AddArg("jsDat", "TEXT")
+, [[DECLARE uid INT UNSIGNED;
+	INSERT INTO items(iid, `data`) VALUES(id, jsDat);
     SET uid = last_insert_id();
 
 	SET @t1 = CONCAT('INSERT INTO ', inv ,'(uid, puid) VALUES(', uid, ", ", puid, ')' ); # oh my fucking god actually kill me
@@ -21,18 +21,18 @@ queries[#queries + 1] = ms.CreateProcedure("InsertByIDInInventory",
 
 	SELECT uid;]])
 
-
 queries[#queries + 1] = ms.CreateProcedure("InsertByItemNameInInventory",
 
 LibItUp.SQLArgList()
 	:AddArg("itemname",		"VARCHAR(254)")
 	:AddArg("inv",  		"TEXT")
-	:AddArg("puid",			"BIGINT"),
+	:AddArg("puid",			"BIGINT")
+	:AddArg("jsDat", "TEXT")
 
-[[	DECLARE uid INT UNSIGNED;
+,[[	DECLARE uid INT UNSIGNED;
     DECLARE iid INT UNSIGNED;
     SELECT id INTO iid FROM itemids WHERE name = itemname;
-	INSERT INTO items(iid) VALUES(iid);
+	INSERT INTO items(iid, `data`) VALUES(iid, jsDat);
     SET uid = last_insert_id();
 
 	SET @t1 = CONCAT('INSERT INTO ', inv ,'(uid, puid)

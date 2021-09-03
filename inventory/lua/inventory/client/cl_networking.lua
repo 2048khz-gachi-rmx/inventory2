@@ -61,6 +61,8 @@ function nw.ReadInventoryContents(invtbl, typ)
 
     if not inv then errorf("Didn't find inventory with NetworkID %s!", invID) end
 
+    inv.ReadingNetwork = true
+
     if typ == INV_NETWORK_FULLUPDATE then
         log("!!!!!DROPPING INVENTORY!!!!!")
         inv:Reset()
@@ -146,6 +148,7 @@ function nw.ReadInventoryContents(invtbl, typ)
 
     end
 
+    inv.ReadingNetwork = false
     inv:Emit("Change")
 end
 

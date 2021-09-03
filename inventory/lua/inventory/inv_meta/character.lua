@@ -10,15 +10,6 @@ char.Name = "Character"
 char.MaxItems = 50
 char.IsCharacterInventory = true
 
---[[char.SQLColumns = {
-	{
-		name = "slotid",
-		type = "VARCHAR(64)",
-		attr = "NOT NULL",
-		unique = {"puid", "uid"}
-	}
-}]]
-
 char:On("CanOpen", "NoOpen", function()
 	return false
 end)
@@ -26,9 +17,11 @@ end)
 char:On("CanAddItem", "ManualOnly", function(self, it)
 	return self.Allowed[it:GetUID()] -- you can only add items here through the :Equip() method
 end)
+
 char:On("CanMoveTo", "EquipOnly", function(self, it, slot)
 	return self.Allowed[it:GetUID()]
 end)
+
 char:On("CanMoveFrom", "UnequipOnly", function(self, it, slot)
 	return self.Allowed[it:GetUID()]
 end)
@@ -53,12 +46,8 @@ function char:Unequip(it, slot, inv)
 	--local it = self.Slots[slot]
 	if not IsItem(it) then error("What are you unequipping dude") return end
 
-	print("Moving from", self, "to", inv)
 	local mem = self:CrossInventoryMove(it, inv, slot)
-
-	mem:Then(function()
-		self.Allowed[it:GetUID()] = nil
-	end)
+	self.Allowed[it:GetUID()] = nil
 
 	return mem
 end
@@ -66,7 +55,7 @@ end
 function char:Equip(it, slot)
 	print("Equip: received", self, it, slot)
 	if IsItem(self.Slots[slot]) then
-		local ok = self:Unequip(slot, it:GetInventory()) --switch items places
+		local ok = self:Unequip(self.Slots[slot], it:GetSlot(), it:GetInventory()) --switch items places
 		if ok == false then return end
 	end
 

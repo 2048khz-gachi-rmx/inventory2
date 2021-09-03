@@ -43,6 +43,15 @@ function Inventory.Util.GetInventory(id)
 end
 
 function Inventory.Util.GetItemCount(inv, id)
+	if not IsInventory(inv) and istable(inv) then
+		local amt = 0
+		for k,v in ipairs(inv) do
+			amt = amt + Inventory.Util.GetItemCount(v, id)
+		end
+
+		return amt
+	end
+
 	id = Inventory.Util.ItemNameToID(id)
 	local amt = 0
 

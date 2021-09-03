@@ -274,13 +274,6 @@ function PANEL:StackItem(rec, drop, item, amt)
 
 			local val = math.floor(sl:GetValue())
 
-			--[[local ns = Inventory.Networking.Netstack()
-				ns:WriteInventory(item:GetInventory())
-				ns:WriteItem(rec:GetItem()) --the one we dropped ON (to stack IN)
-				ns:WriteItem(item) --the one we DROPPED (to stack OUT OF)
-				ns:WriteUInt(val, 32)
-			Inventory.Networking.PerformAction(act_enum, ns)]]
-
 			rec:GetInventory():RequestStack(item, rec:GetItem(), val)
 			rec:GetInventory():Emit("Change")
 			--[[item:SetAmount(item:GetAmount() - val)
@@ -302,27 +295,9 @@ function PANEL:ItemDrop(rec, drop, item, ...)
 		self:MoveItem(rec, drop, item)
 	elseif action == "Split" then
 		self:SplitItem(rec, drop, item)
-	elseif action == "Stack" then
+	elseif action == "Merge" then
 		self:StackItem(rec, drop, item)
 	end
-
-	--[=[
-	if rec:GetItem() and rec:GetItem():GetItemID() == item:GetItemID() then --there was the same item in that slot;
-		self:StackItem(rec, drop, item)
-		return
-		--[[local amt = rec:GetItem():CanStack(item)							--and it can be stacked
-		if amt then
-			amt = (self.IsWheelHeld and math.floor(item:GetAmount() / 2)) or amt
-		end]]
-	end
-
-	if not ((input.IsControlDown() or self.IsWheelHeld) and item:GetCountable()) then --ctrl wasn't held when dropping; move request?
-		self:MoveItem(rec, drop, item)
-	elseif not rec:GetItem() then 								--dropped onto empty space
-		if self:Emit("CanSplitItem", rec, drop, item) == false then return end
-		self:SplitItem(rec, drop, item)
-	end
-	]=]
 
 end
 
@@ -361,7 +336,7 @@ function PANEL:AddItemSlot()
 	it:On("ItemHover", self, self.CheckCanDrop, self)
 
 	self:On("Change", it, function(self, inv, ...)
-		if inv:GetItemInSlot(i + 1) ~= it:GetItem(true) then
+		if inv:GetItemInSlot(it:GetSlot()) ~= it:GetItem(true) then
 			it:SetItem(inv:GetItemInSlot(it:GetSlot()))
 		end
 

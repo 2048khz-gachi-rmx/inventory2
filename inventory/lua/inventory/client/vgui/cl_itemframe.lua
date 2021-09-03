@@ -92,7 +92,7 @@ end
 
 function ITEM:TrackChanges(inv, slot)
 	self:GetInventory():On("Change", self, function()
-		if inv:GetItemInSlot(slot) ~= self:GetItem() then
+		if inv:GetItemInSlot(slot) ~= self:GetItem(true) then
 			self:SetItem(inv:GetItemInSlot(slot))
 		end
 	end)
@@ -206,8 +206,6 @@ function ITEM:OpenOptions()
 	if not it then return end --e?
 
 	local mn = vgui.Create("FMenu")
-	mn:SetPos(gui.MouseX() - 8, gui.MouseY() + 1)
-	mn:MoveBy(8, 0, 0.3, 0, 0.4)
 	mn:PopIn()
 
 	mn.WOverride = 200
@@ -217,6 +215,10 @@ function ITEM:OpenOptions()
 	it:GetBase():Emit("GenerateOptions", mn)
 
 	mn:Open()
+	mn:InvalidateLayout(true)
+
+	mn:SetPos(gui.MouseX() - 9, gui.MouseY() - mn:GetTall() + 2)
+	mn:MoveBy(8, 0, 0.3, 0, 0.4)
 end
 
 function ITEM:CreateModelPanel(it)
@@ -380,6 +382,7 @@ function ITEM:DrawBorder(w, h, col)
 	if self:Emit("DrawBorder", w, h, col) == false then return end
 	local rnd = self.Rounding
 	draw.RoundedBox(rnd, 0, 0, w, h, col)
+	self:Emit("PostDrawBorder", w, h, col)
 end
 
 local emptyCol = Color(30, 30, 30)

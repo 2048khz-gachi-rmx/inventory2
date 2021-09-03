@@ -128,18 +128,17 @@ it.GetBase = it.GetBaseItem
 ChainAccessor(it, "Inventory", "Inventory")
 
 function it:SetSlot(slot, sql)
-	self.Slot = slot
-
 	local inv = self:GetInventory()
 
 	if inv then
-		inv:SetSlot(self, slot)
-
-		if SERVER and self:GetSQLExists() and sql ~= false then
-			Inventory.MySQL.SetSlot(self, inv)
-		end
+		slot = inv:_SetSlot(self, slot)
 	end
 
+	self.Slot = slot
+
+	if inv and SERVER and self:GetSQLExists() and sql ~= false then
+		Inventory.MySQL.SetSlot(self, inv)
+	end
 end
 
 function it:GetSlot()

@@ -137,6 +137,8 @@ local function ContinueLoading()
 	FInc.Recursive("inventory/server/*", _SV, nil, shouldIncludeCore)
 	FInc.Recursive("inventory/client/*", _CL, nil, shouldIncludeCore)
 
+	FInc.Recursive("inventory/misc/*", _SV, nil, shouldIncludeCore)
+
 	include("inv_items/load.lua") --that will handle the loading itself
 end
 

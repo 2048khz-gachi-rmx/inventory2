@@ -242,8 +242,8 @@ function ms.UpdateProperties(item, inv)
 	if dat then ms.ItemWriteData(item, dat) end
 end
 
-local newitem_inv_query 	= ms.DB:prepare("CALL InsertByItemNameInInventory(?, ?, ?);")
-local newitem_idinv_query 	= ms.DB:prepare("CALL InsertByIDInInventory(?, ?, ?);")
+local newitem_inv_query 	= ms.DB:prepare("CALL InsertByItemNameInInventory(?, ?, ?, ?);")
+local newitem_idinv_query 	= ms.DB:prepare("CALL InsertByIDInInventory(?, ?, ?, ?);")
 
 -- takes an item object and sticks it in the inventory
 function ms.NewInventoryItem(item, inv, ply)
@@ -275,6 +275,17 @@ function ms.NewInventoryItem(item, inv, ply)
 
 		qobj:setString(2, invname)
 		qobj:setString(3, sid)
+
+		local json = ms.SerializeData(item)
+
+		print("serialized data:", json)
+		PrintTable(item:GetData() or {"no data"})
+
+		if json then
+			qobj:setString(4, json)
+		else
+			qobj:setNull(4)
+		end
 
 		--qobj:setNumber(4, slot)
 	end
@@ -519,11 +530,20 @@ local new_dat_query = ms.DB:prepare("UPDATE items SET data = ? WHERE uid = ?")
 -- COMPLETELY overrides item data with new key-values
 -- Accepts either a key-value as the second argument or automatically takes the item's .Data
 
+function ms.SerializeData(it, data)
+	data = data or it:GetData()
+	if not data then return end
+	if table.IsEmpty(data) then return end
+
+	local json = util.TableToJSON(data)
+
+	return json
+end
+
 function ms.ItemWriteData(it, data)
 	if not it:GetUID() then return end
 
-	data = data or it:GetData()
-	local json = util.TableToJSON(data)
+	local json = ms.SerializeData(it, data)
 
 	new_dat_query:setString(1, json)
 	new_dat_query:setNumber(2, it:GetUID())
@@ -539,8 +559,7 @@ function ms.ItemSetData(it, t)
 	t = t or it:GetData()
 	if not it:GetUID() then return end -- not initialized yet? ms.UpdateProperties will take care of it if so
 
-
-	local json = util.TableToJSON(t)
+	local json = ms.SerializeData(it, t)
 	if not json then errorf("Failed to get JSON from arg: %s", t) return end --?
 
 	--printf("ItemSetData: patching JSON %s", json)

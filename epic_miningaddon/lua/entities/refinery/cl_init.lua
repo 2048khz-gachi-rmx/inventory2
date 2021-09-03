@@ -28,11 +28,8 @@ function ENT:Think()
 
 end
 
-
-
 function ENT:WithdrawItem(slot, to)
 	local inv = self.OreInput
-
 end
 
 function ENT:QueueOre(slot, it, bulk)
@@ -64,7 +61,7 @@ end
 function ENT:CreateInputSlot(slot)
 	local ent = self
 
-	slot:SetSlot(slot.ID)
+	--slot:SetSlot(slot.ID)
 
 	slot:On("ItemHover", "OresOnly", function(slot, slot2, item)
 		if not item:GetBase().IsOre then
@@ -76,34 +73,36 @@ function ENT:CreateInputSlot(slot)
 
 	slot:On("Drop", "DropOre", function(slot, slot2, item)
 		if not item:GetBase().IsOre or not item:GetInventory().IsBackpack then return false end
-		ent:QueueOre(slot.ID, item)
+		ent:QueueOre(slot:GetSlot(), item)
 	end)
 
 	local col = Color(250, 110, 20)
-	slot:On("DrawBorder", "DrawSmeltingProgress", function(self, w, h)
 
+	slot:On("PostDrawBorder", "DrawSmeltingProgress", function(self, w, h)
 		local it = self.Item
 		local base = it:GetBase()
 		local refTime = base:GetSmeltTime()
 		local start = ent.Status:Get(self:GetSlot(), 0)
 
-		local fr = math.min((CurTime() - start) / refTime, 1)
+		if ent.Status:Get("DepowerTime") then
+			fr = start
+		else
+			fr = math.min((CurTime() - start) / refTime, 1)
+		end
 
 		draw.RoundedBox(4, 0, h - fr*h, w, fr*h, col)
 	end)
 
 	slot.Inventory = self.OreInput
-	slot:TrackChanges(slot.Inventory, slot.ID)
+	slot:TrackChanges(slot.Inventory, slot:GetSlot())
 
-	if slot.Inventory.Slots[slot.ID] then
-		slot:SetItem(slot.Inventory.Slots[slot.ID])
+	if slot.Inventory.Slots[slot:GetSlot()] then
+		slot:SetItem(slot.Inventory.Slots[slot:GetSlot()])
 	end
 end
 
 function ENT:CreateOutputSlot(slot)
 	local ent = self
-
-	slot:SetSlot(slot.ID)
 
 	slot:On("ItemHover", "OresOnly", function(slot, slot2, item)
 		if item == slot:GetItem() then
@@ -119,10 +118,10 @@ function ENT:CreateOutputSlot(slot)
 
 	slot.Inventory = self.OreOutput
 
-	slot:TrackChanges(slot.Inventory, slot.ID)
+	slot:TrackChanges(slot.Inventory, slot:GetSlot())
 
-	if slot.Inventory.Slots[slot.ID] then
-		slot:SetItem(slot.Inventory.Slots[slot.ID])
+	if slot.Inventory.Slots[slot:GetSlot()] then
+		slot:SetItem(slot.Inventory.Slots[slot:GetSlot()])
 	end
 end
 
@@ -192,7 +191,7 @@ function ENT:OnOpenRefine(ref, pnl)
 			local slot = vgui.Create("ItemFrame", p)
 			slot:SetSize(slotSize, slotSize)
 			slot:SetPos(icX, row.icY)
-			slot.ID = slotID
+			slot:SetSlot(slotID)
 			self:CreateInputSlot(slot)
 
 			icX = icX + row.slotW
@@ -229,7 +228,7 @@ function ENT:OnOpenRefine(ref, pnl)
 		local slot = vgui.Create("ItemFrame", out)
 		slot:SetSize(slotSize, slotSize)
 		slot:SetPos(icX, out:GetTall() / 2 - slotSize / 2)
-		slot.ID = i
+		slot:SetSlot(i)
 
 		self:CreateOutputSlot(slot)
 		icX = icX + slotSize + slotPadX

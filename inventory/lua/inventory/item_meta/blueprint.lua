@@ -138,3 +138,5 @@ function bp:PaintBlueprint(x, y, w, h, fake, col)
 		error("Retard: " .. err)
 	end
 end
+
+if SERVER then include("blueprint_sv_extension.lua") end

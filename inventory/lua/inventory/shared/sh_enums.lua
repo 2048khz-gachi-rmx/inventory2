@@ -82,5 +82,7 @@ Inventory.EquipmentIDs = {}
 
 for k,v in ipairs(Inventory.EquipmentSlots) do
 	Inventory.EquipmentIDs[v.slot] = v
+	Inventory.EquipmentIDs[k] = v
+	Inventory.EquipmentIDs[v.name] = v
 	v.id = k
 end

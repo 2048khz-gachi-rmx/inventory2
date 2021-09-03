@@ -51,6 +51,7 @@ function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
 		end
 
 		if its == true then
+			print("stacked in existing", left, pr)
 			if cbanyway then cb() end
 			pr:Resolve(false, left)
 			return pr, 0
@@ -149,7 +150,6 @@ end
 local function ActuallyMove(inv1, inv2, it, slot)
 	local em = Inventory.MySQL.SetInventory(it, inv2, slot)
 
-
 	inv1:RemoveItem(it, true, true) -- don't write the change 'cause we have crossmoves as a separate change
 	it:SetSlot(slot)
 	inv2:AddItem(it, true, true) -- same shit
@@ -198,6 +198,7 @@ function bp:InsertItem(it, slot, cb)
 	end
 
 	slot = slot or it:GetSlot()
+	it:SetInventory(self)
 	it:SetSlot(slot)
 
 	local sqlemit = it:Insert(self)

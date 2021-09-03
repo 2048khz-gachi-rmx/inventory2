@@ -1,5 +1,5 @@
 ENT.Type = "anim"
-ENT.Base = "base_anim"
+ENT.Base = "bw_base_electronics"
 ENT.RenderGroup = RENDERGROUP_BOTH
 
 ENT.Spawnable = false
@@ -11,18 +11,7 @@ ENT.MaxQueues = 7
 ENT.OutputSlots = 3
 ENT.InventoryUseOwnership = false
 
-function ENT:SetupDataTables()
-
-	self:NetworkVar("Bool", 0, "Working")
-	self:NetworkVar("String", 0, "Queues")
-	self:NetworkVar("Int", 0, "MaxQueues")
-	if SERVER then
-		self:SetWorking(false)
-		self:SetMaxQueues(4)
-		self:SetQueues("2222")
-	end
-
-end
+ENT.PowerRequired = 25
 
 function ENT:SHInit()
 	self.Inventory = {Inventory.Inventories.Entity:new(self), Inventory.Inventories.Entity:new(self)}
@@ -35,6 +24,11 @@ function ENT:SHInit()
 
 	self.Status = Networkable(("Refinery:%d"):format(self:EntIndex())):Bond(self)
 
+	self.OreOutput.ActionCanCrossInventoryFrom = true
+	self.OreOutput.ActionCanCrossInventoryTo = false
+
+	self.OreInput.ActionCanCrossInventoryFrom = false
+	self.OreInput.ActionCanCrossInventoryTo = true
 
 	self.OreInput:On("CanAddItem", "OresOnly", function(self, it)
 		local can = it.AllowedRefineryInsert
@@ -46,4 +40,5 @@ function ENT:SHInit()
 		return it.IsOre == true
 	end)
 
+	self.BaseClass.SHInit(self)
 end

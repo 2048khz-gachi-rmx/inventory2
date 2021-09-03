@@ -29,6 +29,7 @@ function ENT:Initialize()
 	self:SHInit()
 
 	self.Queue = {}
+	self._LastThink = CurTime()
 end
 
 util.AddNetworkString("OreRefinery")
@@ -38,39 +39,86 @@ function ENT:RemoveOre(slot)
 	self.OreInput[slot]:Delete()
 end
 
+function ENT:TimeItem(slot)
+	local itm = self.OreInput:GetSlots()[slot]
+	local itmStart = itm.StartedRefining or CurTime()
+
+
+	if self:IsPowered() then
+		-- we're powered; status value means start of refining
+		-- get unpowered penalty (if any), apply and network
+		local pwStart = self.Status:Get("DepowerTime", CurTime())
+		local diff = CurTime() - math.max(pwStart, itmStart)
+
+		itm.StartedRefining = itmStart + diff
+		self.Status:Set(slot, itm.StartedRefining)
+	else
+		-- we're unpowered; status value means % refined when power was gone
+		-- calculate time between "ore added" and "power shutoff"
+		local passed = self.Status:Get("DepowerTime", CurTime()) - itmStart
+		local frac = passed / itm:GetBase():GetSmeltTime()
+
+		itm.StartedRefining = itmStart -- assign initial time if it didnt exist
+		self.Status:Set(slot, frac)
+	end
+end
+
+function ENT:OnPower()
+	for k,v in pairs(self.OreInput:GetSlots()) do
+		self:TimeItem(k)
+	end
+
+	self.Status:Set("DepowerTime", nil)
+end
+
+function ENT:OnUnpower()
+	self.Status:Set("DepowerTime", CurTime())
+
+	for k,v in pairs(self.OreInput:GetSlots()) do
+		self:TimeItem(k)
+	end
+end
+
 function ENT:Think()
-	local now = false
-	local anythingSmelted = false
+	if not self:IsPowered() then
+		self:NextThink(CurTime() + 0.2)
+		return true
+	end
+
 	local fin_amt = {}
+	local changed = false
 
 	for k,v in pairs(self.OreInput:GetItems()) do
 		local fin = v.StartedRefining + v:GetBase():GetSmeltTime()
+
 		if CurTime() > fin then
-			--print(v, "finished")
 			local smTo = v:GetBase():GetSmeltsTo()
+			v:Delete()
 			if not smTo then print("didn't find what", v:GetName(), " smelts to") continue end --?
 
 			fin_amt[smTo] = (fin_amt[smTo] or 0) + 1
-			v:Delete()
-			--self.Status:Set(v:GetSlot(), nil)
-			anythingSmelted = true
+			changed = true
 		end
 	end
 
 	local prs = {}
 
 	for name, amt in pairs(fin_amt) do
-		local pr = self.OreOutput:NewItem(name, function() self:SendInfo() end, nil, {Amount = amt})
+		local pr, what = self.OreOutput:NewItem(name, function() self:SendInfo() end, nil, {Amount = amt})
+
 		if pr then
 			table.insert(prs, pr)
 		end
 	end
 
-	Promise.OnAll(prs, function()
-		if IsValid(self) then self:SendInfo() end
-	end)
+	if #prs > 0 then
+		Promise.OnAll(prs):Then(function()
+			if IsValid(self) then self:SendInfo() end
+		end)
 
-	if anythingSmelted then self.Status:Network() end
+	elseif changed then
+		self:SendInfo()
+	end
 
 	self:NextThink(CurTime() + 0.2)
 	return true
@@ -82,13 +130,13 @@ function ENT:AddInputItem(inv, item, slot)
 	--new:SetSlot(slot)
 	new:SetAmount(1)
 	new:SetOwner(inv:GetOwner())
-	new.StartedRefining = CurTime()
 	new.AllowedRefineryInsert = true
 
 	return self.OreInput:InsertItem(new, slot)
 end
 
 function ENT:QueueRefine(ply, inv, item, slot, bulk)
+
 	if bulk then
 		local prs = {}
 		local amt = item:GetAmount()
@@ -105,9 +153,6 @@ function ENT:QueueRefine(ply, inv, item, slot, bulk)
 			prs[#prs + 1] = pr
 
 			ins = ins + 1
-			pr:Then(function()
-				self.Status:Set(i, CurTime())
-			end)
 
 			item:SetAmount(item:GetAmount() - 1)
 		end
@@ -115,6 +160,7 @@ function ENT:QueueRefine(ply, inv, item, slot, bulk)
 		Promise.OnAll(prs):Then(function()
 			if not IsValid(self) then return end
 
+			self:TimeItem(slot)
 			local plys = Filter(ents.FindInPVS(self), true):Filter(IsPlayer)
 			Inventory.Networking.NetworkInventory(plys, self.OreInput)
 			Inventory.Networking.UpdateInventory(ply, inv)
@@ -132,7 +178,7 @@ function ENT:QueueRefine(ply, inv, item, slot, bulk)
 		pr:Then(function()
 			if not IsValid(self) then return end
 
-			self.Status:Set(slot, CurTime())
+			self:TimeItem(slot)
 			item:SetAmount(item:GetAmount() - 1)
 			local plys = Filter(ents.FindInPVS(self), true):Filter(IsPlayer)
 			self.Status:Network()
@@ -174,8 +220,8 @@ net.Receive("OreRefinery", function(len, ply)
 end)
 
 function ENT:SendInfo()
-	print("SendInfo called", CurTime())
-	Inventory.Networking.NetworkInventory(Filter(ents.FindInPVS(self), true):Filter(IsPlayer), self.Inventory, INV_NETWORK_FULLUPDATE)
+	local all = Filter(ents.FindInPVS(self), true):Filter(IsPlayer)
+	Inventory.Networking.NetworkInventory(all, self.Inventory, INV_NETWORK_FULLUPDATE)
 end
 
 function ENT:Use(ply)

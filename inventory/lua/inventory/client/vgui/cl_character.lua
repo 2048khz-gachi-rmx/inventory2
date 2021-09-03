@@ -32,6 +32,7 @@ function PANEL:Init()
 	self:On("UnequipRequest", self.UnequipItem)
 
 	self:GetInventory():On("Change", self, function(...)
+		print("Change emitted on inventory", self:GetInventory())
 		self:Emit("Change", ...)
 	end)
 
@@ -69,8 +70,7 @@ function PANEL:PerformLayout(w, h)
 	local nonArea = self.HeaderSize + textAreaHeight
 
 	for k,v in ipairs(self.Slots) do
-		local slot, name = v.Slot, v.Name
-		local nwid, side = v.ID, v.Side
+		local side = v.Side
 
 		local y = v.YFrac 	-- this is a 0-1, which is the middle of the button on the panel
 							-- (e.g. 0.4 = 40%, so the button's middle should be at 40% of the panel height)
@@ -84,7 +84,8 @@ function PANEL:PerformLayout(w, h)
 end
 
 local function canEquip(btn, item)
-	return item:GetEquippable() and item:GetEquipSlot() == btn.Slot
+	return item:GetEquippable() and
+		Inventory.EquippableID(item:GetEquipSlot()) == Inventory.EquippableID(btn:GetSlot())
 end
 
 							-- V bruh
@@ -100,13 +101,13 @@ function PANEL.EquipItem(slot, self, itemfr, item)
 	ns:WriteInventory(item:GetInventory())
 	ns:WriteItem(item)
 	ns:WriteBool(true)
-	ns:WriteUInt(slot.ID, 16)
+	ns:WriteUInt(slot:GetSlot(), 16)
 	Inventory.Networking.PerformAction(INV_ACTION_EQUIP, ns)
 
 	slot:SetItem(item)
 	local inv = item:GetInventory()
 
-	inv:CrossInventoryMove(item, self:GetInventory(), slot.ID)
+	inv:CrossInventoryMove(item, self:GetInventory(), slot:GetSlot())
 	--[[inv:RemoveItem(item)
 	self:GetInventory():AddItem(item)
 	item:SetSlot(slot.ID)]]
@@ -176,14 +177,14 @@ local function CreateSlots(self, tbl)
 		btn.YFrac = frac * (k - 0.5)
 
 		btn.Side = side
-		btn.ID = nwid
-		btn.Slot = slot
+		btn:SetSlot(nwid)
 		btn.Name = name
 
 		btn:On("Paint", "PaintSlotName", PaintSlotName)
 		btn:On("Drop", "EquipItem", self.EquipItem, self)
 
 		self:On("Change", btn, function(self, inv, ...)
+			print(inv:GetItemInSlot(nwid), btn:GetItem(), btn:GetSlot(), nwid)
 			if inv:GetItemInSlot(nwid) ~= btn:GetItem() then
 				btn:SetItem( inv:GetItemInSlot(btn:GetSlot()) )
 			end

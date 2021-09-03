@@ -44,6 +44,36 @@ function ENT:Use(ply)
 end
 
 
+function ENT:DoBlueprintCraft(ply, bp)
+	local recipe = bp:GetRecipe()
+
+	local invs = Inventory.Util.GetUsableInventories(ply)
+
+	for id, amt in pairs(recipe) do
+		if Inventory.Util.GetItemCount(invs, id) < amt then
+			return false, "Not enough of item: " .. id
+		end
+	end
+
+	print("cool enough of every item")
+
+	--[[for id, amt in pairs(recipe) do
+		local ok = Inventory.TakeItems(invs, id, amt)
+		if not ok then return end
+	end]]
+
+	print("took every item i think")
+
+	local result = bp:GetResult()
+	print("result:", result)
+
+	local pr = bp:CreateResult(ply)
+	--bp:Delete()
+
+	pr:Then(function()
+		ply:UI()
+	end)
+end
 
 net.Receive("Workbench", function(_, ply)
 	local nw = Inventory.Networking
@@ -55,12 +85,7 @@ net.Receive("Workbench", function(_, ply)
 	if not ent:BW_IsOwner(ply) then return end
 
 	local ns = netstack:new()
-	pr:Reply(true, ns)
 
-	net.Start("Workbench")
-		net.WriteBool(true)
-		net.WriteNetStack(ns)
-	net.Send(ply)
 
 	local bp = net.ReadBool()
 
@@ -71,6 +96,18 @@ net.Receive("Workbench", function(_, ply)
 			print("not valid item", ply, it, it and it.Blueprint)
 			return
 		end
+
+		local ok, err = ent:DoBlueprintCraft(ply, it)
+
+		pr:Reply(ok, ns)
+		if err then
+			ns:WriteString(err)
+		end
+
+		net.Start("Workbench")
+			net.WriteBool(true)
+			net.WriteNetStack(ns)
+		net.Send(ply)
 
 		print("crafting from blueprint", it, it:GetRecipe())
 	else

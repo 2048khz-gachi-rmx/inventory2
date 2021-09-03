@@ -16,7 +16,9 @@ function Inv.GUIDesiredAction(slot, inv, itm)
 	local can_split = inv.SupportsSplit and inv2.SupportsSplit
 
 	if itm2 and itm:GetItemID() == itm2:GetItemID() then -- second item exists and is the same ID = stack
-		if not itm2:CanStack(itm) then -- if we can't stack then use "move"
+		local can = itm2:CanStack(itm)
+
+		if not can or can == 0 then -- if we can't stack then use "move"
 			action = "Move"
 		else
 			action = "Merge"
@@ -51,9 +53,10 @@ function Inv.GUICanAction(slot, inv, itm)
 
 	if action == "Merge" then
 		if not itm2:CanStack(itm) then return false end
-	elseif action == "Move" and itm2 and cross_inv then -- check if we can put itm2 into inv
+	elseif action == "Move" and itm2 and is_cross then -- check if we can put itm2 into inv
 		--if not inv2:CanCrossInventoryMove(itm2, inv, itm:GetSlot()) then return false end
-		if not inv:CanCrossInventoryMove(itm2, inv2, itm:GetSlot()) then return false end
+		local can = inv:CanCrossInventoryMove(itm2, inv2, itm:GetSlot())
+		if not can then return false end
 	end
 
 	return action, is_cross

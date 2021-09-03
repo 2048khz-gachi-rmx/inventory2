@@ -104,14 +104,22 @@ function Inventory.TakeItems(inv, iid, amt, filter)
 	iid = Inventory.Util.ItemNameToID(iid)
 	if not iid then errorf("not an itemID or name: %s", iid) return end
 
+	local invs = {inv}
+
+	if not IsInventory(inv) and istable(inv) then
+		invs = inv
+	end
+
 	local matches = {}
 	local have_amt = 0
 
-	for k,v in pairs(inv:GetItems()) do
-		if v:GetItemID() ~= iid then continue end
-		if filter(iid) ~= false then
-			matches[#matches + 1] = v
-			have_amt = have_amt + v:GetAmount()
+	for k, inv in ipairs(invs) do
+		for k,v in pairs(inv:GetItems()) do
+			if v:GetItemID() ~= iid then continue end
+			if filter(iid) ~= false then
+				matches[#matches + 1] = v
+				have_amt = have_amt + v:GetAmount()
+			end
 		end
 	end
 
