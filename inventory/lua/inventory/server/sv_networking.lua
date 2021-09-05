@@ -367,8 +367,12 @@ PLAYER.UI = nw.UpdateInventory
 nw.ResyncCDs = nw.ResyncCDs or {}
 nw.ResyncQueue = nw.ResyncQueue or {}
 
+nw.UpdateCDs = nw.UpdateCDs or {}
+nw.UpdateQueue = nw.UpdateQueue or {}
+
 local resyncCDs = nw.ResyncCDs
 local resyncCD = 3
+local updateCD = 0.5
 
 local function insInvs(t, v)
 	if IsInventory(v) and not table.HasValue(t, v) then
@@ -390,7 +394,7 @@ function nw.RequestResync(ply, ...)
 	end
 
 	if CurTime() - resyncCDs[ply] < resyncCD then
-		timer.Create( "Resync:" .. ply:SteamID64(), resyncCD - (CurTime() - resyncCDs[ply]), 1, function()
+		timer.Create( "ResyncInventory:" .. ply:SteamID64(), resyncCD - (CurTime() - resyncCDs[ply]), 1, function()
 			nw.RequestResync(ply)
 		end)
 		return false
@@ -406,6 +410,36 @@ function nw.RequestResync(ply, ...)
 		ply:NetworkInventory()
 	end
 end
+
+function nw.RequestUpdate(ply, ...)
+	nw.UpdateCDs[ply] = nw.UpdateCDs[ply] or CurTime() - (updateCD + 1)
+
+	nw.UpdateQueue[ply] = nw.UpdateQueue[ply] or {}
+
+	for k,v in ipairs({...}) do
+		insInvs(nw.UpdateQueue[ply], v)
+	end
+
+	if CurTime() - nw.UpdateCDs[ply] < updateCD then
+		timer.Create( "UpdateInventory:" .. ply:SteamID64(), updateCD - (CurTime() - nw.UpdateCDs[ply]), 1, function()
+			nw.RequestResync(ply)
+		end)
+		return false
+	end
+
+	nw.UpdateCDs[ply] = CurTime()
+
+	if #nw.UpdateQueue[ply] > 0 then
+		for k,v in ipairs(nw.UpdateQueue[ply]) do
+			ply:UpdateInventory(v)
+		end
+	else
+		ply:UpdateInventory()
+	end
+end
+
+PLAYER.RequestUpdateInventory = nw.RequestUpdate
+PLAYER.RequestUI = nw.RequestUpdate
 
 function nw.ReadInventory()
 	local ent = net.ReadEntity()

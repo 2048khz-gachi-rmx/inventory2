@@ -15,7 +15,7 @@ ChainAccessor(eq, "Equipped", "Equipped")
 eq.IsEquipped = eq.GetEquipped
 
 function eq:Unequip(ply, slot, intoInv)
-	local char = ply.Inventory.Character
+	local char = Inventory.GetEquippableInventory(ply)
 	if not char then errorf("What the fuck can't equip on %s cuz no character inventory", ply) end
 
 	local mem = char:Unequip(self, slot, intoInv)
@@ -28,7 +28,7 @@ function eq:Unequip(ply, slot, intoInv)
 end
 
 function eq:Equip(ply, slot)
-	local char = ply.Inventory.Character
+	local char = Inventory.GetEquippableInventory(ply)
 	if not char then errorf("What the fuck can't equip on %s cuz no character inventory", ply) end
 
 	local mem = char:Equip(self, slot)
@@ -37,7 +37,6 @@ function eq:Equip(ply, slot)
 		self:SetEquipped(true)
 	end)
 
-	print("Equipped", self, slot, " but serverside")
 	return mem
 end
 

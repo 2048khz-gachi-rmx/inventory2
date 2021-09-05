@@ -21,7 +21,7 @@ local function load(act)
 			local em = it:Equip(ply, slot)
 			em:Then(function()
 				if IsValid(ply) then
-					ply:NetworkInventory({inv, ply.Inventory.Character}, INV_NETWORK_UPDATE)
+					ply:RequestUpdateInventory({inv, Inventory.GetEquippableInventory(ply)})
 				end
 			end)
 		else
@@ -34,7 +34,7 @@ local function load(act)
 			local em = it:Unequip(ply, slot, invto)
 			em:Then(function()
 				if IsValid(ply) then
-					ply:NetworkInventory({inv, invto}, INV_NETWORK_UPDATE)
+					ply:RequestUpdateInventory({inv, invto})
 				end
 			end)
 
