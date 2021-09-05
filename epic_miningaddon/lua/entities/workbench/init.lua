@@ -57,18 +57,13 @@ function ENT:DoBlueprintCraft(ply, bp)
 
 	print("cool enough of every item")
 
-	--[[for id, amt in pairs(recipe) do
+	for id, amt in pairs(recipe) do
 		local ok = Inventory.TakeItems(invs, id, amt)
 		if not ok then return end
-	end]]
-
-	print("took every item i think")
-
-	local result = bp:GetResult()
-	print("result:", result)
+	end
 
 	local pr = bp:CreateResult(ply)
-	--bp:Delete()
+	bp:Delete()
 
 	pr:Then(function()
 		ply:UI()
