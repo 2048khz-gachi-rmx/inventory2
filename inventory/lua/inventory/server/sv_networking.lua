@@ -477,6 +477,7 @@ end
 
 
 hook.Add("PlayerFullyLoaded", "InventoryNetwork", function(ply)
-	nw.NetworkItemNames(ply)
-	nw.NetworkInventory(ply)
+	-- eh just let the player request the resync
+	--nw.NetworkItemNames(ply)
+	--nw.NetworkInventory(ply)
 end)

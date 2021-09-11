@@ -11,7 +11,7 @@ ENT.Model = "models/props/CS_militia/table_shed.mdl"
 local me = {}
 
 
-function ENT:Initialize()
+function ENT:Init()
 	self:SetModel(self.Model)
 
 	self:PhysicsInit(SOLID_VPHYSICS)

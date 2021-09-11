@@ -37,20 +37,25 @@ bp:Register()
 
 bp:On("GenerateText", "BlueprintModifiers", function(self, cloud, markup)
 	self:GenerateText(cloud, markup)
+	print("generate text")
 end)
 
-bp:On("PostGenerateText", "BlueprintModifiers", function(self, cloud, markup)
+bp:On("PostGenerateText", "BlueprintRecipe", function(self, cloud, markup)
 	self:PostGenerateText(cloud, markup)
+	print("post generate text")
 end)
 
 function bp:PostGenerateText(cloud, markup)
 	local has_recipe = not table.IsEmpty(self:GetRecipe())
 	if not has_recipe then print("no recipe bruh") return end
 
-	cloud:AddSeparator(nil, cloud.LabelWidth / 8, 8)
+	if #cloud:GetPieces() > 0 then
+		cloud:AddSeparator(nil, cloud.LabelWidth / 8, 8)
+	end
 
-	local recipeMup = vgui.Create("MarkupText", cloud)
+	local recipeMup = vgui.Create("MarkupText", cloud, "Markup - Recipe")
 	recipeMup:SetWide(cloud:GetCurWidth() - 16)
+	recipeMup.naem = "Markup - Recipe"
 
 	for id, amt in pairs(self:GetRecipe()) do
 		local pc = recipeMup:AddPiece()
@@ -76,6 +81,7 @@ function bp:GenerateText(cloud, markup)
 		else
 			local mpiece = markup:AddPiece()
 			mpiece:AddText(k).IgnoreVisibility = true
+			mpiece:SetAlignment(1)
 			mpiece:Debug()
 		end
 	end

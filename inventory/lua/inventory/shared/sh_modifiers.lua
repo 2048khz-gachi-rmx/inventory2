@@ -15,13 +15,14 @@ mods.Pool.Blazing = {
 		mod:SetColor(bcol)
 
 		mod:On("Think", function()
-			bcol.r = 210 + math.abs(math.sin(CurTime() * 1.4) * 40)
-			bcol.g = 120 + math.abs(math.sin(CurTime() * 1.1) * 20)
+			bcol.r = 210 + math.abs(math.sin(CurTime() * 2.3) * 40)
+			bcol.g = 120 + math.abs(math.sin(CurTime() * 1.7) * 20)
 		end)
 		local desc = mup:AddPiece()
 		desc.Font = "OS16"
 		desc:DockMargin(4, 0, 0, 0)
 		desc:SetColor(Color(180, 150, 60))
+		desc:SetAlignment(1)
 		local tx = desc:AddText("BRrrrrrrrrrrrt and you're ~ablaze~")
 		desc.IgnoreVisibility = true
 		--desc:Debug()
@@ -57,6 +58,7 @@ mods.Pool.Crippling = {
 		desc.Font = "OS16"
 		desc:DockMargin(8, 0, 0, 0)
 		desc:SetColor(Color(130, 130, 130))
+		desc:SetAlignment(1)
 		local tx = desc:AddText("It does some kewl shit, ya feel me? Like it can slow down ppl and shit, thats really cool i guess")
 		desc.IgnoreVisibility = true
 	end,

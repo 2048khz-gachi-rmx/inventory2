@@ -7,7 +7,7 @@ ENT.Model = "models/props/CS_militia/furnace01.mdl"
 
 ENT.Refinery = true
 
-function ENT:Initialize()
+function ENT:Init()
 	self:SetModel(self.Model)
 	self:PhysicsInit(SOLID_VPHYSICS)
 	self:SetMoveType(MOVETYPE_VPHYSICS)
@@ -41,8 +41,8 @@ end
 
 function ENT:TimeItem(slot)
 	local itm = self.OreInput:GetSlots()[slot]
-	local itmStart = itm.StartedRefining or CurTime()
 
+	local itmStart = itm.StartedRefining or CurTime()
 
 	if self:IsPowered() then
 		-- we're powered; status value means start of refining
@@ -150,6 +150,7 @@ function ENT:QueueRefine(ply, inv, item, slot, bulk)
 				self, inv, item, i)
 			if not ok then print("couldn't add input item to #" .. i) continue end
 
+			pr.slot = i
 			prs[#prs + 1] = pr
 
 			ins = ins + 1
@@ -160,7 +161,10 @@ function ENT:QueueRefine(ply, inv, item, slot, bulk)
 		Promise.OnAll(prs):Then(function()
 			if not IsValid(self) then return end
 
-			self:TimeItem(slot)
+			for k,v in ipairs(prs) do
+				self:TimeItem(v.slot)
+			end
+
 			local plys = Filter(ents.FindInPVS(self), true):Filter(IsPlayer)
 			Inventory.Networking.NetworkInventory(plys, self.OreInput)
 			Inventory.Networking.UpdateInventory(ply, inv)

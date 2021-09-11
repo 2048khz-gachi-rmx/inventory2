@@ -80,12 +80,12 @@ EndTool()
 
 local curCol = Colors.Golden:Copy()
 local bufFrac = WeakTable(nil, "k")
-local an = Animatable("Vectahs")
+local an = Animatable("OremarkVectors")
 
 hook.Add("PostDrawTranslucentRenderables", "OresRender", function(a, b)
 	if a or b then return end
 
-	if not LocalPlayer():IsSuperAdmin() then print("Not sa") return end
+	if not LocalPlayer():IsSuperAdmin() then return end
 
 	local tool = LocalPlayer():GetTool()
 	if not tool or not tool.IsOreMark then return end

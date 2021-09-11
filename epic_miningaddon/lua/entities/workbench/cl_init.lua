@@ -1,10 +1,5 @@
 include("shared.lua")
 
-
-function ENT:Initialize()
-
-end
-
 function ENT:DrawDisplay()
 
 end

@@ -3,24 +3,29 @@ local it = Inventory.ItemObjects.Generic
 function it:_CallTextGenerators(cloud)
 	cloud:SetFont("OS24")
 	cloud:SetText(self:GetName())
-	cloud:SetMaxW(250)
+	cloud:SetMaxW(400)
+	cloud.MinW = 250
 
 	local lwid = cloud.LabelWidth
 
-	local mup = vgui.Create("MarkupText", cloud)
+	local mup = vgui.Create("MarkupText", cloud, "Markup - Generic")
 	mup:SetPaintedManually(true)
 	mup:SetWide(cloud:GetCurWidth() - 16)
+	mup.X = 8
 
 	self:Emit("GenerateText", cloud, mup)
 
+	if #mup:GetPieces() > 0 then
+		cloud:AddPanel(mup)
+	end
+
+	self:Emit("PostGenerateText", cloud, mup)
+
 	if #mup:GetPieces() < 1 then
 		mup:Remove()
+		cloud.MinW =  64
 	else
-		cloud:AddPanel(mup)
 		mup:InvalidateLayout(true)
-		mup.X = 8
-
-		self:Emit("PostGenerateText", cloud, mup)
 	end
 
 	local len = #cloud.DoneText

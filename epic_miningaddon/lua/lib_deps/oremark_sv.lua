@@ -2,25 +2,33 @@ StartTool("OreMark")
 
 _OreData = _OreData or {}
 
-file.CreateDir("inventory/")
+file.CreateDir("inventory")
+file.CreateDir("inventory/ores")
+
+local map = game.GetMap()
+
 local function readOreData(force)
 	if _OreData and not force then return _OreData end
 
-	local dat = file.Read("inventory/ore_positions.dat", "DATA")
+	local dat = file.Read("inventory/ores/" .. map .. ".dat", "DATA")
 
 	if not dat then
-		file.Write("inventory/ore_positions.dat", "")
+		file.Write("inventory/ores/" .. map .. ".dat", "")
 		return {}
 	end
 
 	_OreData = util.JSONToTable(dat) or {}
+	Inventory.OresPositions = _OreData
+
 	return _OreData
 end
 
 readOreData(true)
 
 local function writeOreData()
-	file.Write("inventory/ore_positions.dat", util.TableToJSON(_OreData))
+	file.Write("inventory/ores/" .. map .. ".dat", util.TableToJSON(_OreData))
+	Inventory.OresPositions = _OreData
+	OresRespawn()
 end
 
 local nw = Networkable("Orepositions")

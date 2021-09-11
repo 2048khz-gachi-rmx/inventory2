@@ -1,6 +1,6 @@
 AddCSLuaFile()
 
-SWEP.PrintName              = "Dang ole' pickaxe"
+SWEP.PrintName              = "Harvester"
 SWEP.Spawnable              = true
 SWEP.AdminSpawnable         = false
 
