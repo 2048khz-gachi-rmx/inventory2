@@ -125,8 +125,7 @@ function ENT:Think()
 end
 
 function ENT:AddInputItem(inv, item, slot)
-	local meta = Inventory.Util.GetMeta(item:GetItemID())
-	local new = meta:new(nil, item:GetItemID())
+	local new = Inventory.NewItem(item:GetItemID())
 	--new:SetSlot(slot)
 	new:SetAmount(1)
 	new:SetOwner(inv:GetOwner())

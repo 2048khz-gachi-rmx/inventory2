@@ -204,7 +204,7 @@ function PANEL:SplitItem(rec, drop, item)
 	local iid = item:GetItemID()
 
 	local meta = Inventory.Util.GetMeta(iid)
-	local newitem = meta:new(nil, iid)
+	local newitem = Inventory.NewItem(iid)
 
 	newitem:SetAmount(math.floor(item:GetAmount() / 2))
 	newitem:SetSlot(rec:GetSlot())

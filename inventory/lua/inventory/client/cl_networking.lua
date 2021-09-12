@@ -25,8 +25,7 @@ function nw.ReadItem(uid_sz, iid_sz, slot_sz, inventory)
         uid, uid_sz, iid, iid_sz, slot, slot_sz)
 
     if not item then
-        local meta = Inventory.Util.GetMeta(iid)
-        item = meta:new(uid, iid)
+        item = Inventory.ReconstructItem(uid, iid, inventory)
     end
 
     if slot then item:SetSlot(slot) end

@@ -103,3 +103,6 @@ function it:SetData(k, v)
 end
 
 ChainAccessor(it, "SQLExists", "SQLExists")
+
+function it:InitializeNew() end
+function it:InitializeExisting() end

@@ -76,15 +76,14 @@ local function load()
 		local dat = table.Copy(it:GetData())
 		dat.Amount = amt
 
-		local meta = Inventory.Util.GetMeta(it:GetItemID())
-		local new = meta:new(nil, it:GetItemID())
+		local new = Inventory.NewItem(nil, it:GetItemID())
 		new:SetOwner(ply)
 		new:SetInventory(inv)
 		new:SetSlot(where)
 		new:SetData(dat)
 
 		inv:InsertItem(new):Then(function(...)
-			if IsValid(ply) then ply:UpdateInventory(inv) end
+			if IsValid(ply) then Inventory.Networking.RequestUpdate(ply, inv) end
 		end, GenerateErrorer("SplitActionInsert"))
 
 		return false, inv
@@ -176,8 +175,7 @@ local function load()
 		local dat = table.Copy(it:GetData())
 		dat.Amount = amt
 
-		local meta = Inventory.Util.GetMeta(it:GetItemID())
-		local new = meta:new(nil, it:GetItemID())
+		local new = Inventory.NewItem(nil, it:GetItemID())
 		new:SetOwner(ply)
 		new:SetInventory(invto)
 		new:SetSlot(slot)

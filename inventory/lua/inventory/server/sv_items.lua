@@ -3,30 +3,44 @@
 	Creates a brand new item and waits until you stick it into SQL with all the data necessary.
 ]]
 
-function Inventory.NewItem(iid, invobj, dat)
+local function makeItem(iid, invobj, dat)
 	local it = Inventory.Util.GetMeta(iid)
 	if not it then errorf("No item meta for IID %s", iid) return end
 
-	local item = it:new(nil, iid)
-	item:SetInventory(invobj)
-
+	local item = it:new(nil, iid, false)
 	local base = item:GetBaseItem()
 
-	local def = table.Copy(base.DefaultData)
+	item.Data = table.Copy(base.DefaultData)
+
+	if invobj then
+		item:SetInventory(invobj)
+	end
 
 	if dat then
-		for k,v in pairs(dat) do
-			def[k] = v
+		for k,v in pairs(item.Data) do
+			item.Data[k] = v
 		end
 	end
 
-	item.Data = def
+	return item
+end
 
-	item:Once("AssignUID", "EmitCreatedNew", function()
-		item:Emit("CreatedNew")
-	end)
+function Inventory.NewItem(iid, invobj, dat)
+	local item = makeItem(iid, invobj, dat)
+	item:InitializeNew()
 
 	return item
+end
+
+--[[
+	Creates an item using SQL info.
+]]
+
+function Inventory.ReconstructItem(uid, iid, invobj, dat)
+	local itm = makeItem(iid, invobj, dat)
+	itm:SetUID(uid)
+
+	return itm
 end
 
 local function equalData(dat1, dat2)
