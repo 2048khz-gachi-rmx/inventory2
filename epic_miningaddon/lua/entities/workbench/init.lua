@@ -66,7 +66,7 @@ function ENT:DoBlueprintCraft(ply, bp)
 	bp:Delete()
 
 	pr:Then(function()
-		ply:UI()
+		Inventory.Networking.RequestUpdate(ply)
 	end)
 end
 

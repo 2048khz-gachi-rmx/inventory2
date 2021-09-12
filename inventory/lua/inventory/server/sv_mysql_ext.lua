@@ -373,7 +373,6 @@ function ms.SetInventory(it, inv, slot, dat)
 		end
 	end
 
-	print("columns, values", columns, values)
 	local ow, owuid = inv:GetOwner()
 
 	local puid = mysqloo.quote(ms.DB, owuid)
@@ -386,8 +385,6 @@ function ms.SetInventory(it, inv, slot, dat)
 			inv.SQLName, columns, it:GetUID(), puid, values )
 	end
 
-	print(q1, q2)
-
 	local qo1, qo2
 
 	if src_inv.UseSQL ~= false then
@@ -399,8 +396,6 @@ function ms.SetInventory(it, inv, slot, dat)
 		qo2 = db:query(q2)
 		t:addQuery(qo2)
 	end
-
-	print(qo1 and q1 or "[ignored]", "\n", qo2 and q2 or "[ignored]")
 
 	return MySQLEmitter:new(t, true):Catch(trerr)
 end
@@ -423,13 +418,7 @@ function ms.FetchPlayerItems(inv, ply)
 		Inventory.Log("MySQL: Fetched info for %q's %q inventory; %d items", ply:Nick(), tname, #dat)
 
 		for k,v in ipairs(dat) do
-			local it = Inventory.Util.GetMeta(v.iid)
-			if not it then
-				ErrorNoHalt("Failed to reconstruct item with ItemID: " .. v.iid .. " (didn't find meta)\n")
-				continue
-			end
-
-			it = it:new(v.uid, v.iid)
+			local it = Inventory.ReconstructItem(v.uid, v.iid)
 
 			it:SetOwner(ply)
 			it:SetSlot(v.slotid)
@@ -437,6 +426,8 @@ function ms.FetchPlayerItems(inv, ply)
 			it:SetSQLExists(true)
 
 			inv:AddItem(it, true)
+
+			it:InitializeExisting()
 		end
 
 	end

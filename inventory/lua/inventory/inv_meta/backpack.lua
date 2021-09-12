@@ -72,6 +72,9 @@ function bp:_SetSlot(it, slot)
 	end
 
 	self.Slots[slot] = it
+	if it:GetUID() then
+		self.Items[it:GetUID()] = it
+	end
 
 	if it:GetKnown() then self:AddChange(it, INV_ITEM_MOVED) end --if the player doesn't know about the item, don't replace the change
 	return slot
@@ -176,6 +179,8 @@ function bp:AddItem(it, ignore_emitter, nochange)
 		return
 	end
 
+	if self.Slots[it:GetSlot()] == it then return end
+
 	if not ignore_emitter then
 		local can = self:Emit("CanAddItem", it, it:GetUID())
 		if can == false then print("disallowed adding item, lol") return false end
@@ -222,7 +227,7 @@ end
 
 function bp:HasItem(it)
 	if IsItem(it) then
-		return self:GetItem(it:GetUID())
+		return self:GetItem(it:GetUID()) == it
 	else
 		return self:GetItem(it)
 	end

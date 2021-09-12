@@ -8,7 +8,12 @@ BaseItemAccessor(wep, "Uses", "StartUses")
 
 function wep:Initialize()
 	self:SetModifiers({})
+end
+
+function wep:InitializeNew()
+	-- new weapons get uses set to starting automatically
 	self:SetData("Uses", self:GetStartUses())
+	print("InitializeNew on weapon")
 end
 
 function wep:Equip(ply, slot)
