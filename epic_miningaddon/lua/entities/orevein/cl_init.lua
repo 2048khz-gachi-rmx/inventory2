@@ -51,7 +51,7 @@ function ENT:DecodeInitialResources(new)
 		ores[base:GetItemName()] = ore
 	end
 
-	self.TotalAmount = fullamt 
+	self.TotalAmount = fullamt
 end
 
 function ENT:UpdateOres(key, old, new)

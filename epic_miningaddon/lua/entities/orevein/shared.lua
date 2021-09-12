@@ -16,14 +16,3 @@ function ENT:SetupDataTables()
 										-- take into consideration what ores spawned (their rarity value compared to rest of the pool, eg top 30%, top 10%, top 5% ores)
 	self:UseNetDTNotify()
 end
-
---[[
-AddCSLuaFile("oremark_cl.lua")
-
-
-hook.Add("LibItUp", "LoadOremark", function(lib)
-	lib.OnInitEntity(
-		Curry(include, file.Here() .. "oremark" .. (SERVER and "_sv" or "_cl") .. ".lua")
-	)
-end)
-]]

@@ -150,13 +150,12 @@ function it:ReadNetworkedVars()
 
 	for k,v in ipairs(base.NetworkedVars) do
 		local read = net.ReadBool()
-		if not read then print("no networked vars") continue end
+		if not read then continue end
 
 		if isfunction(v.what) then
 			v.what(self, false)
 		else
 			self.Data[v.what] = net["Read" .. v.type] (unpack(v.args))
-			print("also read:", "Read" .. v.type, unpack(v.args))
 		end
 	end
 

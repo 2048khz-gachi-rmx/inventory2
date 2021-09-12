@@ -37,12 +37,10 @@ bp:Register()
 
 bp:On("GenerateText", "BlueprintModifiers", function(self, cloud, markup)
 	self:GenerateText(cloud, markup)
-	print("generate text")
 end)
 
 bp:On("PostGenerateText", "BlueprintRecipe", function(self, cloud, markup)
 	self:PostGenerateText(cloud, markup)
-	print("post generate text")
 end)
 
 function bp:PostGenerateText(cloud, markup)

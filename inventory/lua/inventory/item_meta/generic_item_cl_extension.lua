@@ -3,8 +3,8 @@ local it = Inventory.ItemObjects.Generic
 function it:_CallTextGenerators(cloud)
 	cloud:SetFont("OS24")
 	cloud:SetText(self:GetName())
-	cloud:SetMaxW(400)
-	cloud.MinW = 250
+	cloud:SetMaxW(300)
+	--cloud.MinW = 250
 
 	local lwid = cloud.LabelWidth
 
@@ -23,7 +23,7 @@ function it:_CallTextGenerators(cloud)
 
 	if #mup:GetPieces() < 1 then
 		mup:Remove()
-		cloud.MinW =  64
+		--cloud.MinW =  64
 	else
 		mup:InvalidateLayout(true)
 	end

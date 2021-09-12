@@ -169,7 +169,6 @@ function bp:GetItemInSlot(slot)
 end
 
 function bp:AddItem(it, ignore_emitter, nochange)
-	print("additem called", it)
 	if not it:GetSlot() then errorf("Can't add an item without a slot set! Set a slot first!\nItem: %s", it) return end
 
 	if it:GetInventory() and it:GetInventory() ~= self then
@@ -236,7 +235,7 @@ end
 
 function bp:HasAccess(ply, action)
 	local allow = self:Emit("Can" .. action, ply)
-	if allow ~= nil then print("Can" .. action, "returned", allow) return allow end
+	if allow ~= nil then return allow end
 
 	if self["ActionCan" .. action] ~= nil then
 		local allow

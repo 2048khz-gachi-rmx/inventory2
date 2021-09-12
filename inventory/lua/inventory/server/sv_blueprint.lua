@@ -13,7 +13,7 @@ local chances = {
 }
 
 Inventory.Blueprints.TierMods = {
-	[1] = function(ply) return math.random() > 0.85 and 1 or 0 end, --15% of 1 mod
+	[1] = function(ply) return math.random() > 0.0 and 1 or 0 end, --15% of 1 mod
 	[2] = function(ply) return math.random() > 0.75 and 2 or 1 end, --75% of 1 mod, 25% of 2 mods
 
 	[3] = function(ply)

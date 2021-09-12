@@ -487,16 +487,19 @@ function ITEM:GetAmount()
 end
 
 local amtCol = Color(120, 120, 120)
-local boxCol = Color(30, 30, 30, 220)
+local boxCol = Color(35, 35, 35, 220)
 
 local initA = boxCol.a
 local initAA = amtCol.a
 
+local dev = GetConVar("developer")
 function ITEM:PaintOver(w, h)
 	local it = self.Item or self.FakeItem
 
 	if it then
-		draw.SimpleText(it:GetUID(), "OS16", w/2, 0, Colors.DarkerRed, 1, 5)
+		if dev:GetInt() > 0 then
+			draw.SimpleText(it:GetUID(), "OS16", w/2, 0, Colors.DarkerRed, 1, 5)
+		end
 
 		if it:GetCountable() then
 			local dim = self.DrawColDim or 0
@@ -505,15 +508,16 @@ function ITEM:PaintOver(w, h)
 			amtCol.a = initAA * (1 - dim) * 0.3 + initAA * 0.7
 
 			local amt = self:GetAmount()
+			local amtFont = "MR18"
 			if amt then
-				surface.SetFont("MR18")
+				surface.SetFont(amtFont)
 				local tw, th = surface.GetTextSize("x" .. amt)
 
 				local tpadx = 2
 				local tpady = 2
 
-				draw.RoundedBoxEx(self.Rounding, w - tpadx*3 - tw, h - th, tw + tpadx*2, th - tpady, boxCol, true, true)
-				draw.SimpleText("x" .. amt, "MR18", w - tpadx*2, h, amtCol, 2, 4)
+				draw.RoundedBoxEx(self.Rounding, w - tpadx*3 - tw, h - th, tw + tpadx*2, th - tpady, boxCol, true)
+				draw.SimpleText("x" .. amt, amtFont, w - tpadx*2, h, amtCol, 2, 4)
 			end
 		end
 

@@ -16,10 +16,6 @@ function Inventory.CanEquipInSlot(it, slotid)
 	return true
 end
 
-function Inventory.EquippableID(what)
-	return Inventory.EquipmentIDs[what] and Inventory.EquipmentIDs[what].id
-end
-
 function Inventory.GetEquippableInventory(ply)
 	return ply.Inventory.Character
 end

@@ -25,6 +25,9 @@ mods.Pool.Blazing = {
 		desc:SetAlignment(1)
 		local tx = desc:AddText("BRrrrrrrrrrrrt and you're ~ablaze~")
 		desc.IgnoreVisibility = true
+
+		local nw = desc:RewrapWidth(200)
+		mup:SetWide(math.max(mup:GetWide(), nw))
 		--desc:Debug()
 	end
 }
@@ -32,7 +35,6 @@ mods.Pool.Blazing = {
 mods.Pool.Crippling = {
 	MaxTier = 3,
 	Markup = function(it, mup, tier)
-
 		local mod = mup:AddPiece()
 		mod:SetAlignment(1)
 		mod.Font = "OS24"
@@ -59,8 +61,12 @@ mods.Pool.Crippling = {
 		desc:DockMargin(8, 0, 0, 0)
 		desc:SetColor(Color(130, 130, 130))
 		desc:SetAlignment(1)
-		local tx = desc:AddText("It does some kewl shit, ya feel me? Like it can slow down ppl and shit, thats really cool i guess")
+		local tx = desc:AddText("[NYI] Each shot applies a stacking ???% decrease to your victim's movement speed for ???s.")
+		tx.WrapData = { AllowDashing = false }
 		desc.IgnoreVisibility = true
+
+		local nw = desc:RewrapWidth(250)
+		mup:SetWide(math.max(mup:GetWide(), nw))
 	end,
 }
 
