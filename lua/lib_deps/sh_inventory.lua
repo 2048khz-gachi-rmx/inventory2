@@ -139,7 +139,7 @@ local function ContinueLoading()
 	FInc.Recursive("inventory/client/*", _CL, nil, shouldIncludeCore)
 
 	-- loading extensions
-	FInc.Recursive("inventory/misc/*", _SH, nil, FInc.RealmResolver():SetVerbose(true))
+	FInc.Recursive("inventory/misc/*", _SH, nil, FInc.RealmResolver())
 
 	-- loading items
 	include("inv_items/load.lua") --that will handle the loading itself

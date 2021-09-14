@@ -69,24 +69,47 @@ function bp.GetRandomType()
 	end
 end
 
-function bp.GenerateMods(amt)
-	local pool = Inventory.Modifiers.Pool
-	local keys = table.GetKeys(pool)
+function bp.GenerateMods(qual, amt)
+	local pool = {}
+	local guar = {} -- guaranteed mods
 
 	local ret = {}
+	local count = 0
 
-	for i=1, amt do
-		local modnum = math.random(1, #keys)
-		local name = keys[modnum]
-		if not name then break end
-
-		local modtbl = pool[name]
-
-		local tier = math.random(1, modtbl.MaxTier or 1)
-		ret[name] = tier
-
-		table.remove(keys, modnum)
+	for k,v in pairs(Inventory.Modifiers.Pool) do
+		if not qual.ModsBlacklist[k] then
+			if qual.ModsGuarantee[k] then
+				guar[#guar + 1] = v
+			else
+				pool[#pool + 1] = v
+			end
+		end
 	end
+
+	table.Shuffle(guar)
+
+	print("Generating:", qual:GetName(), amt)
+	for i=1, math.min(amt, #guar) do
+		ret[guar[i]:GetName()] = guar[i]
+		count = count + 1
+	end
+
+	print("GENERATED GUARANTEED MODS:")
+	PrintTable(table.GetKeys(ret))
+
+	if count == amt then return ret end
+
+	table.Shuffle(pool)
+
+	for i=1, math.min(amt - count, #pool) do
+		local modtbl = pool[i]
+		local tier = math.random(1, modtbl:GetMaxTier() or 1)
+		ret[modtbl:GetName()] = tier
+		count = count + 1
+	end
+
+	print("GENERATED MODS:")
+	PrintTable(table.GetKeys(ret))
 
 	return ret
 end
@@ -114,16 +137,32 @@ function bp.GenerateRecipe(itm)
 	return rec
 end
 
+function bp.PickQuality(tier, wep)
+	local quals = Inventory.Qualities.ByTier[tier]
+
+	local pool = {}
+	for k,v in ipairs(quals) do pool[k] = v end
+
+	while true do
+		local key = math.random(#pool)
+		local pick = pool[key]
+		if not pick then return false end -- ran out of mods in pool
+
+		if pick:GetType() == "Weapon" then return pick end
+		table.remove(pool, key)
+	end
+end
+
 function bp.Generate(tier, typ)
 	if typ == "random" then
 		typ = bp.GetRandomType()
 	end
 
-	local amtMods = bp.TierGetMods(tier)
 	local wep = bp.GetWeapon(typ)
-	print("generating", wep, amtMods)
 
-	local mods = bp.GenerateMods(amtMods)
+	local qual = bp.PickQuality(tier, wep)
+	local amtMods = bp.TierGetMods(tier)
+	local mods = bp.GenerateMods(qual, amtMods)
 
 	local item = Inventory.Blueprints.CreateBlank()
 	item:SetModifiers(mods)

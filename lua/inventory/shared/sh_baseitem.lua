@@ -69,11 +69,13 @@ function Inventory.Util.GetUsableInventories(ply)
 end
 
 function Inventory.Util.ItemNameToID(name)
-	return isnumber(name) and name or Inventory.IDConversion.ToID[name]
+	return isnumber(name) and Inventory.IDConversion.ToName[name] and name
+		or Inventory.IDConversion.ToID[name]
 end
 
 function Inventory.Util.ItemIDToName(id)
-	return isstring(id) and id or Inventory.IDConversion.ToName[id]
+	return isstring(id) and Inventory.IDConversion.ToID[id] and id
+		or Inventory.IDConversion.ToName[id]
 end
 
 function Inventory.Util.IsInventory(obj)

@@ -40,8 +40,8 @@ function bp:GenerateText(cloud, markup)
 
 	for k,v in pairs(self:GetModifiers()) do
 		local mod = Inventory.Modifiers.Get(k)
-		if mod and mod.Markup then
-			mod.Markup (self, markup, v)
+		if mod then
+			mod:GenerateMarkup(self, markup, v)
 		else
 			local mpiece = markup:AddPiece()
 			mpiece:AddText(k).IgnoreVisibility = true
