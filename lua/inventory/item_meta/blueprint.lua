@@ -1,9 +1,13 @@
 --sasa
 
-local gen = Inventory.GetClass("item_meta", "generic_item")
+local gen = Inventory.GetClass("item_meta", "unique_item")
 local bp = Inventory.ItemObjects.Blueprint or gen:Extend("Blueprint")
 
 bp.IsBlueprint = true
+
+DataAccessor(bp, "Result", "Result")
+DataAccessor(bp, "Recipe", "Recipe")
+DataAccessor(bp, "Tier", "Tier")
 
 function bp:Initialize(uid, iid)
 
@@ -18,21 +22,16 @@ end
 
 function bp:GetName()
 	local wep = weapons.GetStored(self:GetResult())
+	local qName = self:GetQuality() and self:GetQuality():GetName() or "Mundane"
 	if not wep then
-		return ("T%d %s [%s] Blueprint"):format(self:GetTier(), "Invalid weapon", self:GetResult())
+		return ("T%d %s %s [%s] Blueprint"):format(self:GetTier(), qName, "Invalid weapon", self:GetResult())
 	end
 
-	return ("T%d %s Blueprint"):format(self:GetTier(), wep.PrintName)
+
+	return ("T%d %s %s Blueprint"):format(self:GetTier(), qName, wep.PrintName)
 end
-DataAccessor(bp, "Result", "Result")
-DataAccessor(bp, "Modifiers", "Modifiers")
-DataAccessor(bp, "Stats", "Stats")
-DataAccessor(bp, "Recipe", "Recipe")
-DataAccessor(bp, "Tier", "Tier")
 
 bp:Register()
-
-
 
 
 function bp:GetWeaponType()

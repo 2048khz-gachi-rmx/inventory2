@@ -2,6 +2,7 @@ local it = Inventory.ItemObjects.Generic
 
 function it:WriteNetworkedVars(ns, typ)
 	local base = self:GetBaseItem()
+
 	for k,v in ipairs(base.NetworkedVars) do
 
 		--for every custom-encoded var, there is a bool written before the actual content
@@ -10,16 +11,23 @@ function it:WriteNetworkedVars(ns, typ)
 
 		if isfunction(v.what) then
 			local ret = v.what(self, true) --true means write, false means read
-			if not IsNetStack(ret) then ns:WriteBool(false) continue end
+			if not IsNetStack(ret) then
+				ns:WriteBool(false).PacketName = "Lack of NWVar - " .. v.id
+				errorNHf("NWVar %d (%s) didnt return netstack!", k, v.id)
+				continue
+			end
 
-			ns:WriteBool(true).PacketName = "Has NetworkedVar as function - " .. tostring(self)
+			ns:WriteBool(true).PacketName = "Has NetworkedVar - function: " .. tostring(self)
 			ret:MergeInto(ns)
 		else
-			if not self.Data[v.what] or (typ ~= INV_NETWORK_FULLUPDATE and self.LastNetworkedVars[v.what] == self.Data[v.what]) then ns:WriteBool(false) continue end
+			if not self.Data[v.what] or (typ ~= INV_NETWORK_FULLUPDATE and self.LastNetworkedVars[v.what] == self.Data[v.what]) then
+				ns:WriteBool(false).PacketName = "Lack of NWVar - " .. v.what
+				continue
+			end
 
-			ns:WriteBool(true).PacketName = "Has NetworkedVar as predefined"
+			ns:WriteBool(true).PacketName = "Has NWVar - predefined"
 
-			ns["Write" .. v.type] (ns, self.Data[v.what], unpack(v.args)).PacketName = "NetworkedVar - " .. v.what
+			ns["Write" .. v.type] (ns, self.Data[v.what], unpack(v.args)).PacketName = "NWVar - " .. v.what
 			self.LastNetworkedVars[v.what] = self.Data[v.what]
 		end
 	end

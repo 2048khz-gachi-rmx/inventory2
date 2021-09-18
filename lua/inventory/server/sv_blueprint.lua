@@ -88,14 +88,12 @@ function bp.GenerateMods(qual, amt)
 
 	table.Shuffle(guar)
 
-	print("Generating:", qual:GetName(), amt)
 	for i=1, math.min(amt, #guar) do
-		ret[guar[i]:GetName()] = guar[i]
+		local modtbl = guar[i]
+		local tier = math.random(1, modtbl:GetMaxTier() or 1)
+		ret[modtbl:GetName()] = tier
 		count = count + 1
 	end
-
-	print("GENERATED GUARANTEED MODS:")
-	PrintTable(table.GetKeys(ret))
 
 	if count == amt then return ret end
 
@@ -108,8 +106,15 @@ function bp.GenerateMods(qual, amt)
 		count = count + 1
 	end
 
-	print("GENERATED MODS:")
-	PrintTable(table.GetKeys(ret))
+	return ret
+end
+
+function bp.GenerateStats(qual)
+	local ret = {}
+
+	for name, dat in pairs(qual.Stats) do
+		ret[name] = math.random()
+	end
 
 	return ret
 end
@@ -163,11 +168,15 @@ function bp.Generate(tier, typ)
 	local qual = bp.PickQuality(tier, wep)
 	local amtMods = bp.TierGetMods(tier)
 	local mods = bp.GenerateMods(qual, amtMods)
+	local stats = bp.GenerateStats(qual)
 
 	local item = Inventory.Blueprints.CreateBlank()
-	item:SetModifiers(mods)
 	item:SetResult(wep)
 	item:SetTier(tier)
+
+	item:SetQualityName(qual:GetName())
+	item:SetModNames(mods)
+	item:SetStatRolls(stats)
 
 	item:SetRecipe(bp.GenerateRecipe(item))
 

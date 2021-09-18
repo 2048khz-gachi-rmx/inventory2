@@ -67,34 +67,19 @@ Items = Items
 -- _sv are only included serverside
 -- _extension are included by items manually
 -- this function assumes inclusion realm is _SH
-local function shouldIncludeItem(path)
-	local is_sv = path:match("_sv")
-	local ext = path:match("_extension")
-	local cl, sv = true, true
 
-	if is_sv then cl = false end
+local fResolver = FInc.RealmResolver()
+	--:SetVerbose()
+	:SetDefault(true)
 
-	if ext then --extensions get included manually
-		cl = (not is_sv and 1) or false
-		sv = false
-	end
-
+local function shouldIncludeItem(path, ...)
 	if Inventory.Included[path] then return false, false end --something before us already included it, don't include again
 
-	return cl, sv
+	return fResolver(path, ...)
 end
 
-local function shouldIncludeCore(path, realm)
-	local ext = path:match("_extension") or path:match("_ext")
-
-	local cl, sv = realm == _CL or realm == _SH, realm == _SV or realm == _SH
-
-	if ext then --extensions get included manually
-		cl = cl and 1 or false
-		sv = false
-	end
-
-	return cl, sv
+local function shouldIncludeCore(path, ...)
+	return fResolver(path, ...)
 end
 
 local states = {}

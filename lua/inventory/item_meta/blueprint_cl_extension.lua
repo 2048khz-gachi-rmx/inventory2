@@ -1,20 +1,9 @@
 --
 local bp = Inventory.ItemObjects.Blueprint
 
-bp:On("GenerateText", "BlueprintModifiers", function(self, cloud, markup)
-	self:GenerateText(cloud, markup)
-end)
-
-bp:On("PostGenerateText", "BlueprintRecipe", function(self, cloud, markup)
-	self:PostGenerateText(cloud, markup)
-end)
-
-function bp:PostGenerateText(cloud, markup)
-	local has_recipe = not table.IsEmpty(self:GetRecipe())
-	if not has_recipe then print("no recipe bruh") return end
-
+function bp:GenerateRecipeText(cloud, markup)
 	if #cloud:GetPieces() > 0 then
-		cloud:AddSeparator(nil, cloud.LabelWidth / 8, 8)
+		cloud:AddSeparator(nil, cloud.LabelWidth / 8, 4)
 	end
 
 	local recipeMup = vgui.Create("MarkupText", cloud, "Markup - Recipe")
@@ -35,20 +24,9 @@ function bp:PostGenerateText(cloud, markup)
 	cloud:AddPanel(recipeMup)
 end
 
-function bp:GenerateText(cloud, markup)
-	cloud:SetMaxW( math.max(cloud:GetItemFrame():GetWide() * 2.5, cloud:GetMaxW()) )
-
-	for k,v in pairs(self:GetModifiers()) do
-		local mod = Inventory.Modifiers.Get(k)
-		if mod then
-			mod:GenerateMarkup(self, markup, v)
-		else
-			local mpiece = markup:AddPiece()
-			mpiece:AddText(k).IgnoreVisibility = true
-			mpiece:SetAlignment(1)
-			mpiece:Debug()
-		end
-	end
+function bp:PostGenerateText(cloud, markup)
+	local has_recipe = not table.IsEmpty(self:GetRecipe())
+	if has_recipe then self:GenerateRecipeText(cloud, markup) end
 end
 
 local mtrx = Matrix()

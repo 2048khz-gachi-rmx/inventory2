@@ -28,6 +28,10 @@ function Base:OnExtend(new, name, class)
 	new.ItemClass = class
 	new.NetworkedVars = {}
 
+	for k,v in pairs(self.NetworkedVars) do
+		new.NetworkedVars[k] = v
+	end
+
 	--if name ~= self.BaseName then
 		self.Extensions[name] = new
 		Inventory.BaseItemObjects[name] = self
@@ -127,7 +131,7 @@ function Base:AddDefaultData(name, var)
 	self.DefaultData[name] = var
 end
 
--- `what` may be a function which must return a netstack
+-- `what` may be a function which **must return a netstack**!!!
 -- if it's a function then the second argument will be whether the var is being read or written
 -- `true` if written, `false` if read
 

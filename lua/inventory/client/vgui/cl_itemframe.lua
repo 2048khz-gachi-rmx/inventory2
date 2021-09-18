@@ -208,7 +208,7 @@ function ITEM:OpenOptions()
 	local mn = vgui.Create("FMenu")
 	mn:PopIn()
 
-	mn.WOverride = 200
+	mn.WOverride = 150
 
 	hook.Run("InventoryGetOptions", it, mn)
 	it:Emit("GenerateOptions", mn)
@@ -217,8 +217,10 @@ function ITEM:OpenOptions()
 	mn:Open()
 	mn:InvalidateLayout(true)
 
-	mn:SetPos(gui.MouseX() - 9, gui.MouseY() - mn:GetTall() + 2)
-	mn:MoveBy(8, 0, 0.3, 0, 0.4)
+	local toX, toY = self:LocalToScreen(self:GetWide() + 4, self:GetTall() / 2 - mn:GetTall() / 2)
+
+	mn:SetPos(toX - 8, toY)
+	mn:MoveTo(toX, toY, 0.2, 0, 0.3)
 end
 
 function ITEM:CreateModelPanel(it)

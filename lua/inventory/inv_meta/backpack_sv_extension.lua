@@ -51,7 +51,6 @@ function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
 		end
 
 		if its == true then
-			print("stacked in existing", left, pr)
 			if cbanyway then cb() end
 			pr:Resolve(false, left)
 			return pr, 0
@@ -168,7 +167,7 @@ function bp:CrossInventoryMove(it, inv2, slot)
 	if not inv2:IsSlotLegal(slot) then printf("Attempted to move item out of inventory bounds (%s > %s)", slot, inv2.MaxItems) return end
 
 	local other_item = inv2:GetItemInSlot(slot)
-	print("theres other item?", other_item, slot, inv2)
+
 	if other_item then
 		if not inv2:CanCrossInventoryMove(other_item, self, it:GetSlot()) then print(inv2, "#1 doesn't allow CIM") return false end
 	end
@@ -187,17 +186,18 @@ function bp:CrossInventoryMove(it, inv2, slot)
 end
 
 --for adding an existing both in-game and in-sql item, use bp:AddItem(item)
---takes an existing item and inserts it into the inventory as well as mysql
+--takes an existing item object and inserts it into the inventory as well as mysql
 
 function bp:InsertItem(it, slot, cb)
 	cb = cb or BlankFunc
 
-	if not slot and not it:GetSlot() then
+	slot = slot or it:GetSlot()
+
+	if not slot then
 		slot = self:GetFreeSlot()
 		if not slot then print("Can't insert", it, "into", self, "cuz no slots") return false end
 	end
 
-	slot = slot or it:GetSlot()
 	it:SetInventory(self)
 	it:SetSlot(slot)
 

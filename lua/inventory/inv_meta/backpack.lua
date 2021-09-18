@@ -179,21 +179,17 @@ function bp:AddItem(it, ignore_emitter, nochange)
 		return
 	end
 
-	if self.Slots[it:GetSlot()] == it then return end
+	if it:GetUID() then
+		self.Items[it:GetUID()] = it
+	else
+		errorf("Can't add an item to an inventory without a UID! %s", it)
+	end
+
+	if self.Slots[it:GetSlot()] == it then return it:GetSlot() end
 
 	if not ignore_emitter then
 		local can = self:Emit("CanAddItem", it, it:GetUID())
 		if can == false then print("disallowed adding item, lol") return false end
-	end
-
-	if it:GetUID() then
-		self.Items[it:GetUID()] = it
-	else
-		errorf("Can't create an item to an inventory without a UID! %s", it)
-		--if table.HasValue(self.Items, it) then errorf("Trying to add an item which already existed in this inventory!") return end
-		--self.Items[#self.Items + 1] = it
-		--it:SetUID(#self.Items)
-		--it:SetUIDFake(true)
 	end
 
 	self.Slots[it:GetSlot()] = it

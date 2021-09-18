@@ -1,7 +1,7 @@
 local it = Inventory.ItemObjects.Generic
 
 function it:_CallTextGenerators(cloud)
-	cloud:SetFont("OS24")
+	cloud:SetFont("BSSB28")
 	cloud:SetText(self:GetName())
 	cloud:SetMaxW(300)
 	--cloud.MinW = 250
@@ -31,7 +31,7 @@ function it:_CallTextGenerators(cloud)
 	local len = #cloud.DoneText
 
 	if len > 0 then --some texts were added
-		cloud:AddSeparator(nil, lwid / 8, 2, 0)
+		cloud:AddSeparator(nil, lwid / 8, 4, 0)
 	end
 
 	cloud:SetColor(Colors.Gray:Copy())

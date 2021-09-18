@@ -11,22 +11,25 @@ local function make(nm)
 end
 
 make("Fiery")
-	:AddStat("Damage", 5, 30)
-	:AddStat("Accuracy", -30, -5)
+	:AddStat("Damage", 20, 35)
+
+	:AddStat("Spread", 10, 25)
+	:AddStat("RPM", -10, -25)
 
 	:GuaranteeMod("Blazing")
+
 
 make("Swift")
 	:AddStat("RPM", 15, 40)
 	:AddStat("MoveSpeed", 5, 15)
-	:AddStat("DrawTime", 10, 40)
+	:AddStat("DrawTime", -10, -50)
 
-	:AddStat("Damage", -5, 5)
-	:AddStat("Accuracy", -15, 0)
+	:AddStat("Damage", -15, -5)
+	:AddStat("Spread", 10, 25)
 
 
 make("Lightweight")
-	:AddStat("Accuracy", 5, 15)
+	:AddStat("Spread", -15, -25)
 	:AddStat("Handling", 20, 60)
 	:AddStat("MoveSpeed", 10, 30)
 	:AddStat("DrawTime", 25, 60)

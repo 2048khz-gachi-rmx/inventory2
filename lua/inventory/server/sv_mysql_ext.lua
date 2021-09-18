@@ -407,6 +407,21 @@ local fetchitems_query 	= "SELECT its.iid, its.uid, its.data, inv.slotid FROM it
 
 --mysqloo is fucking autistic so this can't be used as a prepared query :/
 
+local function remakeItem(inv, ply, v)
+	local it = Inventory.ReconstructItem(v.uid, v.iid)
+
+	it:SetOwner(ply)
+	it:SetSlot(v.slotid)
+	it:DeserializeData(v.data)
+	it:SetSQLExists(true)
+
+	inv:AddItem(it, true)
+
+	it:InitializeExisting()
+
+	return it
+end
+
 function ms.FetchPlayerItems(inv, ply)
 	local tname = inv.SQLName
 	if not tname or tname == "" then errorf("Inventory MUST have an SQLName attached to it!") end
@@ -418,16 +433,7 @@ function ms.FetchPlayerItems(inv, ply)
 		Inventory.Log("MySQL: Fetched info for %q's %q inventory; %d items", ply:Nick(), tname, #dat)
 
 		for k,v in ipairs(dat) do
-			local it = Inventory.ReconstructItem(v.uid, v.iid)
-
-			it:SetOwner(ply)
-			it:SetSlot(v.slotid)
-			it:DeserializeData(v.data)
-			it:SetSQLExists(true)
-
-			inv:AddItem(it, true)
-
-			it:InitializeExisting()
+			xpcall(remakeItem, GenerateErrorer("InventorySQLRecon"), inv, ply, v)
 		end
 
 	end

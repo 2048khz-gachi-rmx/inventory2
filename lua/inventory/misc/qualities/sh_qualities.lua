@@ -4,6 +4,7 @@ Inventory.Qualities = Inventory.Qualities or {}
 
 Inventory.Qualities.ByType = Inventory.Qualities.ByType or muldim:new()
 Inventory.Qualities.ByTier = Inventory.Qualities.ByTier or muldim:new()
+Inventory.Qualities.ByName = Inventory.Qualities.ByName or {}
 
 for i=1, 4 do
 	Inventory.Qualities.ByTier:GetOrSet(i)
@@ -12,6 +13,8 @@ end
 Inventory.Qualities.All = Inventory.Qualities.All or {}
 
 local ql = Inventory.Quality
+ql.IsQuality = true
+
 ChainAccessor(ql, "Name", "Name")
 ChainAccessor(ql, "ID", "ID")
 ChainAccessor(ql, "Type", "Type")
@@ -37,20 +40,40 @@ function ql:SetTier(min, max)
 	return self
 end
 
+function ql:SetName(name)
+	if self:GetName() and Inventory.Qualities.ByName[self:GetName()] == self then
+		Inventory.Qualities.ByName[self:GetName()] = nil
+	end
+
+	self.Name = name
+	return self
+end
+
 function ql:_Remove()
 	for k,v in ipairs(Inventory.Qualities.ByTier) do
 		Inventory.Qualities.ByTier:RemoveSeqValue(self, k)
 	end
 
 	Inventory.Qualities.ByType:RemoveSeqValue(self, self:GetType())
+
+	if self:GetName() and Inventory.Qualities.ByName[self:GetName()] == self then
+		Inventory.Qualities.ByName[self:GetName()] = nil
+	end
 end
+
+
 
 function ql:Initialize(name, id)
 	assert(isnumber(id))
-
-	local old = Inventory.Qualities.All[id]
+	assert(id < (bit.lshift(1, 16) - 1))
+	local old = Inventory.Qualities.Get(id)
 	if old and old:GetName() ~= name then
 		errorNHf("ID collision: old [%s] -> new [%s]! ID: %s.", old:GetName(), name, id)
+		local oldByName = Inventory.Qualities.Get(name)
+		if oldByName then
+			id = old:GetID()
+			errorNHf("Recovered by using existing mod's ID (%s). This might not work someday, y'know?", id)
+		end
 	end
 
 	if old then
@@ -58,21 +81,27 @@ function ql:Initialize(name, id)
 	end
 
 	Inventory.Qualities.All[id] = self
+	Inventory.Qualities.ByName[name] = self
 
 	self:SetName(name)
 		:SetID(id)
 
 	self.Stats = {}
+	self.StatsGuarantee = {}
 
 	self.ModsGuarantee = {}
 	self.ModsBlacklist = {}
 end
 
-function ql:AddStat(name, min, max)
+function ql:AddStat(name, min, max, guarantee)
 	local nm = Inventory.Enums.WeaponIDToStat(name)
 	assertNHf(nm, "%s is not a stat!", name)
 	min, max = math.Sort(min or 0, max or 0)
 	self.Stats[nm] = {min, max}
+
+	if guarantee then
+		self.StatsGuarantee[nm] = true
+	end
 
 	return self
 end
@@ -91,4 +120,14 @@ function ql:BlacklistMod(name)
 	self.ModsGuarantee[name] = true
 
 	return self
+end
+
+function IsQuality(what)
+	return istable(what) and what.IsQuality
+end
+
+function Inventory.Qualities.Get(nm)
+	if IsQuality(nm) then return nm end
+	if isstring(nm) then return Inventory.Qualities.ByName[nm] end
+	return Inventory.Qualities.All[nm]
 end

@@ -1,14 +1,16 @@
 --
 
+local uq = Inventory.GetClass("item_meta", "unique_item")
 local gen = Inventory.GetClass("item_meta", "generic_item")
-local eq = Inventory.ItemObjects.Equippable or gen:Extend("Equippable")
+local eq = Inventory.ItemObjects.Equippable or uq:Extend("Equippable")
 
 eq.IsEquippable = true
 
 -- give these functions to generic so all the other items
 -- also have this method (to return nil)
-
 BaseItemAccessor(gen, "IsEquippable", "Equippable")
+
+
 BaseItemAccessor(eq, "EquipSlot", "EquipSlot")
 
 ChainAccessor(eq, "Equipped", "Equipped")
@@ -28,6 +30,7 @@ function eq:Unequip(ply, slot, intoInv)
 end
 
 function eq:Equip(ply, slot)
+	print("! !EQUIPBALE EQUIP !!")
 	local char = Inventory.GetEquippableInventory(ply)
 	if not char then errorf("What the fuck can't equip on %s cuz no character inventory", ply) end
 

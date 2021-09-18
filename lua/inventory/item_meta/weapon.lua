@@ -6,39 +6,43 @@ local wep = Inventory.ItemObjects.Weapon or eq:Extend("Weapon")
 BaseItemAccessor(wep, "WeaponClass", "WeaponClass")
 BaseItemAccessor(wep, "Uses", "StartUses")
 
+DataAccessor(wep, "Uses", "Uses")
+
 function wep:Initialize()
-	self:SetModifiers({})
+
 end
 
 function wep:InitializeNew()
 	-- new weapons get uses set to starting automatically
-	self:SetData("Uses", self:GetStartUses())
-	print("InitializeNew on weapon")
-end
-
-function wep:Equip(ply, slot)
-	local mem = eq.Equip(self, ply, slot)
-	self:UseCharge(ply)
-	return mem
-end
-
-function wep:UseCharge(ply)
-	local new = ply:Give(self:GetWeaponClass())
-	if new ~= NULL then
-		self:SetData("Uses", self:GetData().Uses - 1)
-	end
+	self:SetUses(self:GetStartUses())
 end
 
 local allowed = table.KeysToValues({"primary", "secondary", "utility"})
 
 local gray = Color(100, 100, 100)
 
-wep:On("GenerateText", "Uses", function(self, cloud, mup)
+
+local sepPrePost = false
+
+function wep:GenerateText(cloud, markup)
+	cloud:SetMaxW( math.max(cloud:GetItemFrame():GetWide() * 2.5, cloud:GetMaxW()) )
+	local needSep = self:GenerateStatsText(cloud, markup)
+	needSep = self:GenerateModifiersText(cloud, markup, needSep)
+
+	sepPrePost = needSep
+end
+
+function wep:PostGenerateText(cloud, markup)
 	local uses = self:GetData().Uses
 	if uses then
-		cloud:AddFormattedText(uses .. " uses remaining", gray, "OS18")
+		if sepPrePost then
+			cloud:AddSeparator(nil, cloud.LabelWidth / 8, 4)
+		end
+		cloud:AddFormattedText(uses .. " uses remaining", gray, "OS18", nil, nil, 1)
 	end
-end)
+
+	sepPrePost = false
+end
 
 wep:On("CanEquip", "WeaponCanEquip", function(self, ply, slot)
 	local slotName = slot.slot
@@ -54,47 +58,22 @@ wep:On("CanEquip", "WeaponCanEquip", function(self, ply, slot)
 	end
 end)
 
-ChainAccessor(wep, "Modifiers", "Modifiers")
-ChainAccessor(wep, "Modifiers", "Mods")
-
 wep:Register()
+
+
+
+Inventory.ArcCW_InventoryAttachments = Inventory.ArcCW_InventoryAttachments or {}
 
 local invOnly = {
 	"fcg_accelerator"
 }
 
 for k,v in ipairs(invOnly) do
-	invOnly[v] = true
+	Inventory.ArcCW_InventoryAttachments[v] = true
 end
 
 hook.Add("ArcCW_PlayerCanAttach", "InventoryRestrict", function(ply, wep, att, slot, detach)
 	if detach then return end
 end)
 
-
--- cl hook
-hook.Add("ArcCW_ShouldShowAtt", "InventoryRestrict", function(att)
-	if invOnly[att] then return false end
-end)
-
-hook.Add("PlayerLoadout", "InventoryWeapons", function(ply)
-	local inv = Inventory.GetEquippableInventory(ply)
-	local slots = Inventory.EquipmentSlots
-	local its = inv:GetSlots()
-
-	local used = false
-
-	for slot, dat in ipairs(slots) do
-		if not its[slot] then continue end
-
-		local typ = dat.type
-		if typ ~= "Weapon" then continue end
-
-		its[slot]:UseCharge(ply)
-		used = true
-	end
-
-	if used then
-		ply:RequestUpdateInventory(inv)
-	end
-end)
+include("weapon_" .. Rlm(true) .. "_extension.lua")

@@ -275,6 +275,10 @@ local function knows(ply)
 	return ply.KnowsItemNames
 end
 
+for k,v in ipairs(player.GetAll()) do
+	v.KnowsItemNames = nil
+end
+
 function nw.NetworkInventory(ply, inv, typ, just_return, key) --mark 'just_return' as true for this function to just return an invnet (netstack) object
 	if inv and IsInventory(inv) and not inv.NetworkID then errorf("Cannot send inventory %q as it doesn't have a network ID!", inv.Name) return end
 	if typ == nil then typ = INV_NETWORK_FULLUPDATE end
@@ -374,6 +378,7 @@ local resyncCDs = nw.ResyncCDs
 local resyncCD = 3
 local updateCD = 0.5
 
+
 local function insInvs(t, v)
 	if IsInventory(v) and not table.HasValue(t, v) then
 		table.insert(t, v)
@@ -389,7 +394,12 @@ function nw.RequestResync(ply, ...)
 
 	nw.ResyncQueue[ply] = nw.ResyncQueue[ply] or {}
 
-	for k,v in ipairs({...}) do
+	local invs = {...}
+	if #invs == 0 then
+		invs = ply.Inventory
+	end
+
+	for k,v in ipairs(invs) do
 		insInvs(nw.ResyncQueue[ply], v)
 	end
 
@@ -416,7 +426,14 @@ function nw.RequestUpdate(ply, ...)
 
 	nw.UpdateQueue[ply] = nw.UpdateQueue[ply] or {}
 
-	for k,v in ipairs({...}) do
+	local invs = {...}
+	if #invs == 0 then
+		for k,v in pairs(ply.Inventory) do
+			invs[#invs + 1] = v
+		end
+	end
+
+	for k,v in ipairs(invs) do
 		insInvs(nw.UpdateQueue[ply], v)
 	end
 
@@ -433,8 +450,6 @@ function nw.RequestUpdate(ply, ...)
 		for k,v in ipairs(nw.UpdateQueue[ply]) do
 			ply:UpdateInventory(v)
 		end
-	else
-		ply:UpdateInventory()
 	end
 end
 

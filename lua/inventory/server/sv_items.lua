@@ -4,10 +4,10 @@
 ]]
 
 local function makeItem(iid, invobj, dat)
-	local it = Inventory.Util.GetMeta(iid)
-	if not it then errorf("No item meta for IID %s", iid) return end
+	local itMeta = Inventory.Util.GetMeta(iid)
+	if not itMeta then errorf("No item meta for IID %s", iid) return end
 
-	local item = it:new(nil, iid, false)
+	local item = itMeta:new(nil, iid, false)
 	local base = item:GetBaseItem()
 
 	item.Data = table.Copy(base.DefaultData)
@@ -26,6 +26,8 @@ local function makeItem(iid, invobj, dat)
 end
 
 function Inventory.NewItem(iid, invobj, dat)
+	assert(not invobj or IsInventory(invobj))
+
 	local item = makeItem(iid, invobj, dat)
 	item:InitializeNew()
 
@@ -37,6 +39,8 @@ end
 ]]
 
 function Inventory.ReconstructItem(uid, iid, invobj, dat)
+	assert(not invobj or IsInventory(invobj))
+
 	local itm = makeItem(iid, invobj, dat)
 	itm:SetUID(uid)
 

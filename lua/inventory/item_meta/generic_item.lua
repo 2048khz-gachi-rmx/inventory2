@@ -105,7 +105,6 @@ DataAccessor(it, "Amount", "Amount", function(it, amt)
 end)
 
 BaseItemAccessor(it, "Name", "Name")
-BaseItemAccessor(it, "Name", "NiceName")
 BaseItemAccessor(it, "Deletable", "Deletable")
 
 BaseItemAccessor(it, "Model", "Model")
@@ -169,8 +168,4 @@ end
 
 it:Register()
 
-if SERVER then
-	include("generic_item_sv_extension.lua")
-else
-	include("generic_item_cl_extension.lua")
-end
+include("generic_item_" .. Rlm(true) .. "_extension.lua")

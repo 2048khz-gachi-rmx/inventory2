@@ -6,8 +6,14 @@ local mod = Inventory.Modifier
 
 mods.Pool = mods.Pool or {}
 
+
 ChainAccessor(mod, "MaxTier", "MaxTier")
 ChainAccessor(mod, "Name", "Name")
+mod.IsModifier = true
+
+function IsModifier(what)
+	return istable(what) and what.IsModifier
+end
 
 function mod:SetName(name)
 	if self:GetName() then
@@ -102,6 +108,8 @@ mods.ToID = mods.NameToID
 mods.ToName = mods.IDToName
 
 function mods.Get(what)
+	if IsModifier(what) then return what end
+
 	local nm = mods.IDToName(what) or (isstring(what) and what)
 	return mods.Pool[nm]
 end
