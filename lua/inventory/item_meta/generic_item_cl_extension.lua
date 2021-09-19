@@ -50,3 +50,12 @@ function it:SetData(k, v)
 
 	self.Data[k] = v
 end
+
+function it:MoveToSlot(slot)
+	self:SetSlot(slot)
+	self._Commited.Move[self:IncrementToken()] = slot
+end
+
+function it:MoveToInventory(inv, slot)
+	self._Commited.CrossInv[self:IncrementToken()] = ("%p:%s"):format(inv, slot)
+end

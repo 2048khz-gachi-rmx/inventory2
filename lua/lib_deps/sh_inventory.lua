@@ -24,7 +24,7 @@ function InventoryDefine()
 
 	Inventory = {
 		ItemObjects = {}, 				-- Objects stores all metas and extension of the Item (the items owned by players and entities)
-		ItemPool = {}, 					-- pool of itemUID : itemObj
+		ItemPool = WeakTable("v"), 		-- pool of itemUID : itemObj
 		BaseItemObjects = {},			-- BaseItemObjects stores all metas and extension of the BaseItem (which all Items will use)
 		BaseItems = BaseItemsTable,					-- stores the actual base item instances
 

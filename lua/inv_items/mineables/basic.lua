@@ -78,6 +78,7 @@ makeOre("iron_ore", 0, 40)
 	:SetCost(2)
 	:SetOreColor(Color(140, 105, 80))
 	:SetMineChanceMult(1.3)
+	:SetSmeltTime(2)
 	:SetSmeltsTo("iron_bar")
 
 makeOre("coal_ore", "!mining_coal4", 40)

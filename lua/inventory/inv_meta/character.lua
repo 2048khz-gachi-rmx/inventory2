@@ -10,6 +10,9 @@ char.Name = "Character"
 char.MaxItems = 50
 char.IsCharacterInventory = true
 
+char.ActionCanCrossInventoryFrom = CLIENT
+char.ActionCanCrossInventoryTo = CLIENT
+
 char:On("CanOpen", "NoOpen", function()
 	return false
 end)
@@ -53,7 +56,6 @@ function char:Unequip(it, slot, inv)
 end
 
 function char:Equip(it, slot)
-	print("Equip: received", self, it, slot)
 	if IsItem(self.Slots[slot]) then
 		local ok = self:Unequip(self.Slots[slot], it:GetSlot(), it:GetInventory()) --switch items places
 		if ok == false then return end
@@ -65,7 +67,7 @@ function char:Equip(it, slot)
 	local mem = inv:CrossInventoryMove(it, self, slot)
 
 	self.Slots[slot] = it
-	self:AddChange(it, INV_ITEM_ADDED)
+	--self:AddChange(it, INV_ITEM_ADDED)
 	return mem
 end
 

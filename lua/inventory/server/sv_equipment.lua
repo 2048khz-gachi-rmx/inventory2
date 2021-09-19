@@ -1,5 +1,11 @@
 --
 
+local function upd(ply, inv, invto, tok)
+	local oldTok = ply:GetInventoryNWToken()
+	ply:SetInventoryNWToken(tok)
+		ply:RequestUpdateInventory({inv, invto})
+	ply:SetInventoryNWToken(oldTok)
+end
 
 local function load(act)
 	local nw = Inventory.Networking
@@ -10,34 +16,30 @@ local function load(act)
 		local eq = net.ReadBool()
 		local slot = net.ReadUInt(16)
 
+		local tok = ply:GetInventoryNWToken()
+
 		if eq then
-			--if it:Emit("CanEquip", ply, slot) == false then print("item refused to equip") return end
 			local slotName = Inventory.EquipmentSlots[slot]
 
 			local can, why = it:Emit("CanEquip", ply, slotName)
-			if can == false then print("cant equip :(", why) return false end
+			if can == false then return false end
+
+			if not Inventory.CanEquipInSlot(it, slot) then return false end
 
 			local em = it:Equip(ply, slot)
-			em:Then(function()
-				if IsValid(ply) then
-					ply:RequestUpdateInventory({inv, Inventory.GetEquippableInventory(ply)})
-				end
-			end)
+			upd(ply, inv, Inventory.GetEquippableInventory(ply), tok)
+
 		else
-			local invto = act.readInv(ply)
+			local invto = ply.Inventory.Permanent --act.readInv(ply)
 
 			local ok = inv:CanCrossInventoryMove(it, invto, slot)
-			if not ok then print("cant crossinv bruv") return end -- brugh
+			if not ok then return end -- brugh
 
-			print("unequipping now")
 			local em = it:Unequip(ply, slot, invto)
-			em:Then(function()
-				if IsValid(ply) then
-					ply:RequestUpdateInventory({inv, invto})
-				end
-			end)
-
+			upd(ply, inv, Inventory.GetEquippableInventory(ply), tok)
 		end
+
+		print(tok, ":", it:GetInventory():GetName())
 
 		return false
 	end

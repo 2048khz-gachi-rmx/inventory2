@@ -45,9 +45,11 @@ function it:Serialize(ns, typ)
 	return ns
 end
 
--- Stick the item into SQL and into the inventory automatically
+-- Stick the item into inventory SQL automatically
 function it:Insert(invobj, cb)
-	if not invobj then invobj = self.Inventory or errorf("No inventory for the item to use for inserting!") end
+	if not invobj then
+		invobj = self.Inventory or errorf("No inventory for the item to use for inserting!")
+	end
 
 	--local isql = invobj and invobj.SQLName
 
@@ -69,7 +71,6 @@ function it:Insert(invobj, cb)
 		end]]
 
 		self:Emit("AssignUID", uid)
-
 	end)
 
 	return qobj

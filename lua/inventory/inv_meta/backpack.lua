@@ -16,13 +16,13 @@ bp.AutoFetchItems = true
 bp.SupportsSplit = true
 
 function bp:__tostring()
-	return ("%s (owner: %s)"):format(
-		self.Name,
-		( IsValid(self.Owner) and tostring(self.Owner) .. ("[SID: %s] "):format(self.OwnerUID) ) 
+	return ("%s [%p](owner: %s)"):format(
+		self.Name, self,
+		( IsValid(self.Owner) and tostring(self.Owner) .. ("[UID: %s] "):format(self.OwnerUID) )
 			or self.OwnerUID
 	)
-
 end
+
 function bp:OnExtend(new_inv)
 	new_inv.SQLName = false 	--set these yourself!!
 	new_inv.NetworkID = false

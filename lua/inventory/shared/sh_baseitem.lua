@@ -113,7 +113,6 @@ function DataAccessor(it, varname, getname, setcallback)
 		local inv = self:GetInventory()
 
 		if inv then
-			print("inventory", inv)
 			inv:AddChange(self, INV_ITEM_DATACHANGED)
 		end
 

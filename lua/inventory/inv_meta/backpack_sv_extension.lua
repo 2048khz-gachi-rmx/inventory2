@@ -63,7 +63,7 @@ function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
 		return pr, dat and dat.Amount or 0
 	end
 
-	local it = Inventory.NewItem(iid, self)
+	local it = Inventory.NewItem(iid, self, dat)
 	it:SetSlot(slot)
 
 	if self.UseSQL ~= false then
@@ -198,15 +198,15 @@ function bp:InsertItem(it, slot, cb)
 		if not slot then print("Can't insert", it, "into", self, "cuz no slots") return false end
 	end
 
-	it:SetInventory(self)
-	it:SetSlot(slot)
-
-	local sqlemit = it:Insert(self)
+	it:Insert(self)
 	local insSlot
 
 	local pr = Promise()
 
 	if it:GetUID() then
+
+		it:SetSlot(slot)
+
 		insSlot = self:AddItem(it)
 		if insSlot then
 			cb(it, insSlot)
@@ -217,6 +217,7 @@ function bp:InsertItem(it, slot, cb)
 		end
 	else
 		it:Once("AssignUID", function()
+			it:SetSlot(slot)
 			insSlot = self:AddItem(it)
 			if insSlot then
 				cb(it, insSlot)
@@ -322,12 +323,12 @@ function bp:WriteChanges(ns)
 	}
 
 	for item, enums in pairs(self.Changes) do
-
 		for enum, _ in pairs(enums) do
 			if not where[enum] then
 				printf("Unknown change enum in %s! Ignoring... (%s: %q)", self.Name, item, enum == 2 and "2 (= added)" or enum)
 				continue
 			end
+
 			where[enum][#where[enum] + 1] = item
 			allits[#allits + 1] = item
 		end

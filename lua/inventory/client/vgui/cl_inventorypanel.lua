@@ -64,7 +64,10 @@ end
 function PANEL:MoveItem(rec, drop, item)
 	local crossinv = rec:GetInventory() ~= item:GetInventory()
 
-	if not rec:GetSlot() then errorf("This ItemFrame doesn't have a slot assigned to it! Did you forget to call :SetSlot()?") return end
+	if not rec:GetSlot() then
+		errorf("This ItemFrame doesn't have a slot assigned to it! Did you forget to call :SetSlot()?")
+		return
+	end
 	if rec.Item == item then return end
 
 	local recItem = rec:GetItem(true)
@@ -207,7 +210,7 @@ function PANEL:SplitItem(rec, drop, item)
 	local newitem = Inventory.NewItem(iid)
 
 	newitem:SetAmount(math.floor(item:GetAmount() / 2))
-	newitem:SetSlot(rec:GetSlot())
+	newitem:MoveToSlot(rec:GetSlot())
 	function sl:OnValueChanged(new)
 		new = math.floor(new)
 		newitem:SetAmount(new)

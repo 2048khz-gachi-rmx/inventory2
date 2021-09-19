@@ -70,7 +70,6 @@ function Inventory.CheckStackability(inv, iid, cb, dat)
 	end--return false end
 
 	iid = Inventory.Util.ItemNameToID(iid)
-	local base = Inventory.Util.GetBase(iid)
 
 	if not base or not base.Countable then return false end
 	local maxstack = base:GetMaxStack()
@@ -82,11 +81,8 @@ function Inventory.CheckStackability(inv, iid, cb, dat)
 		if v:GetItemID() ~= iid then continue end
 		if not equalData(dat, v:GetData()) then printf("not equal data (%s vs %s)", util.TableToJSON(dat), util.TableToJSON(v:GetData())) continue end --different-data'd items (except .Data.Amount) cannot be stacked
 
-		local max = v:GetMaxStack()
-		local cur = v:GetAmount()
-
-		local canStack = math.min(max - cur, amt)
-		v:SetAmount(cur + canStack)
+		local canStack = v:CanStack(dat, amt)
+		v:SetAmount(v:GetAmount() + canStack)
 		amt = amt - canStack
 		if canStack > 0 then
 			stackedIn[#stackedIn + 1] = v
@@ -105,7 +101,9 @@ function Inventory.CheckStackability(inv, iid, cb, dat)
 		if not free then break end
 
 		local canGive = math.min(maxstack, amt)
-		local it = Inventory.NewItem(iid, inv, {Amount = canGive})
+
+		local it = Inventory.NewItem(iid, inv, dat)
+		it:SetAmount(canGive)
 		it:SetSlot(free)
 
 		ret[i] = it

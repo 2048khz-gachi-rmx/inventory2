@@ -14,9 +14,19 @@ it.__tostring = function(self)
 	)
 end
 
+local TOKEN = uniq.Seq("InvTokens", 16)
+
 function it:OnExtend(new, name)
 	if not isstring(name) then error("ItemClass extensiosns _MUST_ have a name assigned to them!") return end
 	new.ClassName = name
+end
+
+function it:GetToken() return TOKEN end
+function Inventory.GetToken() return TOKEN end
+
+function it:IncrementToken()
+	TOKEN = uniq.Seq("InvTokens", 16)
+	return TOKEN
 end
 
 function it:Initialize(uid, iid, ...)
@@ -33,6 +43,13 @@ function it:Initialize(uid, iid, ...)
 	self.ItemUID = uid
 	self.Data = {}
 	self.LastNetworkedVars = {}
+
+	self._Commited = {
+		Delete = {},
+		Move = {},
+		CrossInv = {}
+	}
+
 	self:SetValid(true)
 
 	local base = Inventory.BaseItems[iid]
@@ -55,12 +72,22 @@ local function equalData(dat1, dat2)
 	return true
 end
 
-function it:CanStack(it2, amt, stackIn)
-	if not equalData(self.Data, it2.Data) then print("inequal data") return false end
-	if self:GetItemID() ~= it2:GetItemID() then print("not same iid") return false end
+function it:GetCommitedActions(typ)
+	return self._Commited[typ]
+end
+
+-- first arg can also be a table of data
+function it:CanStack(it2, amt)
+	local otherData = IsItem(it2) and it2:GetData() or istable(it2) and it2
+	it2 = IsItem(it2) and it2
+
+	if otherData and not equalData(self.Data, otherData) then print("inequal data") return false end
+	if it2 and self:GetItemID() ~= it2:GetItemID() then print("not same iid") return false end
 	if self:GetAmount() == self:GetMaxStack() then print("already max", self:GetAmount(), self:GetMaxStack()) return false end
 
-	return math.min(self:GetMaxStack() - self:GetAmount(), it2:GetAmount(), amt or math.huge)
+	return math.min(self:GetMaxStack() - self:GetAmount(),
+		it2 and it2:GetAmount() or amt or math.huge,
+		amt or math.huge)
 end
 
 function it:Delete()
@@ -69,6 +96,8 @@ function it:Delete()
 	end
 	self:SetValid(false)
 	if SERVER then Inventory.MySQL.DeleteItem(self) end
+
+	self._Commited.Delete[self:IncrementToken()] = true
 end
 
 it.IsValid = it.GetValid

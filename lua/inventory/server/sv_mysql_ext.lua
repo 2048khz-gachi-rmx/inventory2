@@ -264,7 +264,10 @@ function ms.NewInventoryItem(item, inv, ply)
 			qobj = newitem_id_query
 		end]]
 	else
-		local sid = (IsPlayer(ply) and ply:SteamID64()) or (isstring(ply) and ply) or errorf("Inventory.MySQL.NewItem: expected player or steamid64 as arg #3, got %q instead", type(ply))
+		local pin = GetPlayerInfo(ply)
+		local sid = pin and pin:SteamID64() or
+			errorf("Inventory.MySQL.NewItem: expected player or steamid64 as arg #3, got %q instead", type(ply))
+
 		if isstring(iid) then
 			newitem_inv_query:setString(1, iid)
 			qobj = newitem_inv_query

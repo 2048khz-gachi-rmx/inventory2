@@ -30,7 +30,6 @@ function eq:Unequip(ply, slot, intoInv)
 end
 
 function eq:Equip(ply, slot)
-	print("! !EQUIPBALE EQUIP !!")
 	local char = Inventory.GetEquippableInventory(ply)
 	if not char then errorf("What the fuck can't equip on %s cuz no character inventory", ply) end
 

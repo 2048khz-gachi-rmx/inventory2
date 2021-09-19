@@ -11,3 +11,6 @@ vt.Name = "Vault"
 vt.MaxItems = 50
 
 vt:Register()
+
+vt.ActionCanCrossInventoryFrom = CLIENT
+vt.ActionCanCrossInventoryTo = CLIENT

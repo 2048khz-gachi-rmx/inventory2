@@ -2,7 +2,7 @@
 setfenv(0, _G)
 local nw = Inventory.Networking or {InventoryIDs = {}}
 Inventory.Networking = nw
-nw.Verbose = false
+nw.Verbose = true
 
 local realLog = Inventory.Log
 
@@ -39,7 +39,31 @@ function nw.ReadItem(uid_sz, iid_sz, slot_sz, inventory)
     return item
 end
 
-function nw.ReadInventoryContents(invtbl, typ)
+function nw.ShouldAction(itm, act, tok, dat, dat2)
+    local acts = itm:GetCommitedActions(act)
+
+    if acts[tok] then
+        if act == "CrossInv" then
+            local svSez = ("%p:%s"):format(dat, dat2)
+            print(svSez, acts[tok])
+            if svSez ~= acts[tok] then
+                print("desync! ^", tok, dat)
+                return true
+            end
+
+            return false
+        elseif acts[tok] == dat then
+            print(act, acts[tok], dat)
+            return false
+        end
+    else
+        --print("!! no actions for", act, tok)
+    end
+
+    return true
+end
+
+function nw.ReadInventoryContents(invtbl, typ, tok)
     local max_uid, max_id = nw.ReadHeader()
 
     local invID = net.ReadUInt(16)
@@ -69,7 +93,7 @@ function nw.ReadInventoryContents(invtbl, typ)
 
     local its = net.ReadUInt(16)
 
-    realLog("CL-NW: reading %d items for inventory %d", its, invID)
+    log("CL-NW: reading %d items for inventory %d", its, invID)
 
     local slot_size = inv.MaxItems and bit.GetLen(inv.MaxItems)
 
@@ -91,6 +115,7 @@ function nw.ReadInventoryContents(invtbl, typ)
 
             for i=1, dels do
                 local uid = net.ReadUInt(max_uid)
+                -- should this action be token-confirmed?
                 local del_it = inv:DeleteItem(uid, true)
                 --log("   successfully deleted item %d", uid)
                 Inventory:Emit("ItemRemoved", inv, del_it)
@@ -111,7 +136,7 @@ function nw.ReadInventoryContents(invtbl, typ)
                 log("   crossmoving item %s into inventory %s", uid, newinv)
                 local item = Inventory.ItemPool[uid] --inv:GetItem(uid)
 
-                if item then
+                if item and nw.ShouldAction(item, "CrossInv", tok, newinv, slot) then
                     --if there was no item that means we already predicted the removal somewhere
                     log("removing item from", item:GetInventory())
                     item:GetInventory():RemoveItem(item, nil, true)
@@ -135,11 +160,19 @@ function nw.ReadInventoryContents(invtbl, typ)
                 local uid = net.ReadUInt(max_uid)
                 local slot = net.ReadUInt(bit.GetLen(inv.MaxItems))
                 log("   moving item %s into slot %s", uid, slot)
+
                 local item = inv:GetItem(uid)
-                item:SetSlot(slot)
-                --log("   successfully moved item %s into slot %s", uid, slot)
-                --Inventory:Emit("ItemChanged", inv, item)
-                Inventory:Emit("ItemMoved", inv, item)
+
+                if not item then
+                    log("wtf is that item!!! %s", uid)
+                end
+
+                if item and nw.ShouldAction(item, "Move", tok, slot) then
+                    item:SetSlot(slot)
+                    --log("   successfully moved item %s into slot %s", uid, slot)
+                    --Inventory:Emit("ItemChanged", inv, item)
+                    Inventory:Emit("ItemMoved", inv, item)
+                end
             end
         end
         log("finished with slot moves")
@@ -156,8 +189,13 @@ function nw.Resync()
 end
 
 function nw.ReadUpdate(len, type)
-    local invs = net.ReadUInt(8) --amount of inventories
+    local invs = net.ReadUInt(8)
     local ent = net.ReadEntity()
+    local has_tok = net.ReadBool()
+    local tok
+    if has_tok then
+        tok = net.ReadUInt(16)
+    end
 
     realLog("CL-NW: Update: Received %d inventories for %s; packet length is %d bytes", invs, ent, len / 8)
 
@@ -172,13 +210,13 @@ function nw.ReadUpdate(len, type)
     end
 
     for i=1, invs do
-        nw.ReadInventoryContents(invs_table, type)
+        nw.ReadInventoryContents(invs_table, type, tok)
     end
 end
 
 
 function nw.ReadNet(len)
-    realLog("CL-NW: ReadNet: Received inventory update")
+    --realLog("CL-NW: ReadNet: Received inventory update")
     local type = net.ReadUInt(4) --type of networking (fullupdate? partial update?)
 
     if type == INV_NETWORK_FULLUPDATE or type == INV_NETWORK_UPDATE then
@@ -258,6 +296,7 @@ end
 function nw.PerformAction(enum, ns)
     net.Start("Inventory")
         net.WriteUInt(enum, 16)
+        net.WriteUInt(Inventory.GetToken(), 16)
         if ns then net.WriteNetStack(ns) end
     net.SendToServer()
 end

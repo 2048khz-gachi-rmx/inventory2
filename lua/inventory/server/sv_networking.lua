@@ -261,12 +261,35 @@ function nw.SendNetStacks(nses, ply)
 	net.Send(ply)
 end
 
-function nw.WriteHeader(typ, invs, ply)
+function nw.WriteHeader(typ, invs, invOw, ply)
 	local header = netstack:new()
 
 	header:WriteUInt(typ, 4).NetworkType = true
 	header:WriteUInt(invs, 8).InventoryAmt = true        --write amount of inventories we networked
-	header:WriteEntity(ply).InventoryOwner = true        --write the player whose inventories we're networking
+	header:WriteEntity(invOw).InventoryOwner = true        --write the player whose inventories we're networking
+	local tk
+
+
+	if IsPlayer(ply) then
+		tk = ply.InventoryNetworkToken
+		--ply.InventoryNetworkToken = nil
+	elseif istable(ply) then
+		for k,v in ipairs(ply) do
+			if v.InventoryNetworkToken then
+				tk = v.InventoryNetworkToken
+			end
+
+			--v.InventoryNetworkToken = nil
+		end
+	end
+
+	if tk then
+		print("writing token", tk)
+		header:WriteBool(true).HasToken = true
+		header:WriteUInt(tk, 16).TokenID = true
+	else
+		header:WriteBool(false).HasToken = true
+	end
 
 	return header
 end
@@ -321,7 +344,7 @@ function nw.NetworkInventory(ply, inv, typ, just_return, key) --mark 'just_retur
 		if just_return then
 			return ns
 		else 						--      V we're only networking 1 inventory
-			local st = {nw.WriteHeader(typ, 1, inv:GetOwner()), ns} --write the header first, then the actual contents
+			local st = {nw.WriteHeader(typ, 1, inv:GetOwner(), ply), ns} --write the header first, then the actual contents
 
 			nw.SendNetStacks(st, ply)
 		end
@@ -347,7 +370,7 @@ function nw.NetworkInventory(ply, inv, typ, just_return, key) --mark 'just_retur
 			nw.CurrentInventory = nil
 		end
 
-		local header = nw.WriteHeader(typ, #stacks, owner) -- write the header and then the stacks
+		local header = nw.WriteHeader(typ, #stacks, owner, ply) -- write the header and then the stacks
 		table.insert(stacks, 1, header)
 
 		if just_return then
@@ -367,6 +390,18 @@ end
 
 PLAYER.UpdateInventory = nw.UpdateInventory
 PLAYER.UI = nw.UpdateInventory
+
+function nw.SetToken(ply, tk)
+	ply.InventoryNetworkToken = tk
+	INVENTORY_CURRENTTOKEN = tk
+end
+
+function nw.GetToken(ply)
+	return ply.InventoryNetworkToken
+end
+
+PLAYER.SetInventoryNWToken = nw.SetToken
+PLAYER.GetInventoryNWToken = nw.GetToken
 
 nw.ResyncCDs = nw.ResyncCDs or {}
 nw.ResyncQueue = nw.ResyncQueue or {}
@@ -423,7 +458,6 @@ end
 
 function nw.RequestUpdate(ply, ...)
 	nw.UpdateCDs[ply] = nw.UpdateCDs[ply] or CurTime() - (updateCD + 1)
-
 	nw.UpdateQueue[ply] = nw.UpdateQueue[ply] or {}
 
 	local invs = {...}
@@ -437,9 +471,17 @@ function nw.RequestUpdate(ply, ...)
 		insInvs(nw.UpdateQueue[ply], v)
 	end
 
+	local tok = ply:GetInventoryNWToken()
+
 	if CurTime() - nw.UpdateCDs[ply] < updateCD then
 		timer.Create( "UpdateInventory:" .. ply:SteamID64(), updateCD - (CurTime() - nw.UpdateCDs[ply]), 1, function()
-			nw.RequestResync(ply)
+			if not ply:GetInventoryNWToken() then
+				ply:SetInventoryNWToken(tok)
+				print("put on cd token:", tok)
+			end
+
+			nw.RequestUpdate(ply)
+			--ply:SetInventoryNWToken(nil)
 		end)
 		return false
 	end
@@ -485,7 +527,9 @@ function nw.ReadItem(inv)
 	local uid = net.ReadUInt(32)
 
 	local it = inv:GetItem(uid)
-	if not it then return false, ("didn't find item UID %d in %s"):format(uid, inv) end
+	if not it then return false, ("[%d] didn't find item UID %d in %s"):format(
+		INVENTORY_CURRENTTOKEN or -1, uid, inv
+		) end
 
 	return it
 end

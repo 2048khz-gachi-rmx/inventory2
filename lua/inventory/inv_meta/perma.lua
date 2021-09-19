@@ -9,6 +9,9 @@ prm.NetworkID = 3
 prm.Name = "Permanent"
 prm.MaxItems = 50
 
+prm.ActionCanCrossInventoryFrom = CLIENT
+prm.ActionCanCrossInventoryTo = CLIENT
+
 local pad = 12
 
 local function determinePos(main, new)

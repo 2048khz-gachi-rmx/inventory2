@@ -197,13 +197,17 @@ local function load()
 
 	net.Receive("Inventory", function(len, ply)
 		local act = net.ReadUInt(16)
+		local token = net.ReadUInt(16)
 		if not nw.Actions[act] then errorf("Failed to find action for enum %d from player %s", act, ply) return end
 
+		ply:SetInventoryNWToken(token)
 		local ok, needs_nw, inv = xpcall(nw.Actions[act], GenerateErrorer("InventoryActions"), ply)
 
 		if needs_nw then
 			ply:NetworkInventory(inv, INV_NETWORK_UPDATE)
 		end
+
+		ply:SetInventoryNWToken(nil)
 	end)
 
 	hook.Run("InventoryActionsLoaded", nw.Actions)

@@ -32,7 +32,6 @@ function PANEL:Init()
 	self:On("UnequipRequest", self.UnequipItem)
 
 	self:GetInventory():On("Change", self, function(...)
-		print("Change emitted on inventory", self:GetInventory())
 		self:Emit("Change", ...)
 	end)
 
@@ -97,20 +96,17 @@ end
 function PANEL.EquipItem(slot, self, itemfr, item)
 	if not canEquip(slot, item) then return end
 
+	local inv = item:GetInventory()
+	inv:CrossInventoryMove(item, self:GetInventory(), slot:GetSlot())
+
 	local ns = Inventory.Networking.Netstack()
-	ns:WriteInventory(item:GetInventory())
-	ns:WriteItem(item)
-	ns:WriteBool(true)
-	ns:WriteUInt(slot:GetSlot(), 16)
+		ns:WriteInventory(inv)
+		ns:WriteItem(item, true) -- already moved it away; ignore inv check
+		ns:WriteBool(true)
+		ns:WriteUInt(slot:GetSlot(), 16)
 	Inventory.Networking.PerformAction(INV_ACTION_EQUIP, ns)
 
 	slot:SetItem(item)
-	local inv = item:GetInventory()
-
-	inv:CrossInventoryMove(item, self:GetInventory(), slot:GetSlot())
-	--[[inv:RemoveItem(item)
-	self:GetInventory():AddItem(item)
-	item:SetSlot(slot.ID)]]
 	itemfr:SetItem(nil)
 end
 
@@ -122,7 +118,7 @@ function PANEL:UnequipItem(recslot, dropslot, item)
 		ns:WriteItem(item)
 		ns:WriteBool(false)
 		ns:WriteUInt(recslot:GetSlot(), 16)
-		ns:WriteInventory(recslot:GetInventory())
+		-- ns:WriteInventory(recslot:GetInventory())
 	Inventory.Networking.PerformAction(INV_ACTION_EQUIP, ns)
 
 	print("sent")
@@ -184,7 +180,6 @@ local function CreateSlots(self, tbl)
 		btn:On("Drop", "EquipItem", self.EquipItem, self)
 
 		self:On("Change", btn, function(self, inv, ...)
-			print(inv:GetItemInSlot(nwid), btn:GetItem(), btn:GetSlot(), nwid)
 			if inv:GetItemInSlot(nwid) ~= btn:GetItem() then
 				btn:SetItem( inv:GetItemInSlot(btn:GetSlot()) )
 			end
