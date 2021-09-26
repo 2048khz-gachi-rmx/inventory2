@@ -48,7 +48,7 @@ function iPan.CreateInventory(inv, multiple, set)
 	f:SetMouseInputEnabled(true)
 
 	function f:OnKeyCodePressed(key)
-		if key == KEY_F4 then
+		if key == self.CloseByKey then
 			iPan.CloseTime = CurTime()
 			f:PopOut()
 		end
@@ -131,4 +131,5 @@ hook.Add("PlayerButtonDown", "Inventory", function(p, k)
 	f:Center()
 	f:DoAnim()
 	f:SelectTab("Backpack")
+	f.CloseByKey = KEY_F4
 end)
