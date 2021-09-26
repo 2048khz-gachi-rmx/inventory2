@@ -51,6 +51,7 @@ function iPan.CreateInventory(inv, multiple, set)
 		if key == self.CloseByKey then
 			iPan.CloseTime = CurTime()
 			f:PopOut()
+			f:SetInput(false)
 		end
 	end
 
