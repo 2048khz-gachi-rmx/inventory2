@@ -1,16 +1,24 @@
 --
 
 local wd = Inventory.WeaponData.Object
+local wdt = Inventory.WeaponData
 
 function wd:RealmInit(id)
 	self.NW:On("ReadChangeValue", "WeaponDataProxy", function(...)
 		self:ReadData(...)
 	end)
+
+	for k,v in pairs(wdt.EIDToWD:GetNetworked()) do
+		if v == id then
+			self:ResetWeaponBuffs(Entity(k))
+			wdt.EntPool[k] = self
+			wdt.EntPool[Entity(k)] = self
+		end
+	end
 end
 
 function wd:ReadData(nw, key)
 	if self["Deserialize" .. key] then
-		print("calling Deserialize" .. key)
 		return self["Deserialize" .. key] (self)
 	end
 end
@@ -50,4 +58,15 @@ function wd:DeserializeMods()
 	self:SetMods(out)
 end
 
-
+wdt.EIDToWD:On("NetworkedVarChanged", "RecalcBuffs", function(self, key, old, new)
+	if isnumber(new) then
+		local ent = Entity(key)
+		local wd = wdt.Get(new)
+		print(ent, wd, key, new)
+		if wd then
+			wd:ResetWeaponBuffs(ent)
+			wdt.EntPool[key] = wd
+			wdt.EntPool[ent] = wd
+		end
+	end
+end)

@@ -48,10 +48,14 @@ end
 function wd:SetWeapon(wep)
 	wep.WeaponData = self
 	wdt.EIDToWD:Set(wep:EntIndex(), self:GetID())
+	wdt.EntPool[wep] = self
 
 	self.UsingWeapons = self.UsingWeapons or {}
-
 	self.UsingWeapons[wep] = true
+
+	if wep.RecalcAllBuffs then
+		wep:RecalcAllBuffs()
+	end
 end
 
 function wd:RemoveWeapon(wep)
@@ -62,6 +66,7 @@ function wd:RemoveWeapon(wep)
 		end
 
 		wep.WeaponData = nil
+		wdt.EntPool[wep] = nil
 	end
 
 	self.UsingWeapons[wep] = nil

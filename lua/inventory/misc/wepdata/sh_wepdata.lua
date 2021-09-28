@@ -12,6 +12,7 @@ local wd = Inventory.WeaponData.Object
 
 wdt.EIDToWD = wdt.EIDToWD or Networkable("eidToWD")
 
+
 local function nwAccessor(t, key, func)
 	t["Get" .. func] = function(self)
 		return self[key]
@@ -32,8 +33,8 @@ ChainAccessor(wd, "ID", "ID")
 
 function wd:Initialize(id)
 	self.NW = Networkable("WD:" .. id)
-	self.Networakble = self.NW
-	self.Networakble.WeaponData = self
+	self.Networkable = self.NW
+	self.Networkable.WeaponData = self
 
 	local nw = self.NW
 
@@ -50,6 +51,12 @@ function wd:Initialize(id)
 
 	wdt.Pool[id] = self
 	wdt.EntPool[id] = self
+end
+
+function wd:ResetWeaponBuffs(wep)
+	if IsWeapon(wep) and wep.RecalcAllBuffs then
+		wep:RecalcAllBuffs()
+	end
 end
 
 function wd:SetStats(t)
@@ -78,7 +85,6 @@ include(Rlm(true) .. "_wepdata_ext.lua")
 
 hook.Add("NetworkableAttemptCreate", "WeaponData", function(id)
 	if not tostring(id):match("^WD:") then return end
-
 	wd:new(tonumber(id:match("WD:(%d+)")))
 	return true
 end)
@@ -98,13 +104,14 @@ end
 local conv = {
 	AccuracyMOA = "Spread", -- higher AccuracyMOA = more inaccurate
 	SightTime = "Handling",
+	SpeedMult = "MoveSpeed",
 }
 
 -- called once
 
 function Inventory.DoBuffMult(wep, key, cur)
 	local wd = wdt.Get(wep)
-	if not wd then return end
+	if not wd then print("no weapon data bru", Realm()) return end
 
 	key = key:gsub("^Mult_", "")
 	key = conv[key] or key
