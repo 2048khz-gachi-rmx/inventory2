@@ -111,7 +111,7 @@ local conv = {
 
 function Inventory.DoBuffMult(wep, key, cur)
 	local wd = wdt.Get(wep)
-	if not wd then print("no weapon data bru", Realm()) return end
+	if not wd then return end
 
 	key = key:gsub("^Mult_", "")
 	key = conv[key] or key
