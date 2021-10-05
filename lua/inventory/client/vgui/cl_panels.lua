@@ -49,9 +49,9 @@ function iPan.CreateInventory(inv, multiple, set)
 
 	function f:OnKeyCodePressed(key)
 		if key == self.CloseByKey then
-			iPan.CloseTime = CurTime()
-			f:PopOut()
+			iPan.CloseTime = UnPredictedCurTime()
 			f:SetInput(false)
+			f:PopOut()
 		end
 	end
 
@@ -123,7 +123,7 @@ end
 
 hook.Add("PlayerButtonDown", "Inventory", function(p, k)
 	if k ~= KEY_F4 or not IsFirstTimePredicted() then return end
-	if CurTime() - iPan.CloseTime < 0.2 then return end
+	if UnPredictedCurTime() - iPan.CloseTime < 0.2 then return end
 
 	local f = iPan.CreateInventory()
 	f:SetFull(true)
