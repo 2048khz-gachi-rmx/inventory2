@@ -1,4 +1,3 @@
-
 local bp = Inventory.Inventories.Backpack
 
 function bp:CanCrossInventoryMove(it, inv2, slot)
@@ -102,7 +101,7 @@ function bp:RequestMove(it, slot)
 		ns:WriteInventory(self)
 		ns:WriteItem(it)
 		ns:WriteUInt(slot, 16)
-	Inventory.Networking.PerformAction(crossinv and INV_ACTION_CROSSINV_MOVE or INV_ACTION_MOVE, ns)
+	Inventory.Networking.PerformAction(INV_ACTION_MOVE, ns)
 	return true
 end
 
@@ -114,19 +113,18 @@ function bp:CanStack(out, _in, amt)
 end
 
 function bp:RequestStack(item_out, item_in, amt)
+
 	amt = self:CanStack(item_out, item_in, amt)
 	if not amt then return false end
 
 	local crossinv = item_out:GetInventory() ~= item_in:GetInventory()
 	local act_enum = crossinv and INV_ACTION_CROSSINV_MERGE or INV_ACTION_MERGE
 
-	item_in:SetAmount(item_in:GetAmount() + amt)
-	item_out:SetAmount(item_out:GetAmount() - amt)
-
 	local ns = Inventory.Networking.Netstack()
 
 		if crossinv then
-			ns:WriteInventory(item_out:GetInventory())
+			local a, b = item_out:GetInventory()
+			ns:WriteInventory(a, b)
 			ns:WriteItem(item_out)
 		end
 
@@ -136,6 +134,9 @@ function bp:RequestStack(item_out, item_in, amt)
 		end
 		ns:WriteItem(item_in)
 		ns:WriteUInt(amt, 32)
+
+	item_in:SetAmount(item_in:GetAmount() + amt)
+	item_out:SetAmount(item_out:GetAmount() - amt)
 
 	Inventory.Networking.PerformAction(act_enum, ns)
 

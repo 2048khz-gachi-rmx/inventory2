@@ -79,9 +79,11 @@ function Inventory.CheckStackability(inv, iid, cb, dat)
 
 	for k,v in pairs(inv:GetItems()) do
 		if v:GetItemID() ~= iid then continue end
-		if not equalData(dat, v:GetData()) then printf("not equal data (%s vs %s)", util.TableToJSON(dat), util.TableToJSON(v:GetData())) continue end --different-data'd items (except .Data.Amount) cannot be stacked
+		--if not equalData(dat, v:GetData()) then printf("not equal data (%s vs %s)", util.TableToJSON(dat), util.TableToJSON(v:GetData())) continue end --different-data'd items (except .Data.Amount) cannot be stacked
 
 		local canStack = v:CanStack(dat, amt)
+		if not canStack then continue end
+
 		v:SetAmount(v:GetAmount() + canStack)
 		amt = amt - canStack
 		if canStack > 0 then

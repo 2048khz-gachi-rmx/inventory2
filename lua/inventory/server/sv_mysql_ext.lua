@@ -281,9 +281,6 @@ function ms.NewInventoryItem(item, inv, ply)
 
 		local json = ms.SerializeData(item)
 
-		print("serialized data:", json)
-		PrintTable(item:GetData() or {"no data"})
-
 		if json then
 			qobj:setString(4, json)
 		else

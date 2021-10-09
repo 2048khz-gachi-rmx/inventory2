@@ -299,6 +299,7 @@ function PANEL:ItemDrop(rec, drop, item, ...)
 	elseif action == "Split" then
 		self:SplitItem(rec, drop, item)
 	elseif action == "Merge" then
+		print("stacking item:", rec, drop, item)
 		self:StackItem(rec, drop, item)
 	end
 
@@ -346,7 +347,7 @@ function PANEL:AddItemSlot()
 		it:OnInventoryUpdated()
 	end)
 
-	it:On("Drop", "FrameItemDrop", function(...) self:ItemDrop(...) end)
+	it:On("Drop", "FrameItemDrop", function(...) print("item drop", ...) self:ItemDrop(...) end)
 	return it
 end
 
