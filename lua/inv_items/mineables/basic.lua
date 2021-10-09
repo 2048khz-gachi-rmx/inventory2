@@ -20,7 +20,7 @@ local function makeOre(name, skin, bigamt)
 			if not skin or isnumber(skin) then
 				ent:SetSkin(skin or 1)
 			else
-				ent:SetSubMaterial(1, skin)
+				ent:SetMaterial(skin)
 			end
 
 			if (item.Data.Amount or 0) > (bigamt or self:GetMaxStack() * 0.7) then
@@ -38,14 +38,16 @@ local function makeOre(name, skin, bigamt)
 end
 
 if CLIENT then
-	CreateMaterial("mining_coal4", "VertexLitGeneric", {
-
-		["$basetexture"]	= "zerochain/props_mining/zrms_coalpiece",
+	CreateMaterial("inv_coalore", "VertexLitGeneric", {
+		["$basetexture"]	= "zerochain/props_mining/oremine/resource_coal_diff",
 
 		["$surfaceprop"] = "stone",
 		["$model"] = 1,
 
+		["$bumpmap"] = "zerochain/props_mining/oremine/resource_coal_nrm",
+		["$normalmapalphaenvmapmask"] = "1",
 
+		["$envmapfresnel"] = "1",
 		["$normalmapalphaenvmapmask"] = "1",
 
 		["$phong"] = 1,
@@ -81,7 +83,7 @@ makeOre("iron_ore", 0, 40)
 	:SetSmeltTime(2)
 	:SetSmeltsTo("iron_bar")
 
-makeOre("coal_ore", "!mining_coal4", 40)
+makeOre("coal_ore", "!inv_coalore", 40)
 	:SetName("Coal Ore")
 	:SetMaxStack(60)
 	:SetMinRarity(5)
