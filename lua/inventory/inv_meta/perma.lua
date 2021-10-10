@@ -12,9 +12,15 @@ prm.MaxItems = 50
 prm.ActionCanCrossInventoryFrom = CLIENT
 prm.ActionCanCrossInventoryTo = CLIENT
 
+prm.Icon = {
+	URL = "https://i.imgur.com/ZAOKTCs.png",
+	Name = "perma_sq.png",
+	Ratio = 0.5,
+}
+
 local pad = 12
 
-local function determinePos(main, new)
+--[[local function determinePos(main, new)
 
 	local w = main:GetWide()
 
@@ -23,7 +29,7 @@ local function determinePos(main, new)
 	if tooright then toX = -pad - new:GetWide() else toX = w + pad end
 
 	return toX
-end
+end]]
 
 prm:On("OpenFrame", "OpenInventoryCharacter", function(self, main, invpnl)
 	if not main:GetFull() then return end

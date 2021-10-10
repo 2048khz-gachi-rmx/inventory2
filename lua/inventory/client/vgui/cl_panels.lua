@@ -62,31 +62,29 @@ function iPan.CreateInventory(inv, multiple, set)
 
 	f.Inventory = inv
 
-	--[[hook.Add("PostRenderVGUI", f, function()
-		local x, y, w, h = f:GetArea()
-		surface.SetDrawColor(Colors.Red)
-		surface.DrawOutlinedRect(x, y, w, h)
+	local function createTab(invobj)
+		if invobj:Emit("CanOpen") == false then return end --uhkay
 
-		surface.SetDrawColor(0, 255, 0)
-		surface.DrawRect(x + w/2 - 1, y + h/2 - 1, 2, 2)
-		surface.SetDrawColor(0, 0, 255)
-		surface.DrawRect(ScrW() / 2, ScrH() / 2, 3, 3)
-	end)]]
+		local tab = f:AddTab(invobj.Name, f.OnSelectTab, f.OnDeselectTab)
+		tab:SetTall(64)
+		tab.Inventory = invobj
+
+		if invobj.Icon then
+			local ic = tab:SetIcon(invobj.Icon.URL, invobj.Icon.Name, invobj.Icon.Ratio)
+			if invobj.Icon.OnCreate then
+				invobj.Icon.OnCreate(ic)
+			end
+		end
+
+		return tab
+	end
 
 	if multi_invs and inv then --multiple inventories
 		for k,v in pairs(inv) do
-			if v:Emit("CanOpen") == false then continue end --uhkay
-
-			local tab = f:AddTab(v.Name, f.OnSelectTab, f.OnDeselectTab)
-			tab:SetTall(50)
-			tab.Inventory = v
+			createTab(v)
 		end
 	elseif inv then --only one inventory
-		if inv:Emit("CanOpen") == false then return end --uhkay
-
-		local tab = f:AddTab(inv.Name, f.OnSelectTab, f.OnDeselectTab)
-		tab:SetTall(50)
-		tab.Inventory = inv
+		local tab = createTab(inv)
 		tab:Select(true)
 	end
 
@@ -101,6 +99,18 @@ function iPan.CreateInventory(inv, multiple, set)
 	f:CacheShadow(2, 2, 2)
 
 	return f
+end
+
+function Inventory.Panels.PickSettings()
+	local fits = ScrW() >= 1200 and 6 or 4
+	local sz = 	(ScrW() < 1200 and ScrW() > 800 and 80)  or		-- 800 - 1200 = 80x80 (with 4 slots per row)
+				(ScrW() >= 1200 and ScrW() < 1900 and 64) or	-- 1200 - 1900 = 64x64
+				(ScrW() >= 1900 and 80)							-- 1900+ = 80x80 with 6 slots
+
+	return {
+		SlotSize = sz,
+		FitsItems = fits,
+	}
 end
 
 -- makes a panel listen for item hovers and drops

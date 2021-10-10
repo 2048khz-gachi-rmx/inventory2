@@ -15,6 +15,11 @@ bp.IsBackpack = true
 bp.AutoFetchItems = true
 bp.SupportsSplit = true
 
+bp.Icon = {
+	URL = "https://i.imgur.com/KBYX2uQ.png",
+	Name = "bag.png"
+}
+
 function bp:__tostring()
 	return ("%s [%p](owner: %s)"):format(
 		self.Name, self,
@@ -28,6 +33,8 @@ function bp:OnExtend(new_inv)
 	new_inv.NetworkID = false
 	new_inv.Name = "unnamed inventory!?"
 	new_inv.IsBackpack = false
+
+	new_inv.Icon = false
 end
 
 function bp:Initialize(ply)
