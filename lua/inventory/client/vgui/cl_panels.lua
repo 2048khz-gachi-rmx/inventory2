@@ -70,9 +70,15 @@ function iPan.CreateInventory(inv, multiple, set)
 		tab.Inventory = invobj
 
 		if invobj.Icon then
-			local ic = tab:SetIcon(invobj.Icon.URL, invobj.Icon.Name, invobj.Icon.Ratio)
-			if invobj.Icon.OnCreate then
-				invobj.Icon.OnCreate(ic)
+			local icDat = invobj.Icon
+			local ic = tab:SetIcon(icDat.URL, icDat.Name)
+
+			if icDat.PreserveRatio then
+				ic:SetPreserveRatio(true)
+			end
+
+			if icDat.OnCreate then
+				icDat.OnCreate(ic)
 			end
 		end
 

@@ -15,7 +15,7 @@ prm.ActionCanCrossInventoryTo = CLIENT
 prm.Icon = {
 	URL = "https://i.imgur.com/ZAOKTCs.png",
 	Name = "perma_sq.png",
-	Ratio = 0.5,
+	PreserveRatio = true,
 }
 
 local pad = 12
