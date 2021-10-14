@@ -65,7 +65,10 @@ wep:Register()
 Inventory.ArcCW_InventoryAttachments = Inventory.ArcCW_InventoryAttachments or {}
 
 local invOnly = {
-	"fcg_accelerator"
+	"fcg_accelerator",
+	"fcg_auto",
+	"go_homemade_auto",
+	"gsoe_extra_perk_infinite",
 }
 
 for k,v in ipairs(invOnly) do
