@@ -71,6 +71,7 @@ hook.Add("InventoryGetOptions", "DeletableOption", function(it, mn)
 	opt.HovMult = 1.15
 	opt.Color = Color(150, 30, 30)
 	opt.DeleteFrac = 0
+	opt.CloseOnSelect = false
 
 	local delCol = Color(230, 60, 60)
 	function opt:Think()

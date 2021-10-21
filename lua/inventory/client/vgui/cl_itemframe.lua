@@ -470,7 +470,7 @@ function ITEM:Draw(w, h)
 end
 
 function ITEM:DoClick()
-	print("e")
+	self:Emit("Click", self:GetSlot(), self:GetItem())
 end
 
 function ITEM:DoRightClick()

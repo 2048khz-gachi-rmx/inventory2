@@ -284,7 +284,6 @@ function nw.WriteHeader(typ, invs, invOw, ply)
 	end
 
 	if tk then
-		print("writing token", tk)
 		header:WriteBool(true).HasToken = true
 		header:WriteUInt(tk, 16).TokenID = true
 	else
@@ -322,7 +321,6 @@ function nw.NetworkInventory(ply, inv, typ, just_return, key) --mark 'just_retur
 													-- then you need a key with which to differentiate which one it is
 													-- if we weren't given one, we try to find it
 			for k,v in pairs(inv:GetOwner().Inventory) do
-				printf("searching: %p vs. %p", v, inv)
 				if v == inv then
 					key = k
 					break
@@ -477,7 +475,6 @@ function nw.RequestUpdate(ply, ...)
 		timer.Create( "UpdateInventory:" .. ply:SteamID64(), updateCD - (CurTime() - nw.UpdateCDs[ply]), 1, function()
 			if not ply:GetInventoryNWToken() then
 				ply:SetInventoryNWToken(tok)
-				print("put on cd token:", tok)
 			end
 
 			nw.RequestUpdate(ply)

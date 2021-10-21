@@ -50,6 +50,7 @@ function iPan.CreateInventory(inv, multiple, set)
 	function f:OnKeyCodePressed(key)
 		if key == self.CloseByKey then
 			iPan.CloseTime = UnPredictedCurTime()
+			CloseDermaMenus()
 			f:SetInput(false)
 			f:PopOut()
 		end
