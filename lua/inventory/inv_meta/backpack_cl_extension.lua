@@ -47,6 +47,8 @@ local function ActuallyMove(inv1, inv2, it, slot)
 	inv2:AddItem(it, true)
 end
 
+-- from:CrossInventoryMove(itm, to)
+
 function bp:CrossInventoryMove(it, inv2, slot)
 	local other_item = inv2:GetItemInSlot(slot)
 
