@@ -96,7 +96,6 @@ function Inventory.CheckStackability(inv, iid, cb, dat)
 
 	local canCreate = math.ceil(amt / maxstack)
 	local ret = {}
-	printf("creating %d items for %d amt", canCreate, amt)
 
 	for i=1, canCreate do
 		local free = inv:GetFreeSlot()

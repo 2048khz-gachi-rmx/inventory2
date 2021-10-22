@@ -34,8 +34,9 @@ function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
 
 				if self.UseSQL ~= false then
 					v:Insert(self)
+					self:AddItem(v, true)
+
 					v:On("AssignUID", "InsertIntoInv", function(v, uid)
-						self:AddItem(v, true)
 						self:AddChange(v, INV_ITEM_ADDED)
 						cb(v, slot)
 						newPr:Resolve(v)
@@ -68,8 +69,9 @@ function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
 
 	if self.UseSQL ~= false then
 		it:Insert(self)
+		self:AddItem(it, true)
+
 		it:Once("AssignUID", function()
-			self:AddItem(it, true)
 			cb(it, slot)
 			pr:Resolve({it})
 		end)

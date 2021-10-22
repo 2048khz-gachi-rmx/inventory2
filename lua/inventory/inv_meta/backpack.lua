@@ -188,8 +188,14 @@ function bp:AddItem(it, ignore_emitter, nochange)
 
 	if it:GetUID() then
 		self.Items[it:GetUID()] = it
+	--[[else
+		errorf("Can't add an item to an inventory without a UID! %s", it)]]
 	else
-		errorf("Can't add an item to an inventory without a UID! %s", it)
+		it:On("AssignUID", "WriteWithUID", function()
+			if it:GetInventory() == self then
+				self.Items[it:GetUID()] = it
+			end
+		end)
 	end
 
 	if self.Slots[it:GetSlot()] == it then return it:GetSlot() end
