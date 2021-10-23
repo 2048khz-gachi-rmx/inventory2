@@ -5,10 +5,10 @@ function Inventory.Blueprints.CreateBlank()
 end
 
 Inventory.Blueprints.Costs = {
-	[1] = 5,
-	--[[[2] = 20,
-	[3] = 50,
-	[4] = 125,]]
+	[1] = 10,
+	--[[[2] = 35,
+	[3] = 125,
+	[4] = 350,]]
 	--[5] = -200
 }
 

@@ -15,7 +15,7 @@ basebp 	:SetName("Empty Blueprint")
 		end)
 
 		:SetCountable(true)
-		:SetMaxStack(25)
+		:SetMaxStack(100)
 
 
 
