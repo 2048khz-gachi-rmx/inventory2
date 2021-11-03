@@ -100,7 +100,7 @@ function it:Delete()
 	self._Commited.Delete[self:IncrementToken()] = true
 end
 
-it.IsValid = it.GetValid
+
 
 function it:SetOwner(ply)
 	self.Owner = ply
@@ -120,6 +120,7 @@ ChainAccessor(it, "ItemName", "IName")
 
 ChainAccessor(it, "Known", "Known")
 ChainAccessor(it, "_Valid", "Valid")
+it.IsValid = it.GetValid
 
 function it:GetData() --only a getter
 	return self.Data
