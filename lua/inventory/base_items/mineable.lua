@@ -16,6 +16,7 @@ ChainAccessor(Mineable, "SpawnChance", "SpawnChance")
 ChainAccessor(Mineable, "MinRarity", "MinRarity")
 ChainAccessor(Mineable, "MaxRarity", "MaxRarity")
 ChainAccessor(Mineable, "Weight", "Weight")
+ChainAccessor(Mineable, "CanGenerate", "CanGenerate")
 
 ChainAccessor(Mineable, "MineChanceMult", "MineChanceMult")
 Mineable.MineChanceMult = 1
