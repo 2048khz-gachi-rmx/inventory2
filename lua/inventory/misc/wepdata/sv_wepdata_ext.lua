@@ -41,7 +41,7 @@ function wd:SerializeMods(mods, ns)
 
 	for k,v in pairs(self:GetModifiers()) do
 		ns:WriteUInt(Inventory.Modifiers.NameToID(k), 8)
-		ns:WriteUInt(v, 8)
+		ns:WriteUInt(v:GetTier(), 8)
 	end
 end
 
@@ -72,11 +72,11 @@ function wd:RemoveWeapon(wep)
 	self.UsingWeapons[wep] = nil
 
 	if table.IsEmpty(self.UsingWeapons) then
-		print("cleanup WD in 10")
-		timer.Create("WDCleanup:" .. self:GetID(), 10, 1, function()
+		print("cleaning up WD in 5")
+		timer.Create("WDCleanup:" .. self:GetID(), 5, 1, function()
 			if table.IsEmpty(self.UsingWeapons) then
 				self:Remove()
-				print("did cleanup")
+				print("cleaned up WD")
 			end
 		end)
 	end

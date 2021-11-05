@@ -183,12 +183,7 @@ pool.smg = {
 
 	"arccw_fml_fas_mp5",
 	"arccw_fml_fas_m11",
-
-	"arccw_bizon",
-	"arccw_vector",
-	"arccw_mp7",
 	"arccw_fml_fas_sterling",
-
 }
 
 pool.sr = {

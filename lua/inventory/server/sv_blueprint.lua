@@ -77,7 +77,7 @@ function bp.GenerateMods(qual, amt)
 	local count = 0
 
 	for k,v in pairs(Inventory.Modifiers.Pool) do
-		if not qual.ModsBlacklist[k] then
+		if not qual.ModsBlacklist[k] and not v:GetRetired() then
 			if qual.ModsGuarantee[k] then
 				guar[#guar + 1] = v
 			else
