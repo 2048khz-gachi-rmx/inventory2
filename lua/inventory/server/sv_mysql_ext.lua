@@ -411,7 +411,7 @@ local function remakeItem(inv, ply, v)
 	local it = Inventory.ReconstructItem(v.uid, v.iid)
 
 	it:SetOwner(ply)
-	it:SetSlot(v.slotid)
+	it:SetSlot(tonumber(v.slotid))
 	it:DeserializeData(v.data)
 	it:SetSQLExists(true)
 
