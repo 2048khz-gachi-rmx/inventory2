@@ -18,7 +18,7 @@ end
 
 function cases.PostEntityTakeDamage(ev, tgt, dmg)
 	local atk = dmg:GetAttacker()
-	if not atk then return end
+	if not IsPlayer(atk) then return end
 
 	local infl = dmg:GetInflictor()
 	local wep = infl:IsWeapon() and infl or atk:GetActiveWeapon()

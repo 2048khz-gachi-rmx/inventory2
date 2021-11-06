@@ -352,8 +352,6 @@ function nw.NetworkInventory(ply, inv, typ, just_return, key) --mark 'just_retur
 		 -- or we're networking to the owner himself (meaning we network all their inventories)
 
 		local invs = (istable(inv) and inv) or ply.Inventory
-		--if we were given just a few inventories then it's most likely it's just an update
-		if istable(inv) then typ = INV_NETWORK_UPDATE end
 
 		local stacks = {}
 		local owner

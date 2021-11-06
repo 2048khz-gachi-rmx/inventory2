@@ -69,7 +69,7 @@ function bp.GetRandomType()
 	end
 end
 
-function bp.GenerateMods(qual, amt)
+function bp.GenerateMods(tier, qual, amt)
 	local pool = {}
 	local guar = {} -- guaranteed mods
 
@@ -77,12 +77,14 @@ function bp.GenerateMods(qual, amt)
 	local count = 0
 
 	for k,v in pairs(Inventory.Modifiers.Pool) do
-		if not qual.ModsBlacklist[k] and not v:GetRetired() then
-			if qual.ModsGuarantee[k] then
-				guar[#guar + 1] = v
-			else
-				pool[#pool + 1] = v
-			end
+		if qual.ModsBlacklist[k] then continue end
+		if v:GetRetired() then continue end
+		if tier < (v:GetMinBPTier() or 0) then continue end
+
+		if qual.ModsGuarantee[k] then
+			guar[#guar + 1] = v
+		else
+			pool[#pool + 1] = v
 		end
 	end
 
@@ -110,10 +112,28 @@ function bp.GenerateMods(qual, amt)
 end
 
 function bp.GenerateStats(qual)
+	local copy = {} -- shallow copy
+	local i = 1
+	for k,v in pairs(qual.Stats) do
+		copy[i] = k
+		i = i + 1
+	end
+
 	local ret = {}
 
-	for name, dat in pairs(qual.Stats) do
-		ret[name] = math.random()
+	for k,v in pairs(qual.StatsGuarantee) do
+		ret[k] = math.random()
+		table.RemoveByValue(copy, k)
+	end
+
+	local max = math.min(qual:GetMaxStats() or 999, #copy)
+	local min = math.min(qual:GetMinStats() or 0, max)
+
+	local amt = math.random(min, max)
+
+	for i=1, amt do
+		local k = copy[i]
+		ret[k] = math.random()
 	end
 
 	return ret
@@ -167,7 +187,7 @@ function bp.Generate(tier, typ)
 
 	local qual = bp.PickQuality(tier, wep)
 	local amtMods = bp.TierGetMods(tier)
-	local mods = bp.GenerateMods(qual, amtMods)
+	local mods = bp.GenerateMods(tier, qual, amtMods)
 	local stats = bp.GenerateStats(qual)
 
 	local item = Inventory.Blueprints.CreateBlank()

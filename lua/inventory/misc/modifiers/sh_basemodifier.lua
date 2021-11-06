@@ -10,6 +10,12 @@ local mod = Inventory.BaseModifier
 mods.Pool = mods.Pool or {}
 
 ChainAccessor(mod, "MaxTier", "MaxTier")
+
+ChainAccessor(mod, "MinBlueprintTier", "MinBlueprintTier")
+ChainAccessor(mod, "MaxBlueprintTier", "MaxBlueprintTier")
+ChainAccessor(mod, "MinBlueprintTier", "MinBPTier")
+ChainAccessor(mod, "MaxBlueprintTier", "MaxBPTier")
+
 ChainAccessor(mod, "Name", "Name")
 ChainAccessor(mod, "Retired", "Retired")
 
@@ -162,5 +168,10 @@ function mods.Get(what)
 	return mods.Pool[nm]
 end
 
+mods.DescColors = {
+	Color(100, 250, 100),	-- active tier number
+	Color(80, 100, 80),		-- inactive tier number
+	Color(130, 130, 130),	-- description
+}
 
 include("sh_modifier_ext.lua")
