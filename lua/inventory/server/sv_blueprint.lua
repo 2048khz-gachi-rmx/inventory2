@@ -153,10 +153,12 @@ function bp.GenerateRecipe(itm)
 		rec.copper_bar = math.random(5, 15)
 		rec.iron_bar = math.random(10, 20)
 		rec.gold_bar = math.random(5, 10)
+	elseif tier == 3 then
+		rec.copper_bar = math.random(20, 60)
+		rec.iron_bar = math.random(30, 75)
+		rec.gold_bar = math.random(15, 30)
 	else
-		rec.copper_bar = 999
-		rec.iron_bar = 999
-		rec.gold_bar = 999
+		rec.copper_bar = 9999
 	end
 
 	return rec
