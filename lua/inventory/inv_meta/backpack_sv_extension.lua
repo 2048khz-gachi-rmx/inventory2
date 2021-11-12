@@ -314,6 +314,7 @@ function bp:SerializeItems(typ, key)
 
 	return ns
 end
+
 function bp:WriteChanges(ns)
 	local dels, moves, allits = {}, {}, {}
 	local crossmove = {}

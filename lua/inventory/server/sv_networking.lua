@@ -81,7 +81,7 @@ function invnet:Initialize(uid, iid)
 
 	self:WriteUInt(self.MaxUIDLen, 5).UsesUID = 1    --maximum bit size of a  UID in the queue
 	self:WriteUInt(self.MaxIDLen, 5).UsesID = 1      --maximum bit size of an IID in the queue
-
+	print("Initialized", self, self.MaxUID, self.MaxID)
 end
 
 function invnet:SetMaxIDs(uid, iid)
@@ -531,6 +531,19 @@ function nw.ReadItem(inv)
 	return it
 end
 
+function Inventory.WriteItem(itm, ns)
+	ns = ns or Inventory.Networking.NetStack()
+	itm:Serialize(ns, INV_NETWORK_FULLUPDATE)
+	print(ns)
+	return ns
+end
+
+function Inventory.WriteItems(itm, ns)
+	ns = ns or Inventory.Networking.Netstack()
+	for k,v in pairs(itm) do
+		Inventory.WriteItem(v, ns)
+	end
+end
 
 hook.Add("PlayerFullyLoaded", "InventoryNetwork", function(ply)
 	-- eh just let the player request the resync
