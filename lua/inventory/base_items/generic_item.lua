@@ -6,6 +6,8 @@ Base.ItemClass = "Generic"
 Base.ShouldSpin = true
 Base.Extensions = Base.Extensions or {}
 
+Base.IsBaseItem = true
+
 Base.NetworkedVars = {}
 
 -- Extend = a new class is being extended from base (e.g. 'Equipment' from 'Generic')

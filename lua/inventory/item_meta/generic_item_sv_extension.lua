@@ -34,9 +34,7 @@ function it:WriteNetworkedVars(ns, typ)
 end
 
 function it:Serialize(ns, typ)
-	if not ns then
-		ns = Inventory.Networking.NetStack()
-	end
+	ns = ns or Inventory.Networking.NetStack()
 
 	ns:WriteIDs(self)
 	ns:WriteSlot(self)
@@ -58,19 +56,12 @@ function it:Insert(invobj, cb)
 	local qobj = Inventory.MySQL.NewInventoryItem(self, invobj, sid)
 	if not qobj then return end
 
-	qobj:Once("Success", function(_, query, dat)
-		local uid = query:lastInsert()
-		if uid == 0 then uid = dat[1].uid end
-
+	qobj:Then(function(_, query, dat)
 		if cb then cb(self, uid) end
-		self:SetUID(uid)
-		self:SetUIDFake(false)
 
 		--[[if not invobj:HasItem(self) then
 			invobj:AddItem(self)
 		end]]
-
-		self:Emit("AssignUID", uid)
 	end)
 
 	return qobj
