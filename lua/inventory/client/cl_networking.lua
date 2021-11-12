@@ -20,17 +20,25 @@ function nw.ReadItem(uid_sz, iid_sz, slot_sz, inventory)
     local uid, iid = net.ReadUInt(uid_sz), net.ReadUInt(iid_sz)
     local slot = slot_sz and net.ReadUInt(slot_sz)
 
-    local item = inventory:HasItem(uid)
-    log("       Read item UID: %s (sz: %d); IID: %s (sz: %d); Slot: %s (sz: %d)",
-        uid, uid_sz, iid, iid_sz, slot, slot_sz)
+    local item
+
+    if inventory then
+        item = inventory:HasItem(uid)
+        log("       Read item UID: %s (sz: %d); IID: %s (sz: %d); Slot: %s (sz: %d)",
+            uid, uid_sz, iid, iid_sz, slot, slot_sz)
+    end
 
     if not item then
         item = Inventory.ReconstructItem(uid, iid, inventory)
     end
 
-    if slot then item:SetSlot(slot) end
+    if slot then
+        item:SetSlot(slot)
+    end
 
-    inventory:AddItem(item, true)
+    if inventory then
+        inventory:AddItem(item, true)
+    end
 
     item:ReadNetworkedVars()
     --item:SetInventory(inventory)
