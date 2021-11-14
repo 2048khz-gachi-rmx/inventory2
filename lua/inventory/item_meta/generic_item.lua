@@ -78,6 +78,8 @@ end
 
 -- first arg can also be a table of data
 function it:CanStack(it2, amt)
+	
+
 	local otherData = IsItem(it2) and it2:GetData() or istable(it2) and it2
 	it2 = IsItem(it2) and it2
 
