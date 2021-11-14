@@ -19,14 +19,14 @@ local log = ms.Log
 
 local create_table_query = [[
 CREATE TABLE IF NOT EXISTS %s (
-  `uid` INT NOT NULL,
-  `puid` BIGINT UNSIGNED NULL,
+	`uid` INT NOT NULL,
+	`puid` BIGINT UNSIGNED NULL,
 %s]] --[[if the inventory uses slots, this will be '`slotid` MEDIUMINT UNSIGNED NULL,']] .. [[
 %s]] --[[additional columns]] .. [[
-  PRIMARY KEY (`uid`),
-  UNIQUE KEY `uid` (`uid`),
-  %s]] --[[constraints n' other stuff]] .. [[
-  CONSTRAINT FOREIGN KEY (`uid`) REFERENCES `items` (`uid`) ON DELETE CASCADE
+	PRIMARY KEY (`uid`),
+	UNIQUE KEY `uid` (`uid`),
+	%s]] --[[constraints n' other stuff]] .. [[
+	CONSTRAINT FOREIGN KEY (`uid`) REFERENCES `items` (`uid`) ON DELETE CASCADE
 )
 ]]
 
@@ -232,18 +232,34 @@ local setslot_query = "UPDATE %s SET slotid = %d WHERE uid = %s AND puid = %s"
 
 function ms.UpdateProperties(item, inv)
 	inv = item:GetInventory() or inv
-	if not item:GetSQLExists() then errorf("Attempted to update properties of an SQL-less item! %q", item) return end
-	if not item:GetUID() then errorf("Attempted to update properties of an item without a UID! %q", item) return end
-	if not inv.SQLName then errorf("Attempted to update properties of an item in an SQL-less inventory! %q, %q", item, inv) return end
+	inv = inv and inv.SQLName and inv
+
+	if not item:GetSQLExists() then errorf("Attempted to update properties of an SQL-less item! '%s'", item) return end
+	if not item:GetUID() then errorf("Attempted to update properties of an item without a UID! '%s'", item) return end
+	--if inv and not inv.SQLName then errorf("Attempted to update properties of an item in an SQL-less inventory! '%s', '%s'", item, inv) return end
 
 	local dat = not table.IsEmpty(item:GetData()) and item:GetData()
 
-	ms.SetSlot(item, inv)
-	if dat then ms.ItemWriteData(item, dat) end
+	if inv then
+		ms.SetSlot(item, inv)
+	end
+
+	if dat then
+		ms.ItemWriteData(item, dat)
+	end
 end
 
 local newitem_inv_query 	= ms.DB:prepare("CALL InsertByItemNameInInventory(?, ?, ?, ?);")
 local newitem_idinv_query 	= ms.DB:prepare("CALL InsertByIDInInventory(?, ?, ?, ?);")
+
+function ms._PostQuerySetUID(item, qry, dat)
+	local uid = qry:lastInsert()
+	if uid == 0 then uid = dat[1].uid end
+
+	item:SetUID(uid)
+	item:SetUIDFake(false)
+	item:Emit("AssignUID", uid)
+end
 
 -- takes an item object and sticks it in the inventory
 function ms.NewInventoryItem(item, inv, ply)
@@ -290,8 +306,9 @@ function ms.NewInventoryItem(item, inv, ply)
 		--qobj:setNumber(4, slot)
 	end
 
-	local qem = MySQLEmitter(qobj, true):Catch(qerr):Then(function()
+	local qem = MySQLEmitter(qobj, true):Catch(qerr):Then(function(self, qry, dat)
 		item:SetSQLExists(true)
+		ms._PostQuerySetUID(item, qobj, dat)
 		ms.UpdateProperties(item, inv)
 	end)
 
@@ -319,7 +336,9 @@ function ms.NewFloatingItem(item)
 
 	local qem = MySQLEmitter(qobj, true):Catch(qerr)
 
-	qem:Then(function()
+	qem:Then(function(self, qry, dat)
+		item:SetSQLExists(true)
+		ms._PostQuerySetUID(item, qobj, dat)
 		ms.UpdateProperties(item, inv)
 	end)
 	--[[qem:Once("Success", "AssignData", function(_, qobj, res)
@@ -411,7 +430,7 @@ local function remakeItem(inv, ply, v)
 	local it = Inventory.ReconstructItem(v.uid, v.iid)
 
 	it:SetOwner(ply)
-	it:SetSlot(v.slotid)
+	it:SetSlot(tonumber(v.slotid))
 	it:DeserializeData(v.data)
 	it:SetSQLExists(true)
 

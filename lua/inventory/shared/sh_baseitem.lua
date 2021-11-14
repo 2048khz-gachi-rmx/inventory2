@@ -78,11 +78,11 @@ function Inventory.Util.ItemIDToName(id)
 		or Inventory.IDConversion.ToName[id]
 end
 
+
 function Inventory.Util.IsInventory(obj)
 	local mt = getmetatable(obj)
 	return mt and mt.IsInventory
 end
-
 IsInventory = Inventory.Util.IsInventory
 
 
@@ -90,9 +90,13 @@ function Inventory.Util.IsItem(obj)
 	local mt = getmetatable(obj)
 	return mt and mt.IsItem
 end
-
 IsItem = Inventory.Util.IsItem
 
+function Inventory.Util.IsBaseItem(obj)
+	local mt = getmetatable(obj)
+	return mt and mt.IsBaseItem
+end
+IsBaseItem = Inventory.Util.IsBaseItem
 
 function BaseItemAccessor(it, varname, getname)
 	it["Get" .. getname] = function(self)

@@ -18,6 +18,8 @@ ql.IsQuality = true
 ChainAccessor(ql, "Name", "Name")
 ChainAccessor(ql, "ID", "ID")
 ChainAccessor(ql, "Type", "Type")
+ChainAccessor(ql, "MinStats", "MinStats")
+ChainAccessor(ql, "MaxStats", "MaxStats")
 
 function ql:SetType(new)
 	if self:GetType() ~= new and self:GetType() then

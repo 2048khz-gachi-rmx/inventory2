@@ -18,6 +18,8 @@ function wd:RealmInit(id)
 end
 
 function wd:ReadData(nw, key)
+	print("ReadData:", nw, key)
+
 	if self["Deserialize" .. key] then
 		return self["Deserialize" .. key] (self)
 	end
@@ -62,7 +64,7 @@ wdt.EIDToWD:On("NetworkedVarChanged", "RecalcBuffs", function(self, key, old, ne
 	if isnumber(new) then
 		local ent = Entity(key)
 		local wd = wdt.Get(new)
-		print(ent, wd, key, new)
+
 		if wd then
 			wd:ResetWeaponBuffs(ent)
 			wdt.EntPool[key] = wd

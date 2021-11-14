@@ -31,6 +31,24 @@ nwAccessor(wd, "Mods", "Modifiers")
 nwAccessor(wd, "Stats", "Stats")
 ChainAccessor(wd, "ID", "ID")
 
+function wd:SetMods(tbl)
+	for name, tier in pairs(tbl) do
+		if not Inventory.Modifiers.Pool[name] then
+			errorNHf("Unrecognized modifier when setting to WD: %q")
+			continue
+		end
+
+		local mod = Inventory.Modifier:new(name)
+		mod:SetTier(tier)
+		mod:SetWD(self)
+
+		self.Mods[name] = mod
+	end
+
+	self.NW:Set("Mods", tbl)
+end
+wd.SetModifiers = wd.SetMods
+
 function wd:Initialize(id)
 	self.NW = Networkable("WD:" .. id)
 	self.Networkable = self.NW
@@ -75,6 +93,12 @@ function wd:Remove()
 	for k,v in pairs(wdt.EntPool) do
 		if v == self then wdt.EntPool[k] = nil end
 	end
+
+	for k,v in pairs(self:GetMods()) do
+		v:Remove()
+	end
+
+	self:Emit("Remove")
 end
 
 function wd:IsValid()
@@ -90,13 +114,18 @@ hook.Add("NetworkableAttemptCreate", "WeaponData", function(id)
 end)
 
 function wdt.Get(what)
-	if wdt.EntPool[what] then return wdt.EntPool[what] end
+	local qret = wdt.EntPool[what]
+	if qret and qret:IsValid() then return qret end
 
 	if IsEntity(what) then
-		wdt.EntPool[what] = wdt.Pool[what:EntIndex()]
+		local ret = wdt.Pool[what:EntIndex()]
+		if not ret or not ret:IsValid() then return false end
+
+		wdt.EntPool[what] = ret
 		return wdt.EntPool[what]
 	elseif isnumber(what) then
-		return wdt.Pool[what]
+		local ret = wdt.Pool[what]
+		return ret and ret:IsValid() and ret
 	end
 end
 
@@ -151,4 +180,12 @@ function ENTITY:GetWeaponData()
 	if wdid then
 		return wdt.Get(wdid)
 	end
+end
+
+function ENTITY:HasModifier(name)
+	if not self:IsValid() then return false end
+	local wd = self:GetWeaponData()
+	if not wd then return false end
+
+	return wd:GetMods() [name]
 end

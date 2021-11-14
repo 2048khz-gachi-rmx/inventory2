@@ -26,7 +26,7 @@ function uq:GetModifiers(tbl)
 	end]]
 
 	-- eh maybe just copy the names? autorefresh friendly?
-	for name, tier in pairs(self:GetModNames()) do
+	for name, tier in pairs(self:GetModNames() or {}) do
 		into[name] = tier
 	end
 

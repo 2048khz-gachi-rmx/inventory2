@@ -1,7 +1,11 @@
 local uq = Inventory.ItemObjects.Unique
 
 function uq:GenerateModifiersText(cloud, markup, needSep)
-	if needSep and not table.IsEmpty(self:GetModifiers()) then
+	if table.IsEmpty(self:GetModifiers()) then return end
+
+	markup:SetWide(math.max(markup:GetWide(), 300))
+
+	if needSep then
 		cloud:AddSeparator(nil, cloud.LabelWidth / 8, 4)
 	end
 
@@ -17,7 +21,7 @@ function uq:GenerateModifiersText(cloud, markup, needSep)
 		end
 	end
 
-	return needSep or not table.IsEmpty(self:GetModifiers())
+	return needSep
 end
 
 function uq:GenerateStatsText(cloud, markup)

@@ -78,12 +78,15 @@ end
 
 -- first arg can also be a table of data
 function it:CanStack(it2, amt)
+	
+
 	local otherData = IsItem(it2) and it2:GetData() or istable(it2) and it2
 	it2 = IsItem(it2) and it2
 
-	if otherData and not equalData(self.Data, otherData) then print("inequal data") return false end
-	if it2 and self:GetItemID() ~= it2:GetItemID() then print("not same iid") return false end
-	if self:GetAmount() == self:GetMaxStack() then print("already max", self:GetAmount(), self:GetMaxStack()) return false end
+	if otherData and not equalData(self.Data, otherData) then return false end
+	if it2 and self:GetItemID() ~= it2:GetItemID() then return false end
+	if not self:GetMaxStack() or (it2 and not it2:GetMaxStack()) then return false end
+	if self:GetAmount() == self:GetMaxStack() then return false end
 
 	return math.min(self:GetMaxStack() - self:GetAmount(),
 		it2 and it2:GetAmount() or amt or math.huge,

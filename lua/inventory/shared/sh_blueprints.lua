@@ -6,9 +6,9 @@ end
 
 Inventory.Blueprints.Costs = {
 	[1] = 10,
-	--[[[2] = 35,
+	[2] = 35,
 	[3] = 125,
-	[4] = 350,]]
+	--[[[4] = 350,]]
 	--[5] = -200
 }
 
@@ -183,12 +183,7 @@ pool.smg = {
 
 	"arccw_fml_fas_mp5",
 	"arccw_fml_fas_m11",
-
-	"arccw_bizon",
-	"arccw_vector",
-	"arccw_mp7",
 	"arccw_fml_fas_sterling",
-
 }
 
 pool.sr = {
@@ -242,8 +237,8 @@ function Inventory.Blueprints.GetCost(tier, typ)
 	local baseCost = Inventory.Blueprints.Costs[tier]
 	if not baseCost then printf("!!! no cost for tier %s !!!", tier) return false end
 
-	local dat = Inventory.Blueprints.Types[typ]
-	if not dat then printf("!!! no data for type %s !!!", typ) return false end
+	local dat = typ and Inventory.Blueprints.Types[typ]
+	if typ and not dat then printf("!!! no data for type %s !!!", typ) return false end
 
-	return math.floor(baseCost * dat.CostMult)
+	return math.floor(baseCost * (dat and dat.CostMult or 1))
 end

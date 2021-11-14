@@ -10,31 +10,61 @@ local function make(nm)
 	return q
 end
 
-make("Fiery")
-	:AddStat("Damage", 20, 35)
 
-	:AddStat("Spread", 10, 25)
-	:AddStat("RPM", -10, -25)
+make("Fiery")
+	:AddStat("Damage", 20, 35, true)
+	:AddStat("Spread", 10, 25, true)
+	:AddStat("RPM", -10, -25, true)
 
 	:GuaranteeMod("Blazing")
-
+	:SetTier(2, 4)
 
 make("Swift")
-	:AddStat("RPM", 15, 40)
-	:AddStat("MoveSpeed", 5, 15)
-	:AddStat("DrawTime", -10, -50)
+	:AddStat("RPM", 15, 40, true)
+	:AddStat("MoveSpeed", 5, 15, true)
+	:AddStat("DrawTime", -10, -50, true)
 
-	:AddStat("Damage", -15, -5)
+	:AddStat("Damage", -15, -5, true)
 	:AddStat("Spread", 10, 25)
-
+	:SetTier(2)
 
 make("Lightweight")
-	:AddStat("Spread", -15, -25)
-	:AddStat("Handling", 20, 60)
+	:AddStat("Spread", -15, -25, true)
+	:AddStat("Handling", 20, 60, true)
 	:AddStat("MoveSpeed", 10, 30)
-	:AddStat("DrawTime", 25, 60)
+	:AddStat("DrawTime", 25, 60, true)
 	:AddStat("ReloadTime", 20, 50)
 
-	:AddStat("Damage", -5, 5)
+	:AddStat("Damage", -5, 5, true)
 	:AddStat("Recoil", -20, -5)
-	:SetTier(3)
+	:SetTier(3, 4)
+
+
+-- overall sucks but its possible it'll have a damage up
+make("Salvaged")
+	:AddStat("Spread", -5, 10, true)
+	:AddStat("ReloadTime", 10, 40, true)
+	:AddStat("Range", -30, -15, true)
+	:AddStat("Recoil", 10, 30, true)
+
+	:AddStat("Damage", 15, 25)
+	:AddStat("Handling", -20, -10)
+	:AddStat("MoveSpeed", -10, -2)
+	:AddStat("DrawTime", -20, -10)
+
+	:SetTier(1)
+
+-- wildly random stats
+make("Scavenged")
+	:AddStat("Spread", -25, 50)
+	:AddStat("Handling", -35, 50)
+	:AddStat("MoveSpeed", -20, 40)
+	:AddStat("ReloadTime", -40, 60)
+	:AddStat("MagSize", -20, 40)
+
+	:AddStat("Damage", -10, 10)
+	:AddStat("Range", -20, 35)
+	:AddStat("Recoil", -30, 50)
+	:SetMinStats(1)
+	:SetMaxStats(3)
+	:SetTier(1)

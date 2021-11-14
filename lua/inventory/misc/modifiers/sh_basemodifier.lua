@@ -1,18 +1,28 @@
 
-Inventory.Modifier = Inventory.Modifier or Emitter:callable()
+Inventory.BaseModifier = Inventory.BaseModifier or Emitter:callable()
 Inventory.Modifiers = Inventory.Modifiers or {}
+Inventory.Modifiers.Hooks = Inventory.Modifiers.Hooks or muldim:new()
+
 local mods = Inventory.Modifiers
-local mod = Inventory.Modifier
+local hooks = mods.Hooks
+local mod = Inventory.BaseModifier
 
 mods.Pool = mods.Pool or {}
 
-
 ChainAccessor(mod, "MaxTier", "MaxTier")
+
+ChainAccessor(mod, "MinBlueprintTier", "MinBlueprintTier")
+ChainAccessor(mod, "MaxBlueprintTier", "MaxBlueprintTier")
+ChainAccessor(mod, "MinBlueprintTier", "MinBPTier")
+ChainAccessor(mod, "MaxBlueprintTier", "MaxBPTier")
+
 ChainAccessor(mod, "Name", "Name")
+ChainAccessor(mod, "Retired", "Retired")
+
 mod.IsModifier = true
 
-function IsModifier(what)
-	return istable(what) and what.IsModifier
+function IsBaseModifier(what)
+	return istable(what) and what.IsBaseModifier
 end
 
 function mod:SetName(name)
@@ -26,13 +36,54 @@ function mod:SetName(name)
 end
 
 function mod:Initialize(name)
-	if not name then error("modifier requires name bro") return end
+	if not name then error("basemodifier requires name bro") return end
 	self:SetName(name)
+
+	if SERVER and player.GetCount() > 0 then
+		mods.EncodeMods()
+		mods.Send(player.GetAll())
+	end
 end
 
 function mod:GenerateMarkup() end -- for override
 
+function mod:Hook(ev, fn)
+	if not hooks:Get(ev) then
+		hook.Add(ev, "Inventory_Modifiers", function(...) mods.HookRun(ev, ...) end)
+	end
 
+	hooks:Set(fn, ev, self:GetName())
+
+	return self
+end
+
+ChainAccessor(mod, "_TierCalc", "TierCalc")
+function mod:GetTierStrength(...)
+	return self:GetTierCalc() and self:GetTierCalc()(self, ...) or -1
+end
+
+function mod:_Runner(ev, ...)
+	-- get the hook function
+	local hkFn = hooks:Get(ev, base:GetName())
+	if not hkFn then return end --?
+
+	-- warn about shit performance
+	if not self:GetDefaultRunner() then
+		errorNHf("Default hook runner for %q - unoptimized as hell!", self:GetName())
+	end
+
+	-- find every instance of this modifier
+	local inst = mods.InstancePool:Get(base:GetName())
+	if not inst then return end
+
+	-- run the hook function on every instance
+	for k,v in ipairs(inst) do
+		hkFn(inst, ...)
+	end
+end
+
+ChainAccessor(mod, "_Runner", "Runner")
+ChainAccessor(mod, "_DefaultRunner", "DefaultRunner")
 
 mods.IDConv = mods.IDConv or {ToName = {--[[ id = name ]]}, ToID = {--[[ name = id ]]}}
 
@@ -95,6 +146,9 @@ else
 	end)
 end
 
+--[==================================[
+				utility
+--]==================================]
 
 function mods.IDToName(id)
 	return (isstring(id) and mods.IDConv.ToID[id] and id) or mods.IDConv.ToName[id]
@@ -108,8 +162,16 @@ mods.ToID = mods.NameToID
 mods.ToName = mods.IDToName
 
 function mods.Get(what)
-	if IsModifier(what) then return what end
+	if IsBaseModifier(what) then return what end
 
 	local nm = mods.IDToName(what) or (isstring(what) and what)
 	return mods.Pool[nm]
 end
+
+mods.DescColors = {
+	Color(100, 250, 100),	-- active tier number
+	Color(80, 100, 80),		-- inactive tier number
+	Color(130, 130, 130),	-- description
+}
+
+include("sh_modifier_ext.lua")
