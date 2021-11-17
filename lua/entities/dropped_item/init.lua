@@ -2,6 +2,7 @@ include("shared.lua")
 AddCSLuaFile("shared.lua")
 AddCSLuaFile("cl_init.lua")
 
+util.AddNetworkString("dropped_item_itm")
 
 function ENT:SVInit()
 	if not self.Item and SERVER then
@@ -10,7 +11,6 @@ function ENT:SVInit()
 		return
 	end
 
-	self:SetNWItemID(self.Item:GetIID())
 	self:SetCreationTime(CurTime())
 	self:SetModel(self.Model)
 	self:SetSkin(self.Skin)
@@ -21,10 +21,25 @@ function ENT:SVInit()
 	self:GetPhysicsObject():EnableMotion(false)
 	self:SetRenderMode(RENDERMODE_TRANSALPHA)
 
+	self:SetCollisionGroup(COLLISION_GROUP_DEBRIS)
+	--self:SetTrigger(true)
+
 	self:SetUseType(SIMPLE_USE)
 
 	--self:PhysWake()
 	self:Activate()
+end
+
+function ENT:GetItem()
+	return self.Item
+end
+
+function ENT:StartTouch(e)
+	print("dont touch me there", e)
+end
+
+function ENT:EndTouch(e)
+	print("ow ow ow", e)
 end
 
 function ENT:OnRemove()

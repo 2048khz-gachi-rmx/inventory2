@@ -134,6 +134,7 @@ Inventory.BaseItemObjects.Generic("ejectdick")
 	:SetCamPos( Vector(-86.0, -8.9, -8.1) )
 	:SetLookAng( Angle(-7.3, 5.5, 0.0) )
 	:SetFOV( 12.6 )
+	:SetRarity(Inventory.Rarities.All.legendary)
 
 	:SetName("ejectdick but with less dick and more cock and rob")
 	:On("Paint", "PaintBlueprint", function(base, item, slot, w, h)

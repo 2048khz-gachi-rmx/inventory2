@@ -178,18 +178,42 @@ function bp:GetItemInSlot(slot)
 	return self.Slots[slot]
 end
 
-function bp:AddItem(it, ignore_emitter, nochange)
-	if not it:GetSlot() then errorf("Can't add an item without a slot set! Set a slot first!\nItem: %s", it) return end
+function bp:_CanAddItem(it, ignore_emitter)
+	if not it:GetSlot() then
+		return false, "Can't add an item without a slot set! Set a slot first!\nItem: %s", {it}
+	end
 
 	if it:GetInventory() and it:GetInventory() ~= self then
-		errorf("Can't add an item that already has an inventory, remove it from the old inventory first!\nItem: %s\nItem's inv: %s\nAttempted inv: %s\n----\n", it, it:GetInventory(), self)
+		return false, "Can't add an item that already has an inventory, remove it from the old inventory first!\nItem: %s\nItem's inv: %s\nAttempted inv: %s\n----\n", {it, it:GetInventory(), self}
+	end
+
+	if not ignore_emitter then
+		local can = self:Emit("CanAddItem", it, it:GetUID())
+		if can == false then return false end
+	end
+
+	if self.Slots[it:GetSlot()] == it then
+		return it:GetSlot()
+	elseif self.Slots[it:GetSlot()] then
+		return false
+	end
+
+	return true
+end
+
+function bp:AddItem(it, ignore_emitter, nochange)
+	local can, why, fmts = self:_CanAddItem(it, ignore_emitter)
+
+	if not can then
+		if why then
+			errorf(why, unpack(fmts or {}))
+		end
+
 		return
 	end
 
 	if it:GetUID() then
 		self.Items[it:GetUID()] = it
-	--[[else
-		errorf("Can't add an item to an inventory without a UID! %s", it)]]
 	else
 		it:On("AssignUID", "WriteWithUID", function()
 			if it:GetInventory() == self then
@@ -198,14 +222,8 @@ function bp:AddItem(it, ignore_emitter, nochange)
 		end)
 	end
 
-	if self.Slots[it:GetSlot()] == it then return it:GetSlot() end
-
-	if not ignore_emitter then
-		local can = self:Emit("CanAddItem", it, it:GetUID())
-		if can == false then print("disallowed adding item, lol") return false end
-	end
-
 	self.Slots[it:GetSlot()] = it
+
 	if not nochange then
 		self:AddChange(it, INV_ITEM_ADDED)
 	end
@@ -248,6 +266,8 @@ function bp:Reset()
 end
 
 function bp:HasAccess(ply, action)
+	if self.DisallowAllActions then return false end
+
 	local allow = self:Emit("Can" .. action, ply)
 	if allow ~= nil then return allow end
 

@@ -81,7 +81,6 @@ function invnet:Initialize(uid, iid)
 
 	self:WriteUInt(self.MaxUIDLen, 5).UsesUID = 1    --maximum bit size of a  UID in the queue
 	self:WriteUInt(self.MaxIDLen, 5).UsesID = 1      --maximum bit size of an IID in the queue
-	print("Initialized", self, self.MaxUID, self.MaxID)
 end
 
 function invnet:SetMaxIDs(uid, iid)
@@ -163,6 +162,12 @@ function invnet:WriteUID(it)
 end
 
 function invnet:WriteSlot(it)
+	if not it:GetInventory() then
+		self:WriteBool(false)
+		return
+	end
+
+	self:WriteBool(true)
 	local len = it:GetInventory().MaxItems
 	if len then
 		len = bit.GetLen(len)
@@ -529,17 +534,19 @@ function nw.ReadItem(inv)
 	return it
 end
 
-function Inventory.WriteItem(itm, ns)
-	ns = ns or Inventory.Networking.NetStack()
+function Inventory.WriteItem(itm, ns, noResize)
+	ns = ns or Inventory.Networking.NetStack(itm:GetUID(), itm:GetIID())
+	if not noResize then ns:Resize(itm) end
 	itm:Serialize(ns, INV_NETWORK_FULLUPDATE)
-	print(ns)
 	return ns
 end
 
 function Inventory.WriteItems(itm, ns)
 	ns = ns or Inventory.Networking.Netstack()
+	ns:Resize(itm)
+
 	for k,v in pairs(itm) do
-		Inventory.WriteItem(v, ns)
+		Inventory.WriteItem(v, ns, true)
 	end
 end
 

@@ -1,4 +1,3 @@
---?
 
 local Base = Inventory.BaseItemObjects.Generic or Emitter:callable()
 Base.BaseName = "Generic"
@@ -11,7 +10,7 @@ Base.IsBaseItem = true
 Base.NetworkedVars = {}
 
 -- Extend = a new class is being extended from base (e.g. 'Equipment' from 'Generic')
--- `name` is just the name of your base class
+-- `name` is just the name of the new base class
 
 -- `class` is what item meta instances of this base class should use (the ones players hold)
 
@@ -72,6 +71,7 @@ function Base:Initialize(name)
 	self.ItemClass = self.ItemClass
 
 	self:PullItemID()
+	self:SetRarity(Inventory.Rarities.Default)
 
 	Inventory.BaseItems[self.ItemName] = self
 
@@ -173,6 +173,7 @@ ChainAccessor(Base, "ItemName", "ItemName")
 ChainAccessor(Base, "Model", "Model")
 ChainAccessor(Base, "ModelColor", "ModelColor")
 ChainAccessor(Base, "Color", "Color")
+ChainAccessor(Base, "Rarity", "Rarity")
 
 ChainAccessor(Base, "CamPos", "CamPos")
 ChainAccessor(Base, "FOV", "FOV")

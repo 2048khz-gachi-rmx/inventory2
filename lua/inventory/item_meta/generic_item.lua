@@ -149,7 +149,7 @@ BaseItemAccessor(it, "ShouldSpin", "ShouldSpin")
 
 BaseItemAccessor(it, "Countable", "Countable")
 BaseItemAccessor(it, "MaxStack", "MaxStack")
-
+BaseItemAccessor(it, "Rarity", "Rarity")
 
 function it:GetBaseItem()
 	return Inventory.Util.GetBase(self.ItemID)

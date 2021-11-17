@@ -33,6 +33,15 @@ function uq:GetModifiers(tbl)
 	return into
 end
 
+function uq:GetRarity()
+	local qual = self:GetQuality()
+	if not qual or not qual:GetRarity() then
+		return self:GetBase():GetRarity()
+	end
+
+	return qual:GetRarity()
+end
+
 function uq:GetQuality()
 	return Inventory.Qualities.Get(self:GetQualityName())
 end

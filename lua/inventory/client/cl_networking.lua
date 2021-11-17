@@ -16,9 +16,30 @@ function nw.ReadHeader()
     return max_uid, max_id
 end
 
-function nw.ReadItem(uid_sz, iid_sz, slot_sz, inventory)
+function nw.ReadItem(uid_sz, iid_sz)
+    if not uid_sz or not iid_sz then
+        uid_sz, iid_sz = nw.ReadHeader()
+    end
+
     local uid, iid = net.ReadUInt(uid_sz), net.ReadUInt(iid_sz)
-    local slot = slot_sz and net.ReadUInt(slot_sz)
+    local has_slot = net.ReadBool()
+    if has_slot then
+        errorf("NW-Read item (uid: %s, iid: %s) has a slot, meaning it's not inventory-less!", uid, iid)
+        return
+    end
+
+    item = Inventory.ReconstructItem(uid, iid)
+    item:ReadNetworkedVars()
+    Inventory.ItemPool[uid] = item
+    return item
+end
+
+function nw.ReadInventoryItem(uid_sz, iid_sz, slot_sz, inventory)
+    local uid, iid = net.ReadUInt(uid_sz), net.ReadUInt(iid_sz)
+    local has_slot = net.ReadBool()
+
+    slot_sz = slot_sz or (inventory and inventory.MaxItems and bit.GetLen(inventory.MaxItems))
+    local slot = has_slot and slot_sz and net.ReadUInt(slot_sz)
 
     local item
 
@@ -107,7 +128,7 @@ function nw.ReadInventoryContents(invtbl, typ, tok)
 
     for i=1, its do
         log("   reading item #%d", i)
-        local it = nw.ReadItem(max_uid, max_id, slot_size, inv)
+        local it = nw.ReadInventoryItem(max_uid, max_id, slot_size, inv)
         --inv:AddItem(it)
         log("   successfully added item")
         Inventory:Emit("ItemAdded", inv, it)

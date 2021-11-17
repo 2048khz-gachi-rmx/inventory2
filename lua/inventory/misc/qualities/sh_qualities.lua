@@ -20,6 +20,7 @@ ChainAccessor(ql, "ID", "ID")
 ChainAccessor(ql, "Type", "Type")
 ChainAccessor(ql, "MinStats", "MinStats")
 ChainAccessor(ql, "MaxStats", "MaxStats")
+ChainAccessor(ql, "Rarity", "Rarity")
 
 function ql:SetType(new)
 	if self:GetType() ~= new and self:GetType() then
@@ -87,6 +88,7 @@ function ql:Initialize(name, id)
 
 	self:SetName(name)
 		:SetID(id)
+		:SetRarity(Inventory.Rarities.Default)
 
 	self.Stats = {}
 	self.StatsGuarantee = {}
