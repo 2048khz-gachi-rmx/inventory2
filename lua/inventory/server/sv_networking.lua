@@ -81,7 +81,6 @@ function invnet:Initialize(uid, iid)
 
 	self:WriteUInt(self.MaxUIDLen, 5).UsesUID = 1    --maximum bit size of a  UID in the queue
 	self:WriteUInt(self.MaxIDLen, 5).UsesID = 1      --maximum bit size of an IID in the queue
-	print("Initialized", self, self.MaxUID, self.MaxID)
 end
 
 function invnet:SetMaxIDs(uid, iid)
