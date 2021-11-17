@@ -72,7 +72,12 @@ local invOnly = {
 
 	"gsob_ammo_api", "go_ammo_sg_dragon",
 	"gsoe_extra_ammo_explosive",
-	"fml_fas1_muzz_bayo_quad"
+	"fml_fas1_muzz_bayo_quad",
+
+	"mifl_fas2_g20_slide_18", "mifl_fas2_g20_slide_18c",
+	"mifl_fas2_mp5_stock_g3",
+	"mifl_fas2_ak_mag_762_inf"
+
 }
 
 for k,v in ipairs(invOnly) do
