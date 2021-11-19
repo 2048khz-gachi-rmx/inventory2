@@ -161,13 +161,16 @@ function invnet:WriteUID(it)
 	return t
 end
 
-function invnet:WriteSlot(it)
-	if not it:GetInventory() then
-		self:WriteBool(false)
-		return
+function invnet:WriteSlot(it, knownInv)
+	if not knownInv then
+		if not it:GetInventory() then
+			self:WriteBool(false)
+			return
+		end
+
+		self:WriteBool(true)
 	end
 
-	self:WriteBool(true)
 	local len = it:GetInventory().MaxItems
 	if len then
 		len = bit.GetLen(len)

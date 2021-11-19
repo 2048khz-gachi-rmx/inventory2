@@ -22,7 +22,6 @@ function ENT:SVInit()
 	self:SetRenderMode(RENDERMODE_TRANSALPHA)
 
 	self:SetCollisionGroup(COLLISION_GROUP_DEBRIS)
-	--self:SetTrigger(true)
 
 	self:SetUseType(SIMPLE_USE)
 
@@ -30,16 +29,42 @@ function ENT:SVInit()
 	self:Activate()
 end
 
+function ENT:Think()
+	if not self:CanInteract() then return end
+	if self.Setup then return end
+
+	self.Setup = true
+	self:SetTrigger(true)
+end
+
 function ENT:GetItem()
 	return self.Item
 end
 
 function ENT:StartTouch(e)
-	print("dont touch me there", e)
+	if not self:CanInteract() then return end
+	if not IsPlayer(e) then return end
+
+	local tempInv = Inventory.GetTemporaryInventory(e)
+	local left, pr, newIts = tempInv:PickupItem(self:GetItem())
+
+	if not pr then
+		return
+	end
+
+	if not left then
+		self.PickedUp = true
+		self:Remove()
+	end
+
+	pr:Then(function()
+		if not IsValid(e) then return end
+		e:NetworkInventory(tempInv, INV_NETWORK_UPDATE)
+	end)
 end
 
 function ENT:EndTouch(e)
-	print("ow ow ow", e)
+
 end
 
 function ENT:OnRemove()

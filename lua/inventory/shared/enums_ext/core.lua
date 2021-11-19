@@ -34,3 +34,6 @@ Inventory.RequiresNetwork = {
 	[INV_ITEM_ADDED] = true,
 	[INV_ITEM_DATACHANGED] = true,
 }
+
+
+Inventory.DropCleanupTime = 120

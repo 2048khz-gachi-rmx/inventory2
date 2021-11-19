@@ -119,18 +119,17 @@ function bp:RemoveItem(it, noChange, suppresserror)
 	if slot and slots[slot] == foundit then
 		slots[slot] = nil
 	else
-
 		for i=1, self.MaxItems do
 			if self.Slots[i] == foundit then
 				self.Slots[i] = nil
 				slot = i
 			end
 		end
-
 	end
 
 	foundit:SetInventory(nil)
 	foundit:SetSlot(nil)
+	its[foundit:GetUID()] = nil
 
 	--if the player doesn't know about the item, don't even tell him about the deletion
 	if foundit:GetKnown() and not noChange then
@@ -212,6 +211,8 @@ function bp:AddItem(it, ignore_emitter, nochange)
 		return
 	end
 
+	it:SetInventory(self)
+
 	if it:GetUID() then
 		self.Items[it:GetUID()] = it
 	else
@@ -228,8 +229,6 @@ function bp:AddItem(it, ignore_emitter, nochange)
 		self:AddChange(it, INV_ITEM_ADDED)
 	end
 
-	it:SetInventory(self)
-
 	self:Emit("AddItem", it, it:GetUID())
 	if not self.ReadingNetwork then
 		self:Emit("Change")
@@ -238,10 +237,11 @@ function bp:AddItem(it, ignore_emitter, nochange)
 	return it:GetSlot()
 end
 
-function bp:GetFreeSlot()
+function bp:GetFreeSlot(ignore_slots)
+	local slots = self.Slots
 
 	for i=1, self.MaxItems do
-		if not self.Slots[i] then
+		if not slots[i] and (not ignore_slots or not ignore_slots[i]) then
 			return i
 		end
 	end

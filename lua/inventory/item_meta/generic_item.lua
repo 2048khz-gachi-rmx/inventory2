@@ -77,9 +77,9 @@ function it:GetCommitedActions(typ)
 end
 
 -- first arg can also be a table of data
-function it:CanStack(it2, amt)
-	
+-- can stack it2 into self?
 
+function it:CanStack(it2, amt)
 	local otherData = IsItem(it2) and it2:GetData() or istable(it2) and it2
 	it2 = IsItem(it2) and it2
 
@@ -91,6 +91,14 @@ function it:CanStack(it2, amt)
 	return math.min(self:GetMaxStack() - self:GetAmount(),
 		it2 and it2:GetAmount() or amt or math.huge,
 		amt or math.huge)
+end
+
+function it:Stack(it)
+	local amt = isnumber(it) or it:GetAmount()
+	local toStk = math.min(self:GetMaxStack() - self:GetAmount(), amt)
+	self:SetAmount(self:GetAmount() + toStk)
+
+	return amt - toStk
 end
 
 function it:Delete()

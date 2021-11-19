@@ -234,6 +234,67 @@ function bp:InsertItem(it, slot, cb)
 	return pr
 end
 
+function bp:PickupItem(it, ignore_emitter, nochange)
+	CheckArg(1, it, IsItem, "Item")
+
+	local prs = {}
+
+	if not it:GetSlot() then
+		it:SetSlot(self:GetFreeSlot())
+	end
+
+	local can, why, fmts = self:_CanAddItem(it, ignore_emitter)
+
+	if not can then
+		if why then
+			errorf(why, unpack(fmts or {}))
+		end
+
+		return false
+	end
+
+	local left, itStk, newStk = Inventory.GetInventoryStackInfo(self, it)
+	if not left and not itStk then
+		-- item unstackable, just add it
+		local slot = self:GetFreeSlot()
+		if not slot then
+			return false, false
+		end
+
+		it:SetInventory(nil)
+		it:SetSlot(slot)
+		self:AddItem(it, ignore_emitter, nochange)
+
+		local pr = Promise()
+		pr:Resolve() -- instant resolve, nice
+
+		return false, pr, {it}
+	end
+
+	for _, dat in ipairs(itStk) do
+		local v, amt = unpack(dat)
+		v:Stack(it)
+	end
+
+	local newIts = Inventory.CreateStackedItems(self, it, newStk)
+
+	for k,v in ipairs(newIts) do
+		prs[#prs + 1] = self:InsertItem(v)
+	end
+
+	if not self.ReadingNetwork then
+		self:Emit("Change")
+	end
+
+	if left then
+		it:SetAmount(left)
+	end
+
+	local pr = Promise.OnAll(prs)
+
+	return left, pr, newIts
+end
+
 --[[------------------------------]]
 --	    Networking & shtuff
 --[[------------------------------]]
@@ -359,7 +420,7 @@ function bp:WriteChanges(ns)
 		ns:WriteUInt(#crossmove, 16).CrossMovedAmt = true
 		for k,v in ipairs(crossmove) do
 			ns:WriteUID(v)
-			ns:WriteSlot(v)
+			ns:WriteSlot(v, true)
 			--ns:WriteInventory(v:GetInventory())
 		end
 	end
@@ -372,7 +433,7 @@ function bp:WriteChanges(ns)
 		ns:WriteUInt(#moves, 16).MovedAmt = true
 		for k,v in ipairs(moves) do
 			ns:WriteUID(v)
-			ns:WriteSlot(v)
+			ns:WriteSlot(v, true)
 		end
 	end
 

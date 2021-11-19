@@ -3,9 +3,9 @@ ENT.Base = "base_gmodentity"
 ENT.Type = "anim"
 ENT.PrintName = "Base Dropped Item"
 
-ENT.Model = "models/hunter/blocks/cube1x1x1.mdl"
+ENT.Model = "models/hunter/blocks/cube075x075x075.mdl"
 ENT.Skin = 0
-ENT.TimeToPickupable = 2.3
+ENT.TimeToPickupable = 1.6
 ENT.TimeToAnimate = .7
 
 local function notInitted(self)
@@ -34,6 +34,10 @@ function ENT:SetItem(itm)
 
 	self.Item = itm
 	self:SetNWItemID(itm:GetUID())
+end
+
+function ENT:CanInteract()
+	return (CurTime() - self:GetCreationTime()) > self.TimeToPickupable
 end
 
 function ENT:Initialize()

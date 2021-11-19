@@ -63,8 +63,8 @@ function ENT:DrawBeamAnimation(pos, ubFr)
 	local dorig = self:GetDropOrigin()
 
 	local eFr = fr
-	local brkPoint = 0.45
-	local pow = 3
+	local brkPoint = 0.5
+	local pow = 5
 	local height = self.BeamHeight
 
 	if eFr > brkPoint then
@@ -87,7 +87,7 @@ function ENT:DrawBeamAnimation(pos, ubFr)
 	local ox, oy, oz = dorig:Unpack()
 	local curStep = 0
 	local step = trailLen / trailSegs
-	local start = math.max(ubFr - trailLen, 0)
+	local start = math.max(ubFr - (ubFr > 1 and (trailLen - (ubFr - 1) * 0.4) or trailLen), 0)
 
 	render.StartBeam(minLen)
 
@@ -205,7 +205,8 @@ function ENT:DrawGlow(pos, fr)
 	local rCol = rar and rar:GetColor() or Colors.Red
 	cols[2] = rCol
 	
-	fr = Ease(fr, 0.2)
+	fr = Ease(fr, 0.7)
+	local gfr = 3 - fr * 2
 
 	for i=1, 2 do
 		local col = cols[i]
@@ -251,23 +252,27 @@ function ENT:DrawGlow(pos, fr)
 
 	local sz = 48 + math.sin(CurTime() * 2) * 4
 	render.SetMaterial(glows[1])
-	render.DrawSprite(pos, fr * sz, fr * sz, rarityCol)
+	render.DrawSprite(pos, gfr * sz, gfr * sz, rarityCol)
 
 	sz = 60 + math.sin(CurTime() * 1.2) * 12
 	render.SetMaterial(glows[2])
-	render.DrawSprite(pos, fr * sz, fr * sz, rarityCol)
+	render.DrawSprite(pos, gfr * sz, gfr * sz, rarityCol)
 
 	if flashFr > 0 then
 		sz = 56 * flashFr
 		render.SetMaterial(glows[3])
-		render.DrawSprite(pos + (self.NextFlashOffset or vector_origin), fr * sz, fr * sz, rarityCol)
+		render.DrawSprite(pos + (self.NextFlashOffset or vector_origin), gfr * sz, gfr * sz, rarityCol)
 	end
 end
 
 function ENT:Draw()
-	--self:DrawModel()
+	--[[
+	self:DrawModel()
 	self:SetColor(Color(255, 255, 255, 100))
-	local pos = self:GetPos()
+	]]
+
+	local zOff = Vector(0, 0, self:OBBMins().z / 2)
+	local pos = self:GetPos() - zOff
 
 	local fr = CurTime() - self:GetCreationTime()
 	local ubFr = fr / self.TimeToAnimate -- unbound frac
