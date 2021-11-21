@@ -32,12 +32,14 @@ function f:AppearInventory(p)
 
 	local fromabove = p:NewAnimation(0.35, 0, 0.4)
 	local _, x = self:GetNavbarSize()
-	x = x + 8 --padding
+	x = x + self.RBRadius --padding
 	local y = self.HeaderSize
 
 	fromabove.Think = function(_, pnl, frac)
-		local x = x - 8 + 8 * math.min(frac*1.6, 1)^0.7
-		local y = y - 12 + 12 * frac
+		local off = 16
+
+		local x = x - off + off * frac
+		local y = y - 8 + 8 * frac
 
 		pnl:SetPos(x, y)
 	end
@@ -49,7 +51,7 @@ function f:DisappearInventory(p)
 	p:SetZPos(-50)
 	local x, y = p:GetPos()
 
-	local slope = p:NewAnimation(0.3, 0, 1.5)
+	--[[local slope = p:NewAnimation(0.3, 0, 1.5)
 	local fallfrac = 0.6
 
 	slope.Think = function(_, pnl, frac)
@@ -59,10 +61,11 @@ function f:DisappearInventory(p)
 			y = y + 4 * Ease( (frac-fallfrac) * (1/fallfrac), 1.7)
 		end
 		pnl:SetPos(x, y)
-	end
+	end]]
+	local slope = p:MoveBy(16, 8, 0.15, 0, 2.1)
 
 	table.InsertVararg(p.DisappearAnims,
-		p:PopOut(0.1, 0.1, function(_, self)
+		p:PopOut(0.1, 0.05, function(_, self)
 			self:Hide()
 		end),
 
