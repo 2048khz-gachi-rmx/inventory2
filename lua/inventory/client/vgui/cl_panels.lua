@@ -42,8 +42,6 @@ function iPan.CreateInventory(inv, multiple, set)
 	f.SlotPadding = slotPad
 	f.FitsItems = fits
 
-
-
 	iPan.IFrame = f
 	f:SetMouseInputEnabled(true)
 
