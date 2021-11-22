@@ -288,8 +288,15 @@ function invnet:WriteInventory(inv, key)
 end
 
 function invnet:WriteItem(it, ignore)
-    if not self.CurrentInventory or not self.CurrentInventory:HasItem(it) and not ignore then 
-        errorf("Can't write an item if current inventory doesn't have it! (current inv: %s, tried to write: %s)", self.CurrentInventory, it) 
+    if not self.CurrentInventory and not ignore then
+        errorf("Can't write an item without a written inventory! (tried to write: %s, its' inv: %s)", it, it:GetInventory())
+        return
+    end
+
+    if not self.CurrentInventory:HasItem(it) and not ignore then
+        errorf("Can't write an item if current inventory doesn't have it! (current inv: %s, tried to write: %s)\n" ..
+            "   (slot %s, that slot in inv is %s)", self.CurrentInventory, it, it:GetSlot(),
+            self.CurrentInventory:GetSlots()[it:GetSlot()])
         return
     end
 

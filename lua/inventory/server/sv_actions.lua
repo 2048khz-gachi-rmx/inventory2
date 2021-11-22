@@ -73,7 +73,7 @@ local function load()
 		local dat = table.Copy(it:GetData())
 		dat.Amount = amt
 
-		local new = Inventory.NewItem(nil, it:GetItemID())
+		local new = Inventory.NewItem(it:GetItemID())
 		new:SetOwner(ply)
 		new:SetInventory(inv)
 		new:SetSlot(where)
@@ -172,7 +172,7 @@ local function load()
 		local dat = table.Copy(it:GetData())
 		dat.Amount = amt
 
-		local new = Inventory.NewItem(nil, it:GetItemID())
+		local new = Inventory.NewItem(it:GetItemID())
 		new:SetOwner(ply)
 		new:SetInventory(invto)
 		new:SetSlot(slot)
