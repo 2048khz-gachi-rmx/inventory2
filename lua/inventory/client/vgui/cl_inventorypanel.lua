@@ -4,7 +4,7 @@ local iPan = Inventory.Panels
 function PANEL:Init()
 	local scr = vgui.Create("FScrollPanel", self)
 	scr:Dock(FILL)
-	scr:DockMargin(0, 32, 0, 0)
+	scr:DockMargin(4, 32, 4, 4)
 
 	scr.GradBorder = true
 	scr:GetCanvas():AddDockPadding(0, 8, 0, 8)

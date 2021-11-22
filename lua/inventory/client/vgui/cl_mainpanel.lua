@@ -31,9 +31,8 @@ function f:AppearInventory(p)
 	p:PopIn(0.2, 0)
 
 	local fromabove = p:NewAnimation(0.35, 0, 0.4)
-	local _, x = self:GetNavbarSize()
-	x = x + self.RBRadius --padding
-	local y = self.HeaderSize
+	local pos = self:GetPositioned()
+	local x, y = pos[1], pos[2]
 
 	fromabove.Think = function(_, pnl, frac)
 		local off = 16
@@ -109,11 +108,9 @@ function f:SetInventory(inv, pnl, noanim)
 	local uids = {}
 
 	local trackFunc = function(self, slotnum, it)
-
 		if not it:GetUID() then return end --uh kay
 
 		uids[it:GetUID()] = self
-
 	end
 
 	local unTrackFunc = function(self, it)
