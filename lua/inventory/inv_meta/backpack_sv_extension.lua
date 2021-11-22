@@ -323,12 +323,17 @@ function bp:WriteChanges(ns)
 		[INV_ITEM_DELETED] = dels,
 		[INV_ITEM_MOVED] = moves,
 		[INV_ITEM_CROSSMOVED] = crossmove,
+
+		[INV_ITEM_DATACHANGED] = false, -- ignore
+		[INV_ITEM_ADDED] = false,
 	}
 
 	for item, enums in pairs(self.Changes) do
 		for enum, _ in pairs(enums) do
 			if not where[enum] then
-				printf("Unknown change enum in %s! Ignoring... (%s: %q)", self.Name, item, enum == 2 and "2 (= added)" or enum)
+				if where[enum] == nil then
+					printf("Unknown change enum in %s! Ignoring... (%s: %q)", self.Name, item, enum == 2 and "2 (= added)" or enum)
+				end
 				continue
 			end
 
