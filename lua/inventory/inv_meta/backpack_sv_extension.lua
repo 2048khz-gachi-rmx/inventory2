@@ -239,11 +239,11 @@ function bp:PickupItem(it, ignore_emitter, nochange)
 
 	local prs = {}
 
-	if not it:GetSlot() then
+	--[[if not it:GetSlot() then
 		it:SetSlot(self:GetFreeSlot())
-	end
+	end]]
 
-	local can, why, fmts = self:_CanAddItem(it, ignore_emitter)
+	local can, why, fmts = self:_CanAddItem(it, ignore_emitter, true)
 
 	if not can then
 		if why then
@@ -254,6 +254,7 @@ function bp:PickupItem(it, ignore_emitter, nochange)
 	end
 
 	local left, itStk, newStk = Inventory.GetInventoryStackInfo(self, it)
+
 	if not left and not itStk then
 		-- item unstackable, just add it
 		local slot = self:GetFreeSlot()

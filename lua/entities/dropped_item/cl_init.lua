@@ -31,7 +31,7 @@ local additives = {
 }
 
 for k,v in pairs(glows) do
-	glows[k] = CreateMaterial("itemdrop_glow3" .. k, "UnlitGeneric", {
+	glows[k] = CreateMaterial("itemdrop_glow" .. k, "UnlitGeneric", {
 		["$additive"] = "1",
 		["$basetexture"] = v,
 		["$translucent"] = "1",
@@ -41,7 +41,7 @@ for k,v in pairs(glows) do
 end
 
 for k,v in pairs(additives) do
-	additives[k] = CreateMaterial("itemdrop_add_ffs" .. k, "UnlitGeneric", {
+	additives[k] = CreateMaterial("itemdrop_add" .. k, "UnlitGeneric", {
 		["$additive"] = "1",
 		["$basetexture"] = v,
 		["$translucent"] = "1",

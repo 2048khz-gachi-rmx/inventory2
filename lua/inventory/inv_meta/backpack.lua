@@ -177,8 +177,8 @@ function bp:GetItemInSlot(slot)
 	return self.Slots[slot]
 end
 
-function bp:_CanAddItem(it, ignore_emitter)
-	if not it:GetSlot() then
+function bp:_CanAddItem(it, ignore_emitter, ignore_slot)
+	if not it:GetSlot() and not ignore_slot then
 		return false, "Can't add an item without a slot set! Set a slot first!\nItem: %s", {it}
 	end
 
