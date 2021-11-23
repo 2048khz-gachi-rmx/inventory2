@@ -10,9 +10,26 @@ function bp:GenerateRecipeText(cloud, markup)
 	recipeMup:SetWide(cloud:GetCurWidth() - 16)
 	recipeMup.naem = "Markup - Recipe"
 
-	for id, amt in pairs(self:GetRecipe()) do
+	local skip = false
+	local rec = self:GetRecipe()
+
+	for id, amt in pairs(rec) do
+		if skip then skip = false continue end
+
+		skip = true
 		local pc = recipeMup:AddPiece()
 		pc:SetAlignment(1)
+		pc:SetFont("BS18")
+
+		local base = Inventory.Util.GetBase(id)
+		local col = pc:AddTag(MarkupTag("color", base:GetColor() or Colors.Red))
+		pc:AddText(base:GetName())
+		pc:EndTag(col)
+
+		pc:AddText(" x" .. amt .. "        ") -- this is such a hack lmao
+
+		id, amt = next(rec, id)
+
 		local base = Inventory.Util.GetBase(id)
 		local col = pc:AddTag(MarkupTag("color", base:GetColor() or Colors.Red))
 		pc:AddText(base:GetName())

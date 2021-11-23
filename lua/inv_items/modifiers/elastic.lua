@@ -44,7 +44,7 @@ el.SpeedDiv = 0.1
 function el:GenerateMarkup(it, mup, tier)
 	local mod = mup:AddPiece()
 	mod:SetAlignment(1)
-	mod.Font = "BSB28"
+	mod.Font = "BSB24"
 
 	local tx = mod:AddText("Elastic")
 	mod:SetColor(Color(220, 220, 220))
@@ -57,7 +57,7 @@ function el:GenerateMarkup(it, mup, tier)
 	local tx = desc:AddText("Jumping while sprinting will propel you ")
 
 	for i=1, self:GetMaxTier() do
-		local tx2 = desc:AddText(tostring(self:GetTierStrength(i)))
+		local tx2 = desc:AddText(tostring(self:GetTierStrength(i)) .. "m")
 		tx2.color = i == tier and numCol or notNumCol
 
 		if i ~= self:GetMaxTier() then
@@ -66,5 +66,5 @@ function el:GenerateMarkup(it, mup, tier)
 		end
 	end
 
-	desc:AddText(" meters forward.")
+	desc:AddText(" forward.")
 end
