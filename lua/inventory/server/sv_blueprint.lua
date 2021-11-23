@@ -35,12 +35,31 @@ function bp.TierHasTalent(tier)
 	return tier >= 5
 end
 
-function bp.GetWeapon(typ) --weapon pools are defined in sh_blueprints.lua
+function bp.GetWeapon(typ, tier) --weapon pools are defined in sh_blueprints.lua
 	local pool = bp.WeaponPool[typ]
 	if not pool then print("Failed to get blueprint pool for weapon type:", typ) return end --?
 
-	local rand = math.random(1, #pool)
-	return pool[rand]
+	local available = {}
+
+	for k,v in ipairs(pool) do
+		local base = Inventory.BaseItems[v]
+		if not base then
+			errorNHf("Missing weapon while generating blueprint: %s!", v)
+			continue
+		end
+
+		if base:CanGenerate(tier) then
+			available[#available + 1] = v
+		end
+	end
+
+	if #available == 0 then
+		errorf("No available weapons for type %s, tier %s!", typ, tier)
+		return
+	end
+
+	local rand = math.random(1, #available)
+	return available[rand]
 end
 
 function bp.TierGetMods(tier)
@@ -149,14 +168,24 @@ function bp.GenerateRecipe(itm)
 	if tier == 1 then
 		rec.copper_bar = math.random(5, 15)
 		rec.iron_bar = math.random(10, 20)
+		rec.nutsbolts = math.random(1, 4)
+		rec.adhesive = math.random(1, 2)
+
 	elseif tier == 2 then
 		rec.copper_bar = math.random(5, 15)
 		rec.iron_bar = math.random(10, 20)
 		rec.gold_bar = math.random(5, 10)
+		rec.nutsbolts = math.random(3, 7)
+		rec.adhesive = math.random(2, 4)
+		rec.lube = math.random(1, 2)
+
 	elseif tier == 3 then
 		rec.copper_bar = math.random(20, 60)
 		rec.iron_bar = math.random(30, 75)
 		rec.gold_bar = math.random(15, 30)
+		rec.nutsbolts = math.random(6, 13)
+		rec.adhesive = math.random(4, 7)
+		rec.lube = math.random(1, 2)
 	else
 		rec.copper_bar = 9999
 	end
@@ -185,7 +214,7 @@ function bp.Generate(tier, typ)
 		typ = bp.GetRandomType()
 	end
 
-	local wep = bp.GetWeapon(typ)
+	local wep = bp.GetWeapon(typ, tier)
 
 	local qual = bp.PickQuality(tier, wep)
 	local amtMods = bp.TierGetMods(tier)

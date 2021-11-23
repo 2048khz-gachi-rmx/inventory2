@@ -140,35 +140,34 @@ Inventory.Blueprints.WeaponPool = {}
 local pool = Inventory.Blueprints.WeaponPool
 
 pool.ar = {
-	"arccw_famas",
-	"arccw_galil556",
-	"arccw_sg552",
-	"arccw_ak47",
-	"arccw_aug",
-	"arccw_augpara",
-	"arccw_m4a1",
-
+	"arccw_fml_fas_akm15_whyphonemademedothis",
+	"arccw_go_galil_ar",
 	"arccw_go_ace",
+	"arccw_go_aug",
+
 	"arccw_go_ak47",
 	"arccw_go_ar15",
-	"arccw_go_aug",
 	"arccw_go_famas",
 	"arccw_go_m4",
 	"arccw_go_sg556",
 
-	"arccw_fml_fas_m4a1",
-	"arccw_fml_fas_akm15_whyphonemademedothis",
-	"arccw_fml_fas_famas",
-	"arccw_fml_fas_g36c",
-	"arccw_fml_fas_m16a2",
+	"arccw_mifl_fas2_g36c",
+	"arccw_mifl_fas2_ak47",
+	"arccw_mifl_fas2_rpk",
+	"arccw_mifl_fas2_sg55x",
+	"arccw_mifl_fas2_m4a1",
+	"arccw_mifl_fas2_famas",
 }
 
 pool.shotgun = {
-	"arccw_go_mag7",
-	"arccw_go_870",
+	"arccw_fml_fas2_custom_mass26",
+	"arccw_mifl_fas2_toz34",
+	"arccw_fml_fas_m870",
+
 	"arccw_go_nova",
 	"arccw_go_m1014",
-	"arccw_m1014",
+
+	"arccw_mifl_fas2_m3",
 }
 
 
@@ -181,49 +180,44 @@ pool.smg = {
 	"arccw_go_bizon",
 	"arccw_go_ump",
 
-	"arccw_fml_fas_mp5",
+	"arccw_mifl_fas2_mp5",
 	"arccw_fml_fas_m11",
 	"arccw_fml_fas_sterling",
 }
 
 pool.sr = {
+	"arccw_contender",
+
 	"arccw_go_awp",
 	"arccw_go_ssg08",
 
 	"arccw_fml_fas_m82",
 	"arccw_fml_fas_m24",
 
-	"arccw_m107",
-	"arccw_m14",
+	"arccw_mifl_fas2_m24",
 }
 
 pool.dmr = {
-	"arccw_g3a3",
-
-	"arccw_fml_fas_m14",
-	"arccw_fml_fas_g3a3",
-	"arccw_fml_fas_sr25",
+	"arccw_m14",
+	"arccw_fml_fas_sg550",
 
 	"arccw_go_g3",
 	"arccw_go_scar",
-	"arccw_fml_fas_sg550",
+
+	"arccw_mifl_fas2_sr25",
+	"arccw_mifl_fas2_g3",
 }
 
 pool.pistol = {
-
-	"arccw_deagle50",
-	"arccw_deagle357",
-	"arccw_ragingbull",
-	"arccw_makarov",
+	"arccw_mifl_fas2_m1911",
+	"arccw_mifl_fas2_ragingbull",
+	"arccw_mifl_fas2_p226",
+	"arccw_mifl_fas2_deagle",
 
 	"arccw_go_deagle",
 	"arccw_go_fiveseven",
 	"arccw_go_cz75",
-	"arccw_go_r8",
 	"arccw_go_tec9",
-
-	"arccw_fml_fas_deagle",
-
 }
 
 Inventory.Blueprints.WeaponPoolReverse = {}

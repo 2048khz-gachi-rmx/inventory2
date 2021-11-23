@@ -2,9 +2,9 @@
 
 -- does not modify any input data
 -- returns:
--- 	1: bool - all of the items fit?
--- 	2: table - { {existing_item, to_stack}, {...} }
---  3: table - { [slot_create_in] = amt, ... }
+-- 	1: false if all items fit, number of items unstacked otherwise
+-- 	2: table - { {existing_item, to_stack}, {...} }; can be false if item unstackable
+--  3: table - { [slot_create_in] = amt, ... }; same
 
 function Inventory.GetInventoryStackInfo(inv, item)
 	CheckArg(1, inv, IsInventory, "Inventory")
