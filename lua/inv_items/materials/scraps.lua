@@ -95,6 +95,30 @@ Inventory.BaseItemObjects.Generic("nutsbolts")
 		ent:SetSubMaterial(1, "Models/effects/vol_light001") -- ugly hack but oldschool, lol
 	end)
 
+Inventory.BaseItemObjects.Generic("lube")
+	:SetName("Lubricant")
+	:SetModel("models/props_junk/garbage_plasticbottle002a.mdl")
+	:SetModelColor(Color(45, 100, 60))
+
+	:SetCamPos( Vector(64.2, 53.3, 23.3) )
+	:SetLookAng( Angle(15.6, -140.3, 0.0) )
+	:SetFOV( 14.1 )
+
+	:SetCountable(true)
+	:SetMaxStack(10)
+
+Inventory.BaseItemObjects.Generic("adhesive")
+	:SetName("Adhesive")
+	:SetModel("models/props_junk/plasticbucket001a.mdl")
+	:SetModelColor(Color(90, 75, 45))
+
+	:SetCamPos( Vector(47.6, -60.8, 38.0) )
+	:SetLookAng( Angle(23.7, -231.8, 0.0) )
+	:SetFOV( 22.2 )
+
+	:SetCountable(true)
+	:SetMaxStack(10)
+
 Inventory.BaseItemObjects.Generic("rdx")
 	:SetName("RDX")
 	:SetModel("models/props_lab/jar01b.mdl")
