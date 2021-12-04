@@ -7,6 +7,7 @@ ENT.BeamHeight = 96
 
 function ENT:CLInit()
 	self.Wisps = {}
+	self.Random = math.random()
 	self:GenWisp()
 
 	local mins = Vector(-self.GlowRadius, -self.GlowRadius, -self.BeamHeight)
@@ -119,7 +120,6 @@ function ENT:DrawBeamAnimation(pos, ubFr)
 	render.EndBeam()
 end
 
-local temp = Vector()
 local wispCol = color_white:Copy()
 
 function ENT:GenWisp()
@@ -204,10 +204,11 @@ function ENT:DrawGlow(pos, fr)
 	local rar = itm and itm:GetRarity()
 	local rCol = rar and rar:GetColor() or Colors.Red
 	cols[2] = rCol
-	
+
 	fr = Ease(fr, 0.7)
 	local gfr = 3 - fr * 2
 
+	-- beam up
 	for i=1, 2 do
 		local col = cols[i]
 		render.SetMaterial(additives[2])
@@ -237,19 +238,34 @@ function ENT:DrawGlow(pos, fr)
 		render.EndBeam()
 	end
 
-	self:DrawWisps(pos)
+	if self:GetItem() and fr >= 1 then
+		local b = self:GetItem():GetBase()
+		if b then
+			temp:Set(pos)
+			temp[3] = temp[3] + math.sin((CurTime() + self.Random * math.pi * 2) * 2.4) * 1.4
+			b:Paint3D(temp, self:GetAngles(), self:GetItem())
+		end
+	end
+
 	rarityCol:Set(rCol)
 
 	local flashTime = (self.NextFlashTime or 0)
 	local flashFr = CurTime() - flashTime > 0 and 1 - (CurTime() - flashTime) / 0.4 or 0
 
 	if flashFr < 0 then
-		self.NextFlashTime = CurTime() + 0.5 + math.random() * 1.6
-		self.NextFlashOffset = VectorRand(-2, 2)
+		self.NextFlashTime = CurTime() + 0.4 + math.random() * 1.1
+		self.NextFlashOffset = VectorRand(-3, 3)
 	end
 
 	rarityCol.a = fr * 255
 
+	-- glow
+	local dist = EyePos():Distance(pos) - 96
+
+	local alpha = Lerp(dist / 192, 20, 255)
+	local prevA = rarityCol.a
+
+	rarityCol.a = alpha
 	local sz = 48 + math.sin(CurTime() * 2) * 4
 	render.SetMaterial(glows[1])
 	render.DrawSprite(pos, gfr * sz, gfr * sz, rarityCol)
@@ -257,6 +273,8 @@ function ENT:DrawGlow(pos, fr)
 	sz = 60 + math.sin(CurTime() * 1.2) * 12
 	render.SetMaterial(glows[2])
 	render.DrawSprite(pos, gfr * sz, gfr * sz, rarityCol)
+
+	rarityCol.a = prevA
 
 	if flashFr > 0 then
 		sz = 56 * flashFr
@@ -289,6 +307,9 @@ function ENT:Draw()
 
 	ringFr = math.min(ringFr, 1)
 	self:DrawGlow(pos, ringFr)
+
+
+	self:DrawWisps(pos)
 end
 
 function ENT:GetItem()

@@ -12,8 +12,7 @@ Inventory.BaseItemObjects.Generic("circuit_board")
 	:SetCountable(true)
 	:SetMaxStack(10)
 
-	:On("UpdateProperties", "ResourceSkin", function(base, item, ipnl, imdl)
-		local ent = imdl:GetEntity()
+	:On("UpdateModel", "ResourceSkin", function(base, item, ent)
 		ent:SetMaterial("phoenix_storms/wire/pcb_green")
 	end)
 
@@ -75,8 +74,7 @@ Inventory.BaseItemObjects.Generic("radiator")
 
 	:SetCountable(true)
 	:SetMaxStack(5)
-	:On("UpdateProperties", "ResourceSkin", function(base, item, ipnl, imdl)
-		local ent = imdl:GetEntity()
+	:On("UpdateModel", "ResourceSkin", function(base, item, ent)
 		ent:SetSkin(1)
 	end)
 
@@ -91,9 +89,11 @@ Inventory.BaseItemObjects.Generic("nutsbolts")
 
 	:SetCountable(true)
 	:SetMaxStack(10)
-	:On("UpdateProperties", "ResourceSkin", function(base, item, ipnl, imdl)
-		local ent = imdl:GetEntity()
+	:On("UpdateModel", "ResourceSkin", function(base, item, ent, inPnl)
 		ent:SetSubMaterial(1, "Models/effects/vol_light001") -- ugly hack but oldschool, lol
+		if not inPnl then
+			ent:SetModelScale(1.5)
+		end
 	end)
 
 Inventory.BaseItemObjects.Generic("lube")

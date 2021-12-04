@@ -27,6 +27,9 @@ function ENT:SVInit()
 
 	--self:PhysWake()
 	self:Activate()
+	self:Timer("AutoRemoval", Inventory.DropCleanupTime, 1, function()
+		self:Remove()
+	end)
 end
 
 function ENT:Think()

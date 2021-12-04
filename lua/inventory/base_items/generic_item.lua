@@ -283,3 +283,7 @@ Inventory:On("BaseItemInit", "EmitRegister", function(self, bi)
 		its[tick] = nil --clean up the garbage
 	end)
 end)
+
+if CLIENT then
+	include("generic_item_cl_ext.lua")
+end

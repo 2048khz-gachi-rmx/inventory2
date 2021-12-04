@@ -144,7 +144,7 @@ ChainAccessor(ITEM, "Slot", "Slot")
 
 function ITEM:OnInventoryUpdated()
 	if self:GetItem() then
-		self:GetItem():GetBaseItem():Emit("UpdateProperties", self:GetItem(), self, self.ModelPanel)
+		self:GetItem():GetBaseItem():Emit("UpdatePanel", self:GetItem(), self, self.ModelPanel)
 	end
 end
 
@@ -317,7 +317,11 @@ function ITEM:SetItem(it)
 
 		self:CreateModelPanel(it)
 
-		self.Item:GetBaseItem():Emit("UpdateProperties", self.Item, self, self.ModelPanel)
+		if self.ModelPanel and IsValid(self.ModelPanel:GetEntity()) then
+			self.Item:GetBaseItem():Emit("UpdateModel", self.Item, self.ModelPanel:GetEntity(), true)
+		end
+
+		self.Item:GetBaseItem():Emit("UpdatePanel", self.Item, self, self.ModelPanel)
 
 		--self:Emit("Item", it, true)
 

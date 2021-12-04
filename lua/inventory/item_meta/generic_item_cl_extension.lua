@@ -59,3 +59,4 @@ end
 function it:MoveToInventory(inv, slot)
 	self._Commited.CrossInv[self:IncrementToken()] = ("%p:%s"):format(inv, slot)
 end
+

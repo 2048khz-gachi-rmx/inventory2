@@ -14,24 +14,27 @@ local function makeOre(name, skin, bigamt)
 		:SetCamPos( Vector(26.9, 76.9, 28.3) )
 	    :SetLookAng( Angle(19.8, 250.7, 0.0) )
 	    :SetFOV( 8 )
-		:On("UpdateProperties", "ResourceSkin", function(base, item, ipnl, imdl)
-			local ent = imdl:GetEntity()
-
-			if not skin or isnumber(skin) then
+	    :On("UpdateModel", "ResourceSkin", function(base, item, ent)
+	    	if not skin or isnumber(skin) then
 				ent:SetSkin(skin or 1)
 			else
 				ent:SetMaterial(skin)
 			end
 
-			if (item.Data.Amount or 0) > (bigamt or self:GetMaxStack() * 0.7) then
+			if (item:GetAmount() or 0) > (bigamt or base:GetMaxStack() * 0.7) then
 				ent:SetBodygroup(0, 1)
-				imdl:SetFOV(10)
 			else
 				ent:SetBodygroup(0, 0)
+			end
+	    end)
+	    :On("UpdatePanel", "ResourceSkin", function(base, item, ipnl, imdl)
+	    	if (item:GetAmount() or 0) > (bigamt or base:GetMaxStack() * 0.7) then
+				imdl:SetFOV(10)
+			else
 				imdl:SetFOV(8)
 			end
-
-		end)
+	    end)
+		
 		:SetCountable(true)
 
 	return ore
