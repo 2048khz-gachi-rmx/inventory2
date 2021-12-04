@@ -186,6 +186,10 @@ function bp.GenerateRecipe(itm)
 		rec.nutsbolts = math.random(6, 13)
 		rec.adhesive = math.random(4, 7)
 		rec.lube = math.random(1, 2)
+
+		for k,v in pairs(mods) do
+			Inventory.Modifiers.Get(k):Emit("AlterRecipe", itm, rec, v)
+		end
 	else
 		rec.copper_bar = 9999
 	end
