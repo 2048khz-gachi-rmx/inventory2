@@ -39,6 +39,15 @@ local el; el = Inventory.BaseModifier:new("Elastic")
 		return 10 * tier
 	end)
 
+local recipes = {
+	{"thruster_t1", 2},
+	{"thruster_t2", 2},
+	{"thruster_t2", 4},
+}
+el  :On("AlterRecipe", "a", function(self, itm, rec, tier)
+		rec[recipes[tier][1]] = recipes[tier][2]
+	end)
+
 el.SpeedDiv = 0.1
 
 function el:GenerateMarkup(it, mup, tier)
@@ -46,8 +55,8 @@ function el:GenerateMarkup(it, mup, tier)
 	mod:SetAlignment(1)
 	mod.Font = "BSB24"
 
-	local tx = mod:AddText("Elastic")
-	mod:SetColor(Color(220, 220, 220))
+	local tx = mod:AddText("Propulsion")
+	mod:SetColor(Color(110, 160, 240))
 
 	local desc = mup:AddPiece()
 	desc.Font = "OS16"
