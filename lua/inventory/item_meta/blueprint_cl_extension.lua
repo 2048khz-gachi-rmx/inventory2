@@ -26,16 +26,19 @@ function bp:GenerateRecipeText(cloud, markup)
 		pc:AddText(base:GetName())
 		pc:EndTag(col)
 
-		pc:AddText(" x" .. amt .. "        ") -- this is such a hack lmao
+		local pamt = amt
 
-		id, amt = next(rec, id)
+		local id, amt2 = next(rec, id)
+		if not id then pc:AddText(" x" .. amt) break end
+
+		pc:AddText(" x" .. amt .. "        ") -- this is such a hack lmao
 
 		local base = Inventory.Util.GetBase(id)
 		local col = pc:AddTag(MarkupTag("color", base:GetColor() or Colors.Red))
 		pc:AddText(base:GetName())
 		pc:EndTag(col)
 
-		pc:AddText(" x" .. amt)
+		pc:AddText(" x" .. amt2)
 	end
 
 	cloud:AddPanel(recipeMup)
