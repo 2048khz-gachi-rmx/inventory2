@@ -40,7 +40,7 @@ function ms.CreateProcedure(name, args, body)
 	q:Then(function(...)
 		Inventory.Log("Created procedure `" .. name .. "` successfully!", ...)
 		q:Emit("Created")
-	end):Catch(function(_, err)
+	end, function(self, qry, err)
 		if isError(err) then
 			Inventory.LogError("SQL Procedure creation error: %s", err)
 			return
@@ -64,7 +64,7 @@ function ms.CreateFunction(name, args, rettype, body)
 		Inventory.Log("Created procedure `" .. name .. "` successfully!", ...)
 		q:Emit("Created")
 
-	end):Catch(function(_, err)
+	end, function(self, qry, err)
 		if isError(err) then
 			Inventory.LogError("SQL Function creation error: %s", err)
 			return
@@ -84,7 +84,11 @@ ms._States = ms._States or {}
 -- player inventory tables would require "items" and "functions" states
 
 function ms.StateSetQuery(q, ...)
-	if not IsMySQLEmitter(q) then errorf("expected MySQLEmitter, got %q instead", type(q)) return end
+	if not IsMySQLEmitter(q) then
+		errorf("expected MySQLEmitter, got %q instead", type(q))
+		return
+	end
+
 	ms._InitQueue[#ms._InitQueue + 1] = q
 
 	local states = {...}

@@ -5,17 +5,21 @@ local ms = Inventory.MySQL
 local db = ms.DB
 
 local function query(q, suc, fail)
-	table.insert(queries, ms.StateSetQuery( MySQLEmitter(db:query(q), true):Then(function(a, b, c)
+	local em = ms.StateSetQuery( MySQLEmitter(db:query(q), true), "items_table" )
+
+	em:Then(function(a, b, c)
 		if suc then
 			ms.Log(suc)
 		end
-	end):Catch(function(_, err)
+	end, function(_, err)
 		if fail then
 			ms.LogError(fail, err)
 		else
 			ms.LogError("Generic error: [[\n\n%s\n\n]]", err)
 		end
-	end), "items_table" ) )
+	end)
+
+	table.insert(queries, em)
 end
 
 
