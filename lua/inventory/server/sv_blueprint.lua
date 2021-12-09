@@ -237,3 +237,50 @@ function bp.Generate(tier, typ)
 
 	return item
 end
+
+function bp.DebugGenerate(tier, mods, stats, qual)
+	local typ = bp.GetRandomType()
+	local wep = bp.GetWeapon(typ, tier)
+
+	if mods then
+		for k,v in pairs(mods) do
+			if not Inventory.Modifiers.Get(k) then
+				errorf("No such modifier: %s", v)
+			end
+
+			if not isnumber(v) then
+				errorf("Invalid format (should be [\"ModName\"] = tier)")
+			end
+		end
+	end
+
+	if stats then
+		for k,v in pairs(stats) do
+			if not Inventory.Stats.ToName(v) then
+				errorf("No such stat: %s", v)
+			end
+		end
+	end
+
+	if qual and not Inventory.Qualities.Get(qual) then
+		errorf("No such quality: %s", qual)
+	end
+
+	local amtMods = bp.TierGetMods(tier)
+
+	qual = qual or bp.PickQuality(tier, wep)
+	mods = mods or bp.GenerateMods(tier, qual, amtMods)
+	stats = stats or bp.GenerateStats(qual)
+
+	local item = Inventory.Blueprints.CreateBlank()
+	item:SetResult(wep)
+	item:SetTier(tier)
+
+	item:SetQualityName(qual:GetName())
+	item:SetModNames(mods)
+	item:SetStatRolls(stats)
+
+	item:SetRecipe(bp.GenerateRecipe(item))
+
+	return item
+end
