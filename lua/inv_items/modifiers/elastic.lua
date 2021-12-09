@@ -45,7 +45,8 @@ local recipes = {
 	{"thruster_t2", 4},
 }
 el  :On("AlterRecipe", "a", function(self, itm, rec, tier)
-		rec[recipes[tier][1]] = recipes[tier][2]
+		local itName = recipes[tier][1]
+		rec[itName] = (rec[itName] or 0) + recipes[tier][2]
 	end)
 
 el.SpeedDiv = 0.1
@@ -55,7 +56,7 @@ function el:GenerateMarkup(it, mup, tier)
 	mod:SetAlignment(1)
 	mod.Font = "BSB24"
 
-	local tx = mod:AddText("Propulsion")
+	local tx = mod:AddText("Propulsion "  .. string.ToRoman(tier))
 	mod:SetColor(Color(110, 160, 240))
 
 	local desc = mup:AddPiece()

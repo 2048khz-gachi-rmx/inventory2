@@ -4,6 +4,8 @@ local curMod; curMod = Inventory.BaseModifier:new("Vampiric")
 	:SetMaxTier(3)
 	:SetMinBPTier(3)
 	:Hook("PostEntityTakeDamage", function(self, ent, dmg)
+		if not IsPlayer(ent) then return end
+
 		local str = self:GetTierStrength(self:GetTier())
 		if not str then return end
 		str = str / 100
@@ -23,7 +25,7 @@ function curMod:GenerateMarkup(it, mup, tier)
 	mod:SetAlignment(1)
 	mod.Font = "MRB24"
 
-	local tx = mod:AddText("Vampiric")
+	local tx = mod:AddText("Vampiric "  .. string.ToRoman(tier))
 	mod:SetColor(Color(80, 220, 95))
 
 	local desc = mup:AddPiece()
