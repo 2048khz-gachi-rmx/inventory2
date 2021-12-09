@@ -114,13 +114,10 @@ function ms.CreateInventoryTable(tbl_name, use_slots, more_columns, more_constra
 
 	local qobj = ms.DB:query(q)
 
-	qobj.onSuccess = function()
-		log("Created table `%s` successfully!", tbl_name)
-	end
-
-	qobj.onError = qerr
-
-	qobj:start()
+	MySQLEmitter(qobj, true)
+		:Then(function(_, self, dat)
+			log("Created table `%s` successfully!", tbl_name)
+		end, qerr)
 end
 
 hook.Add("InventoryTypeRegistered", "CreateInventoryTables", function(inv)
@@ -191,23 +188,20 @@ function ms.AssignItemID(name, cb, arg)
 	-- query MySQL to create a new ItemID
 	local qobj = assign_query
 	qobj:setString(1, name)
-	--local qobj = db:query(q)
 
-	qobj.onSuccess = function(self, dat)
-		local id = dat[1].id
-					--V stfu
-		if cb then cb(arg or id, arg and id or nil) end
+	MySQLEmitter(qobj, true)
+		:Then(function(_, self, dat)
+			local id = dat[1].id
+						--V stfu
+			if cb then cb(arg or id, arg and id or nil) end
 
-		conv.ToID[name] = id
-		conv.ToName[id] = name
+			conv.ToID[name] = id
+			conv.ToName[id] = name
 
-		Inventory:Emit("ItemIDAssigned", name, id)
-		hook.Run("InventoryItemIDAssigned", name, id)
-	end
+			Inventory:Emit("ItemIDAssigned", name, id)
+			hook.Run("InventoryItemIDAssigned", name, id)
+		end, qerr)
 
-	qobj.onError = qerr
-
-	qobj:start()
 end
 
 ms.AssignItemID = coroutine.Creator(ms.AssignItemID)
@@ -219,13 +213,10 @@ function ms.DeleteItemID(id, cb, ...)
 	qobj:setNumber(1, id)
 	local args = {...}
 
-	qobj.onSuccess = function(self, dat)
-		if cb then cb(unpack(args)) end
-	end
-
-	qobj.onError = qerr
-
-	qobj:start()
+	MySQLEmitter(qobj, true)
+		:Then(function(_, self, dat)
+			if cb then cb(unpack(args)) end
+		end, qerr)
 end
 
 local setslot_query = "UPDATE %s SET slotid = %d WHERE uid = %s AND puid = %s"
@@ -448,18 +439,16 @@ function ms.FetchPlayerItems(inv, ply)
 	local query = fetchitems_query:format(ms.DB:escape(tname), ms.DB:escape(ply:SteamID64()))
 	local q = ms.DB:query(query)
 
-	q.onSuccess = function(self, dat)
-		Inventory.Log("MySQL: Fetched info for %q's %q inventory; %d items", ply:Nick(), tname, #dat)
+	return MySQLEmitter(q, true)
+		:Then(function(_, self, dat)
+			Inventory.Log("MySQL: Fetched info for %q's %q inventory; %d items", ply:Nick(), tname, #dat)
 
-		for k,v in ipairs(dat) do
-			xpcall(remakeItem, GenerateErrorer("InventorySQLRecon"), inv, ply, v)
-		end
+			for k,v in ipairs(dat) do
+				xpcall(remakeItem, GenerateErrorer("InventorySQLRecon"), inv, ply, v)
+			end
 
-	end
-
-	q.onError = qerr
-
-	q:start()
+			return true
+		end, qerr)
 end
 
 function ms.SetSlot(it, inv)
@@ -500,10 +489,11 @@ local function swapSlots(tname, uid, sid, slot1, slot2)
 	t:addQuery(qo1)
 	t:addQuery(qo2)
 	t:addQuery(qo3)
-	print(q1, "\n", q2, "\n", q3)
-	return MySQLEmitter:new(t, true):Catch(trerr)
 
-	--t:start()
+	local em = MySQLEmitter:new(t, true)
+	em:Catch(trerr)
+
+	return em
 end
 
 function ms.SwitchSlots(it1, it2, inv)

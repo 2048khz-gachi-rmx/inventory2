@@ -432,6 +432,7 @@ function nw.RequestResync(ply, ...)
 	resyncCDs[ply] = resyncCDs[ply] or CurTime() - (resyncCD + 1)
 
 	nw.ResyncQueue[ply] = nw.ResyncQueue[ply] or {}
+	ply.InventoryEverSynced = true
 
 	local invs = {...}
 	if #invs == 0 then
