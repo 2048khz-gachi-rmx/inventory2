@@ -5,7 +5,7 @@ local wdt = Inventory.WeaponData
 
 function wd:RealmInit(id)
 	self.NW:On("ReadChangeValue", "WeaponDataProxy", function(...)
-		self:ReadData(...)
+		return self:ReadData(...)
 	end)
 
 	for k,v in pairs(wdt.EIDToWD:GetNetworked()) do
@@ -18,8 +18,6 @@ function wd:RealmInit(id)
 end
 
 function wd:ReadData(nw, key)
-	print("ReadData:", nw, key)
-
 	if self["Deserialize" .. key] then
 		return self["Deserialize" .. key] (self)
 	end
@@ -30,6 +28,8 @@ function wd:DeserializeQuality()
 	local ql = Inventory.Qualities.Get(q)
 
 	self:SetQuality(ql)
+
+	return ql
 end
 
 function wd:DeserializeStats()
@@ -38,11 +38,12 @@ function wd:DeserializeStats()
 	for i=1, amt do
 		local num = net.ReadUInt(8)
 		local perc = net.ReadFloat()
-
 		local name = Inventory.Enums.WeaponIDToStat(num)
 
 		self.Stats[name] = perc
 	end
+
+	return self.Stats
 end
 
 function wd:DeserializeMods()
@@ -58,6 +59,8 @@ function wd:DeserializeMods()
 	end
 
 	self:SetMods(out)
+
+	return out
 end
 
 wdt.EIDToWD:On("NetworkedVarChanged", "RecalcBuffs", function(self, key, old, new)
