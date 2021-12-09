@@ -32,3 +32,11 @@ end
 function Inventory.EquippableID(what)
 	return Inventory.EquipmentIDs[what] and Inventory.EquipmentIDs[what].id
 end
+
+function Inventory.EquippableName(what)
+	local id = Inventory.EquippableID(what)
+	if not id then return "404/no_id" end
+
+	local dat = Inventory.EquipmentSlots[id]
+	return dat and dat.name or "404/no_dat"
+end

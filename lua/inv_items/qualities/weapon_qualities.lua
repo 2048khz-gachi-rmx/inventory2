@@ -18,6 +18,7 @@ make("Fiery")
 
 	:GuaranteeMod("Blazing")
 	:SetTier(2, 4)
+	:SetColor(Color(200, 105, 5))
 
 make("Swift")
 	:AddStat("RPM", 15, 40, true)
@@ -27,6 +28,7 @@ make("Swift")
 	:AddStat("Damage", -15, -5, true)
 	:AddStat("Spread", 10, 25)
 	:SetTier(2)
+	:SetColor(Color(120, 205, 215))
 
 make("Lightweight")
 	:AddStat("Spread", -15, -25, true)
@@ -38,7 +40,7 @@ make("Lightweight")
 	:AddStat("Damage", -5, 5, true)
 	:AddStat("Recoil", -20, -5)
 	:SetTier(3, 4)
-
+	:SetColor(Color(140, 175, 210))
 
 -- overall sucks but its possible it'll have a damage up
 make("Salvaged")
@@ -51,6 +53,8 @@ make("Salvaged")
 	:AddStat("Handling", -20, -10)
 	:AddStat("MoveSpeed", -10, -2)
 	:AddStat("DrawTime", -20, -10)
+
+	:SetColor(Color(160, 130, 55))
 
 	:SetTier(1)
 
@@ -68,3 +72,5 @@ make("Scavenged")
 	:SetMinStats(2)
 	:SetMaxStats(5)
 	:SetTier(1)
+
+	:SetColor(Color(165, 115, 55))

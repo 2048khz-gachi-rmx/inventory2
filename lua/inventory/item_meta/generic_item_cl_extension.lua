@@ -31,7 +31,7 @@ function it:_CallTextGenerators(cloud)
 	local len = #cloud.DoneText
 
 	if len > 0 then --some texts were added
-		cloud:AddSeparator(nil, lwid / 8, 4, 0)
+		cloud:AddSeparator(nil, lwid / 8, 4, self.AutoSepNum or 0)
 	end
 
 	cloud:SetColor(Colors.Gray:Copy())

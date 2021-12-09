@@ -19,31 +19,6 @@ end
 
 local allowed = table.KeysToValues({"primary", "secondary", "utility"})
 
-local gray = Color(100, 100, 100)
-
-
-local sepPrePost = false
-
-function wep:GenerateText(cloud, markup)
-	cloud:SetMaxW( math.max(cloud:GetItemFrame():GetWide() * 2.5, cloud:GetMaxW()) )
-	local needSep = self:GenerateStatsText(cloud, markup)
-	needSep = self:GenerateModifiersText(cloud, markup, needSep)
-
-	sepPrePost = needSep
-end
-
-function wep:PostGenerateText(cloud, markup)
-	local uses = self:GetData().Uses
-	if uses then
-		if sepPrePost then
-			cloud:AddSeparator(nil, cloud.LabelWidth / 8, 4)
-		end
-		cloud:AddFormattedText(uses .. " uses remaining", gray, "OS18", nil, nil, 1)
-	end
-
-	sepPrePost = false
-end
-
 wep:On("CanEquip", "WeaponCanEquip", function(self, ply, slot)
 	local slotName = slot.slot
 

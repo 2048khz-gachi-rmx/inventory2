@@ -22,7 +22,7 @@ function wep:UseCharge(ply)
 	end
 end
 
-hook.Add("PlayerLoadout", "InventoryWeapons", function(ply)
+hook.NHAdd("PlayerLoadout", "InventoryWeapons", function(ply)
 	local inv = Inventory.GetEquippableInventory(ply)
 	local slots = Inventory.EquipmentSlots
 	local its = inv:GetSlots()

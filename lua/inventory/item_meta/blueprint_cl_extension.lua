@@ -1,6 +1,38 @@
 --
 local bp = Inventory.ItemObjects.Blueprint
 
+function bp:GetRarityColor()
+	return self:GetQuality():GetColor()
+end
+
+function bp:GetRarityText()
+	local wep = self:GetResult()
+	local base = wep and Inventory.Util.GetBase(wep)
+	if not base then return "!? 404 base " .. wep end
+
+	local slot = base:GetEquipSlot()
+
+	return ("%s %s BP")
+	:format(self:GetQuality():GetName(),
+		Inventory.EquippableName(base:GetEquipSlot())
+	)
+end
+
+local function addItm(pc, iid, amt, space)
+	local base = Inventory.Util.GetBase(iid)
+	local nmTxt = pc:AddText(base:GetName())
+	local amtTxt = pc:AddText(" x" .. amt .. (space and "  " or ""))
+
+	local haveAmt = Inventory.Util.GetItemCount(Inventory.GetTemporaryInventory(LocalPlayer()), iid)
+	amtTxt.color = haveAmt >= amt and color_white or Colors.Red
+
+	local baseCol = (base:GetColor() or Colors.Red):Copy()
+
+	nmTxt.color = baseCol
+
+	return amtTxt
+end
+
 function bp:GenerateRecipeText(cloud, markup)
 	if #cloud:GetPieces() > 0 then
 		cloud:AddSeparator(nil, cloud.LabelWidth / 8, 4)
@@ -21,24 +53,14 @@ function bp:GenerateRecipeText(cloud, markup)
 		pc:SetAlignment(1)
 		pc:SetFont("BS18")
 
-		local base = Inventory.Util.GetBase(id)
-		local col = pc:AddTag(MarkupTag("color", base:GetColor() or Colors.Red))
-		pc:AddText(base:GetName())
-		pc:EndTag(col)
+		local id2, amt2 = next(rec, id)
+		addItm(pc, id, amt, id2)
 
-		local pamt = amt
+		if not id2 then
+			break
+		end
 
-		local id, amt2 = next(rec, id)
-		if not id then pc:AddText(" x" .. amt) break end
-
-		pc:AddText(" x" .. amt .. "        ") -- this is such a hack lmao
-
-		local base = Inventory.Util.GetBase(id)
-		local col = pc:AddTag(MarkupTag("color", base:GetColor() or Colors.Red))
-		pc:AddText(base:GetName())
-		pc:EndTag(col)
-
-		pc:AddText(" x" .. amt2)
+		addItm(pc, id2, amt2, false)
 	end
 
 	cloud:AddPanel(recipeMup)
