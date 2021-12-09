@@ -187,6 +187,10 @@ function bp:CrossInventoryMove(it, inv2, slot)
 	return em
 end
 
+function bp:LoadItems()
+	return Inventory.MySQL.FetchPlayerItems(self, self:GetOwner())
+end
+
 --for adding an existing both in-game and in-sql item, use bp:AddItem(item)
 --takes an existing item object and inserts it into the inventory as well as mysql
 

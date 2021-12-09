@@ -46,13 +46,12 @@ function bp:Initialize(ply)
 		self:SetOwner(ply)
 
 		if SERVER and self.AutoFetchItems then
-			Inventory.MySQL.FetchPlayerItems(self, ply)
+			self.FetchPr = Inventory.MySQL.FetchPlayerItems(self, ply)
+			self.FetchPr:Then(function()
+				self.FetchPr = nil
+			end)
 		end
 	end
-end
-
-function bp:LoadItems()
-	if SERVER then Inventory.MySQL.FetchPlayerItems(self, self:GetOwner()) else error("This function isn't meant to be run clientside...") end
 end
 
 function bp:SetOwner(ply)

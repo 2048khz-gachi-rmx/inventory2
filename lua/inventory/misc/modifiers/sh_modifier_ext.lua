@@ -17,7 +17,6 @@ local function BaseAccessor(tbl, varname, getname)
 end
 
 
-ChainAccessor(mod, "_Base", "Base")
 ChainAccessor(mod, "_Tier", "Tier")
 
 ChainAccessor(mod, "_WD", "WD")
@@ -28,6 +27,10 @@ BaseAccessor(mod, "_BaseTier", "BaseTier")
 
 function mod:GetTierStrength(...)
 	return self:GetBase():GetTierStrength(...)
+end
+
+function mod:GetBase()
+	return mods.Pool[self._BaseName]
 end
 
 function mod:Initialize(base)
@@ -42,7 +45,7 @@ function mod:Initialize(base)
 		return
 	end
 
-	self:SetBase(base)
+	self._BaseName = base:GetName()
 	mods.InstancePool:Insert(self, base:GetName())
 end
 
