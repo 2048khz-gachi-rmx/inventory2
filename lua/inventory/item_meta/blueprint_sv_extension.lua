@@ -6,11 +6,11 @@ function bp:CreateResult(ply)
 
 	local it = Inventory.NewItem(self:GetResult(), inv)
 
-	local pr = inv:InsertItem(it)
-
 	it:SetQualityName(self:GetQualityName())
 	it:SetModNames(self:GetModNames())
 	it:SetStatRolls(self:GetStatRolls())
+
+	local pr = inv:InsertItem(it)
 
 	return pr
 end

@@ -167,7 +167,7 @@ function nw.ReadInventoryContents(invtbl, typ, tok)
 
                 if item and nw.ShouldAction(item, "CrossInv", tok, newinv, slot) then
                     --if there was no item that means we already predicted the removal somewhere
-                    log("removing item from", item:GetInventory())
+                    log("removing item from %s", item:GetInventory())
                     item:GetInventory():RemoveItem(item, nil, true)
 
                     item:SetSlot(slot)

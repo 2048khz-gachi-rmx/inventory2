@@ -151,9 +151,14 @@ end
 local function ActuallyMove(inv1, inv2, it, slot)
 	local em = Inventory.MySQL.SetInventory(it, inv2, slot)
 
+	print("Removing", it, "from", inv1)
+	print("and adding to", inv2)
 	inv1:RemoveItem(it, true, true) -- don't write the change 'cause we have crossmoves as a separate change
 	it:SetSlot(slot)
 	inv2:AddItem(it, true, true) -- same shit
+
+	print("Done:", it:GetInventory())
+	assert(it:GetInventory() == inv2)
 
 	inv2:AddChange(it, INV_ITEM_CROSSMOVED)
 
@@ -162,7 +167,15 @@ end
 
 -- move from bp to inv2
 function bp:CrossInventoryMove(it, inv2, slot)
-	if it:GetInventory() ~= self then errorf("Can't move an item from an inventory which it doesn't belong to! (item) %q vs %q (self)", it:GetInventory(), self) return end
+	if not IsInventory(inv2) then
+		errorf("CrossInventoryMove between what invs")
+		return
+	end
+
+	if it:GetInventory() ~= self then
+		errorf("Can't move an item from an inventory which it doesn't belong to! (item) %q vs %q (self)", it:GetInventory(), self)
+		return
+	end
 
 	slot = slot or inv2:GetFreeSlot()
 	if not slot then print("Can't cross-inventory-move cuz no slot", slot) return false end
@@ -209,11 +222,14 @@ function bp:InsertItem(it, slot, cb)
 
 	local pr = Promise()
 
+	print("bp:InsertItem", it)
+
 	if it:GetUID() then
 
 		it:SetSlot(slot)
 
 		insSlot = self:AddItem(it)
+		print("had uid; insta add")
 		if insSlot then
 			cb(it, insSlot)
 			self:AddChange(it, INV_ITEM_ADDED)
@@ -222,9 +238,11 @@ function bp:InsertItem(it, slot, cb)
 			pr:Reject(it, insSlot)
 		end
 	else
+		print("no uid")
 		it:Once("AssignUID", function()
 			it:SetSlot(slot)
 			insSlot = self:AddItem(it)
+			print("uid assigned; added")
 			if insSlot then
 				cb(it, insSlot)
 				self:AddChange(it, INV_ITEM_ADDED)
@@ -234,6 +252,8 @@ function bp:InsertItem(it, slot, cb)
 			end
 		end)
 	end
+
+	print('at end', it:GetInventory())
 
 	return pr
 end

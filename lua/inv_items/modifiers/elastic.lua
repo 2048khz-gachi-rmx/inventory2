@@ -54,7 +54,7 @@ el.SpeedDiv = 0.1
 function el:GenerateMarkup(it, mup, tier)
 	local mod = mup:AddPiece()
 	mod:SetAlignment(1)
-	mod.Font = "BSB24"
+	mod.Font = "BSB20"
 
 	local tx = mod:AddText("Propulsion "  .. string.ToRoman(tier))
 	mod:SetColor(Color(110, 160, 240))

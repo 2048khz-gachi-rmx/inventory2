@@ -40,7 +40,7 @@ el  :On("AlterRecipe", "a", function(self, itm, rec, tier)
 function el:GenerateMarkup(it, mup, tier)
 	local mod = mup:AddPiece()
 	mod:SetAlignment(1)
-	mod.Font = "WEIRD22"
+	mod.Font = "WEIRD20"
 
 	local tx = mod:AddText("Executioner " .. string.ToRoman(tier))
 	mod:SetColor(Color(220, 60, 60))

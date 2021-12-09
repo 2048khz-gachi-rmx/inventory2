@@ -132,7 +132,7 @@ function PANEL:HighlightFit(btn, itemfr, item)
 	local can = canEquip(btn, item)
 	if not can then
 		btn.HoverGradientColor = Colors.DarkerRed
-		btn:AlphaTo(120, 0.1, 0)
+		btn:AlphaTo(50, 0.1, 0)
 		return
 	end
 

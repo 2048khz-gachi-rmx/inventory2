@@ -238,14 +238,14 @@ function bp.Generate(tier, typ)
 	return item
 end
 
-function bp.DebugGenerate(tier, mods, stats, qual)
+function bp.DebugGenerate(tier, mods, stats, qual, rec)
 	local typ = bp.GetRandomType()
 	local wep = bp.GetWeapon(typ, tier)
 
 	if mods then
 		for k,v in pairs(mods) do
 			if not Inventory.Modifiers.Get(k) then
-				errorf("No such modifier: %s", v)
+				errorf("No such modifier: %s", k)
 			end
 
 			if not isnumber(v) then
@@ -280,7 +280,11 @@ function bp.DebugGenerate(tier, mods, stats, qual)
 	item:SetModNames(mods)
 	item:SetStatRolls(stats)
 
-	item:SetRecipe(bp.GenerateRecipe(item))
+	if rec ~= false then
+		item:SetRecipe(bp.GenerateRecipe(item))
+	else
+		item:SetRecipe({})
+	end
 
 	return item
 end

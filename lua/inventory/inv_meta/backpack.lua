@@ -192,8 +192,12 @@ function bp:_CanAddItem(it, ignore_emitter, ignore_slot)
 
 	if self.Slots[it:GetSlot()] == it then
 		return it:GetSlot()
+	--[[
+	-- bad idea: some mechanics (ie equip) use this to override an item in a slot easily
+	-- this should be fine
 	elseif self.Slots[it:GetSlot()] then
-		return false
+		return false --, "Already had an item in slot %s (%s)", {it:GetSlot(), self.Slots[it:GetSlot()]}
+		]]
 	end
 
 	return true

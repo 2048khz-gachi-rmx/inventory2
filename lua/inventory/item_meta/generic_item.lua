@@ -167,6 +167,14 @@ end
 it.GetBase = it.GetBaseItem
 
 
+--[[function it:SetInventory(inv)
+	if inv == nil then
+		errorNHf("attempt to set to nil inventory!!!")
+	end
+
+	self.Inventory = inv
+end]]
+
 ChainAccessor(it, "Inventory", "Inventory")
 
 function it:SetSlot(slot, sql)

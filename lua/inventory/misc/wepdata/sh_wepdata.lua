@@ -146,6 +146,16 @@ function Inventory.DoBuffMult(wep, key, cur)
 	key = conv[key] or key
 	local perc = 1 + (wd:GetStats()[key] or 0) / 100
 
+	for k,v in pairs(wd:GetMods() or {}) do
+		local st = v:GetModStats()
+		if not st or (not st[key] and not st.Any) then continue end
+
+		local str = eval(st[key] or st.Any, v, key)
+		if str then
+			perc = perc + str / 100
+		end
+	end
+
 	return perc
 end
 

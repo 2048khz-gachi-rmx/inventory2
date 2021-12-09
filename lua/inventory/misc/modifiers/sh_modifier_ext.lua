@@ -24,6 +24,7 @@ ChainAccessor(mod, "_WD", "WeaponData")
 
 BaseAccessor(mod, "_Name", "Name")
 BaseAccessor(mod, "_BaseTier", "BaseTier")
+BaseAccessor(mod, "_ModStats", "ModStats")
 
 function mod:GetTierStrength(...)
 	return self:GetBase():GetTierStrength(...)

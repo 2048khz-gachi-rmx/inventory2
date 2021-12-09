@@ -18,6 +18,7 @@ ChainAccessor(mod, "MaxBlueprintTier", "MaxBPTier")
 
 ChainAccessor(mod, "Name", "Name")
 ChainAccessor(mod, "Retired", "Retired")
+ChainAccessor(mod, "_ModStats", "ModStats")
 
 mod.IsModifier = true
 
@@ -59,7 +60,10 @@ end
 
 ChainAccessor(mod, "_TierCalc", "TierCalc")
 function mod:GetTierStrength(...)
-	return self:GetTierCalc() and self:GetTierCalc()(self, ...) or -1
+	local fn = self:GetTierCalc()
+	if not fn then return -1 end
+
+	return self:GetTierCalc()(self, ...)
 end
 
 function mod:_Runner(ev, ...)
