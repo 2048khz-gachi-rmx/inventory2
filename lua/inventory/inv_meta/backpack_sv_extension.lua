@@ -151,13 +151,10 @@ end
 local function ActuallyMove(inv1, inv2, it, slot)
 	local em = Inventory.MySQL.SetInventory(it, inv2, slot)
 
-	print("Removing", it, "from", inv1)
-	print("and adding to", inv2)
 	inv1:RemoveItem(it, true, true) -- don't write the change 'cause we have crossmoves as a separate change
 	it:SetSlot(slot)
 	inv2:AddItem(it, true, true) -- same shit
 
-	print("Done:", it:GetInventory())
 	assert(it:GetInventory() == inv2)
 
 	inv2:AddChange(it, INV_ITEM_CROSSMOVED)

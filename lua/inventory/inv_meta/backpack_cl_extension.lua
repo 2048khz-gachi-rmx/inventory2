@@ -26,11 +26,11 @@ function bp:CanCrossInventoryMove(it, inv2, slot)
 	-- todo: is this necessary?
 
 	--check if inv2 can accept cross-inventory item
-	local can = inv2:Emit("CanCrossMoveTo", it, self)
+	local can = inv2:Emit("CanMoveTo", it, self)
 	if can == false then return false end
 
 	--check if inv1 can give out the item
-	can = self:Emit("CanCrossMoveFrom", it, inv2)
+	can = self:Emit("CanMoveFrom", it, inv2)
 	if can == false then return false end
 
 	--check if inv2 can add an item to itself

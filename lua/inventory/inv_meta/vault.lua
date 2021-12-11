@@ -12,5 +12,10 @@ vt.MaxItems = 50
 
 vt:Register()
 
-vt.ActionCanCrossInventoryFrom = CLIENT
-vt.ActionCanCrossInventoryTo = CLIENT
+--vt.ActionCanCrossInventoryFrom = CLIENT
+--vt.ActionCanCrossInventoryTo = CLIENT
+
+vt:On("CanMoveTo", "Vault", function(self, itm, inv2, slot)
+	if not inv2.IsBackpack then return false end
+	return CLIENT and IsValid(Inventory.MatterDigitizerPanel) -- purely visual
+end)
