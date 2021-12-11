@@ -171,7 +171,7 @@ local function CreateSlots(self, tbl)
 
 		local btn = vgui.Create("ItemFrame", self, "ItemFrame for InventoryCharacter")
 		btn:SetSize(eqBtnSize, eqBtnSize)
-		btn:SetInventoryFrame(self)
+		btn:SetInventoryPanel(self)
 		btn.Rounding = 4
 		btn.Border = {col = Colors.LightGray}
 		btn.YFrac = frac * (k - 0.5)

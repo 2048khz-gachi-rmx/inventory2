@@ -286,9 +286,21 @@ function PANEL:StackItem(rec, drop, item, amt)
 end
 
 function PANEL:ItemDrop(rec, drop, item, ...)
-
 	if item:GetInventory().IsCharacterInventory then
-		drop:GetInventoryFrame():Emit("UnequipRequest", rec, drop, item)
+		drop:GetInventoryPanel():Emit("UnequipRequest", rec, drop, item)
+		return
+	end
+
+	local dp = drop:GetInventoryPanel()
+	local df = dp:GetMainFrame()
+
+	local sf = self:GetMainFrame()
+
+	if df:Emit("ItemDropFrom", rec, self, item) == false then
+		return
+	end
+
+	if sf:Emit("ItemDropOn", rec, drop, item) == false then
 		return
 	end
 
@@ -299,7 +311,6 @@ function PANEL:ItemDrop(rec, drop, item, ...)
 	elseif action == "Split" then
 		self:SplitItem(rec, drop, item)
 	elseif action == "Merge" then
-		print("stacking item:", rec, drop, item)
 		self:StackItem(rec, drop, item)
 	end
 
@@ -333,7 +344,7 @@ function PANEL:AddItemSlot()
 				8 + y * (main.SlotSize + main.SlotPadding))
 
 	self.Slots[i + 1] = it
-	it:SetInventoryFrame(self)
+	it:SetInventoryPanel(self)
 	it:SetSlot(i + 1)
 	it:SetMainFrame(self:GetMainFrame())
 	it:On("ItemInserted", self, self.OnItemAddedIntoSlot, self)
@@ -347,7 +358,7 @@ function PANEL:AddItemSlot()
 		it:OnInventoryUpdated()
 	end)
 
-	it:On("Drop", "FrameItemDrop", function(...) print("item drop", ...) self:ItemDrop(...) end)
+	it:On("Drop", "FrameItemDrop", function(...) self:ItemDrop(...) end)
 	return it
 end
 

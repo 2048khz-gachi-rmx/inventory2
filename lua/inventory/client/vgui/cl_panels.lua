@@ -90,10 +90,11 @@ function iPan.CreateInventory(inv, multiple, set)
 		end
 	elseif inv then --only one inventory
 		local tab = createTab(inv)
+		f:SetRetractedSize(0)
 		tab:Select(true)
 	end
 
-	f:SetWide(f:GetWide() + 50 + 8)
+	f:SetWide(f:GetWide() + f:GetRetractedSize() + 8)
 	f:SetTall(math.max(ScrH() * 0.6, 350))
 	function f:DoAnim()
 		f.Y = f.Y - 24
@@ -106,11 +107,19 @@ function iPan.CreateInventory(inv, multiple, set)
 	return f
 end
 
-function Inventory.Panels.PickSettings()
-	local fits = ScrW() >= 1200 and 6 or 4
+function Inventory.Panels.PickSettings(width)
 	local sz = 	(ScrW() < 1200 and ScrW() > 800 and 80)  or		-- 800 - 1200 = 80x80 (with 4 slots per row)
 				(ScrW() >= 1200 and ScrW() < 1900 and 64) or	-- 1200 - 1900 = 64x64
 				(ScrW() >= 1900 and 80)							-- 1900+ = 80x80 with 6 slots
+
+	local fits
+
+	if width then
+		fits = math.floor((width - 4) / sz)
+	else
+		
+		fits = ScrW() >= 1200 and 6 or 4
+	end
 
 	return {
 		SlotSize = sz,

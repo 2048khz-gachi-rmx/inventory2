@@ -281,8 +281,8 @@ function ITEM:CreateModelPanel(it)
 	end
 end
 
-function ITEM:SetInventoryFrame(it)
-	self.InventoryFrame = it
+function ITEM:SetInventoryPanel(it)
+	self.InventoryPanel = it
 	self.Inventory = it:GetInventory()
 
 	local mf = it:GetMainFrame()
@@ -294,8 +294,8 @@ function ITEM:GetInventory()
 	return self.Inventory
 end
 
-function ITEM:GetInventoryFrame()
-	return self.InventoryFrame
+function ITEM:GetInventoryPanel()
+	return self.InventoryPanel
 end
 
 function ITEM:SetItem(it)
