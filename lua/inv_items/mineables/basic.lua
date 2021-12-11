@@ -34,8 +34,9 @@ local function makeOre(name, skin, bigamt)
 				imdl:SetFOV(8)
 			end
 	    end)
-		
+
 		:SetCountable(true)
+		:SetBaseTransferCost(15000)
 
 	return ore
 end
@@ -64,7 +65,7 @@ end
 
 makeOre("copper_ore", 1, 35)
 	:SetName("Copper Ore")
-	:SetMaxStack(50)
+	:SetMaxStack(30)
 	:SetMinRarity(35)
 	:SetMaxRarity(50)
 	:SetWeight(3)
@@ -76,7 +77,7 @@ makeOre("copper_ore", 1, 35)
 
 makeOre("iron_ore", 0, 40)
 	:SetName("Iron Ore")
-	:SetMaxStack(60)
+	:SetMaxStack(40)
 	:SetMinRarity(25)
 	:SetMaxRarity(55)
 	:SetWeight(5)
@@ -113,7 +114,7 @@ makeOre("coal_ore", "!inv_coalore", 40)
 ]]
 makeOre("gold_ore", 3, 20)
 	:SetName("Gold Ore")
-	:SetMaxStack(30)
+	:SetMaxStack(20)
 	:SetMinRarity(50)
 	:SetMaxRarity(70)
 	:SetSpawnChance(30)

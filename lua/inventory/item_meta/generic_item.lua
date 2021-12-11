@@ -106,7 +106,9 @@ function it:Delete()
 		self:GetInventory():RemoveItem(self)
 	end
 	self:SetValid(false)
-	if SERVER then Inventory.MySQL.DeleteItem(self) end
+	if SERVER then
+		Inventory.MySQL.DeleteItem(self)
+	end
 
 	self._Commited.Delete[self:IncrementToken()] = true
 end
@@ -128,6 +130,8 @@ ChainAccessor(it, "ItemID", "IID")
 
 ChainAccessor(it, "ItemName", "ItemName")
 ChainAccessor(it, "ItemName", "IName")
+
+
 
 ChainAccessor(it, "Known", "Known")
 ChainAccessor(it, "_Valid", "Valid")
@@ -158,6 +162,11 @@ BaseItemAccessor(it, "ShouldSpin", "ShouldSpin")
 BaseItemAccessor(it, "Countable", "Countable")
 BaseItemAccessor(it, "MaxStack", "MaxStack")
 BaseItemAccessor(it, "Rarity", "Rarity")
+BaseItemAccessor(it, "BaseTransferCost", "BaseTransferCost")
+
+function it:GetTransferCost()
+	return self:GetBase():GetBaseTransferCost()
+end
 
 function it:GetBaseItem()
 	return Inventory.Util.GetBase(self.ItemID)
