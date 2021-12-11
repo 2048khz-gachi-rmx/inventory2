@@ -107,6 +107,15 @@ function BaseItemAccessor(it, varname, getname)
 	end
 end
 
+function BaseItemAccessorFn(it, varname, getname)
+	it["Get" .. getname] = function(self)
+		local base = self:GetBaseItem()
+		if not base then errorf("Item %s didn't have a base item!", it) return end
+
+		return base["Get" .. varname] (base)
+	end
+end
+
 function DataAccessor(it, varname, getname, setcallback)
 	it["Get" .. getname] = function(self)
 		return self.Data[varname]

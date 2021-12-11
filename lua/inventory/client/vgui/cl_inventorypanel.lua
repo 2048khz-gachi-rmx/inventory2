@@ -292,11 +292,11 @@ function PANEL:ItemDrop(rec, drop, item, ...)
 	end
 
 	local dp = drop:GetInventoryPanel()
-	local df = dp:GetMainFrame()
+	local df = dp and dp:GetMainFrame()
 
 	local sf = self:GetMainFrame()
 
-	if df:Emit("ItemDropFrom", rec, self, item) == false then
+	if df and df:Emit("ItemDropFrom", rec, self, item) == false then
 		return
 	end
 
