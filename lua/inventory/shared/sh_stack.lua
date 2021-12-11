@@ -6,6 +6,10 @@
 -- 	2: table - { {existing_item, to_stack}, {...} }; can be false if item unstackable
 --  3: table - { [slot_create_in] = amt, ... }; same
 
+local sortFn = function(a, b)
+	return a[1]:GetSlot() < b[1]:GetSlot()
+end
+
 function Inventory.GetInventoryStackInfo(inv, item)
 	CheckArg(1, inv, IsInventory, "Inventory")
 	CheckArg(2, item, IsItem, "Item")
@@ -21,8 +25,8 @@ function Inventory.GetInventoryStackInfo(inv, item)
 	-- new items are slotted instantly while uid assignment might take a while
 	for slot, itm in pairs(inv:GetSlots()) do
 		--if stackAmt <= 0 then break end
-
 		local amt = itm:CanStack(item, stackAmt)
+
 		if amt then
 			candidates[#candidates + 1] = {itm, amt}
 			--stackAmt = stackAmt - amt
@@ -31,9 +35,7 @@ function Inventory.GetInventoryStackInfo(inv, item)
 
 	assert(stackAmt >= 0)
 
-	table.sort(candidates, function(a, b)
-		return a[1]:GetSlot() < b[1]:GetSlot()
-	end)
+	table.sort(candidates, sortFn)
 
 	for k, dat in ipairs(candidates) do
 		if stackAmt <= 0 then
@@ -53,7 +55,7 @@ function Inventory.GetInventoryStackInfo(inv, item)
 		end
 
 		local toCreate = math.min(maxStack, stackAmt)
-		print("adding createNew in slot", slot, toCreate, stackAmt)
+
 		stackAmt = stackAmt - toCreate
 
 		ignoreSlots[slot] = true
