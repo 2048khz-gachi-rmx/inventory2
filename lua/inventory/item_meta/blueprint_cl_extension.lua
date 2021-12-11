@@ -20,6 +20,11 @@ end
 
 local function addItm(pc, iid, amt, space)
 	local base = Inventory.Util.GetBase(iid)
+	if not base then
+		pc:AddText("NO_ITEM: " .. iid .. " x" .. amt .. "  ")
+		return
+	end
+
 	local nmTxt = pc:AddText(base:GetName())
 	local amtTxt = pc:AddText(" x" .. amt .. (space and "  " or ""))
 

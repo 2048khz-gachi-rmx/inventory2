@@ -31,6 +31,10 @@ function bp:GetName()
 	return ("T%d %s Blueprint"):format(self:GetTier(), wep.PrintName)
 end
 
+function bp:GetTransferCost()
+	return self:GetBaseTransferCost() * (2 ^ (self:GetTier() - 1))
+end
+
 bp:Register()
 
 
