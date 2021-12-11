@@ -78,6 +78,7 @@ Inventory.BaseItemObjects.Generic("radiator")
 		ent:SetSkin(1)
 	end)
 
+--[[
 Inventory.BaseItemObjects.Generic("nutsbolts")
 	:SetName("Nuts & Bolts")
 	:SetModel("models/items/sniper_round_box.mdl")
@@ -95,6 +96,7 @@ Inventory.BaseItemObjects.Generic("nutsbolts")
 			ent:SetModelScale(1.5)
 		end
 	end)
+]]
 
 Inventory.BaseItemObjects.Generic("lube")
 	:SetName("Lubricant")
@@ -109,6 +111,7 @@ Inventory.BaseItemObjects.Generic("lube")
 	:SetCountable(true)
 	:SetMaxStack(10)
 
+--[[
 Inventory.BaseItemObjects.Generic("adhesive")
 	:SetName("Adhesive")
 	:SetModel("models/props_junk/plasticbucket001a.mdl")
@@ -121,6 +124,7 @@ Inventory.BaseItemObjects.Generic("adhesive")
 
 	:SetCountable(true)
 	:SetMaxStack(10)
+]]
 
 Inventory.BaseItemObjects.Generic("rdx")
 	:SetName("RDX")
