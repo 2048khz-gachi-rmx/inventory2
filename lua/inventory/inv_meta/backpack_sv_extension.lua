@@ -310,6 +310,8 @@ function bp:PickupItem(it, ignore_emitter, nochange)
 
 	if left then
 		it:SetAmount(left)
+	else
+		it:Delete()
 	end
 
 	local pr = Promise.OnAll(prs)
