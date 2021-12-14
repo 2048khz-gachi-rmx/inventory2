@@ -148,6 +148,22 @@ function ITEM:OnInventoryUpdated()
 	end
 end
 
+function ITEM:OnMousePressed(c)
+	vgui.GetControlTable("DButton").OnMousePressed(self, c)
+	if c == MOUSE_MIDDLE then
+		self.IsWheelHeld = true
+	end
+end
+
+function ITEM:OnMouseReleased(c)
+	vgui.GetControlTable("DButton").OnMouseReleased(self, c)
+
+	timer.Simple(0, function()
+		-- let dragndrop run first
+		self.IsWheelHeld = false
+	end)
+end
+
 function ITEM:OnDragStart()
 	self:Emit("DragStart")
 	hook.Run("InventoryItemDragStart", self, self:GetItem(true))

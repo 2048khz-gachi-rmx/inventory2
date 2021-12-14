@@ -65,8 +65,6 @@ function ql:_Remove()
 	end
 end
 
-
-
 function ql:Initialize(name, id)
 	assert(isnumber(id))
 	assert(id < (bit.lshift(1, 16) - 1))
@@ -99,6 +97,10 @@ function ql:Initialize(name, id)
 
 	self.ModsGuarantee = {}
 	self.ModsBlacklist = {}
+end
+
+function ql:Alias(nm)
+	Inventory.Qualities.ByName[nm] = self
 end
 
 function ql:AddStat(name, min, max, guarantee)
@@ -138,4 +140,8 @@ function Inventory.Qualities.Get(nm)
 	if IsQuality(nm) then return nm end
 	if isstring(nm) then return Inventory.Qualities.ByName[nm] end
 	return Inventory.Qualities.All[nm]
+end
+
+function Inventory.Qualities.GetErrored()
+	return Inventory.Qualities.ByName["MissingQuality"]
 end

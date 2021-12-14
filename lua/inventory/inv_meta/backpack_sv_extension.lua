@@ -111,7 +111,7 @@ function bp:NewItemNetwork(who, iid, cb, slot, dat, nostack, cbanyway)
 		end
 	end
 
-	local pr = self:NewItem(iid, real_cb, slot, dat, nostack, cbanyway)
+	local pr, left = self:NewItem(iid, real_cb, slot, dat, nostack, cbanyway)
 
 	-- true is the only case where we need to call cb and network manually
 
@@ -123,7 +123,7 @@ function bp:NewItemNetwork(who, iid, cb, slot, dat, nostack, cbanyway)
 		end
 	end)
 
-	return pr
+	return pr, left
 end
 
 -- can you move FROM this inv?

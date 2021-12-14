@@ -10,10 +10,11 @@ function Inv.GUIDesiredAction(slot, inv, itm)
 
 	if slot:GetItem(true) == itm then return false end
 	local itm2 = slot:GetItem(true)
+	local invPnl = slot:GetInventoryPanel()
 
 	local is_cross = inv ~= inv2
 
-	local can_split = inv.SupportsSplit and inv2.SupportsSplit
+	local can_split = itm:GetCountable() and inv.SupportsSplit and inv2.SupportsSplit
 
 	if itm2 and itm:GetItemID() == itm2:GetItemID() then -- second item exists and is the same ID = stack
 		local can = itm2:CanStack(itm)
@@ -25,7 +26,7 @@ function Inv.GUIDesiredAction(slot, inv, itm)
 		end
 	elseif itm2 then	-- second item exists and isn't the same ID = swap (or move)
 		action = "Move"
-	elseif (input.IsControlDown() or slot.IsWheelHeld) and can_split then -- second item doesnt exist, ctrl/mmb held = split
+	elseif (input.IsControlDown() or invPnl.IsWheelHeld) and can_split then -- second item doesnt exist, ctrl/mmb held = split
 		action = "Split"
 	else -- second item doesn't exist, nothing held = move
 		action = "Move"

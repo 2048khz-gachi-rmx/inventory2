@@ -25,6 +25,7 @@ function PANEL:Think()
 	self:Emit("Think")
 end
 
+
 function PANEL:SetFull(b)
 	self.FullInventory = (b==nil and true) or b
 end

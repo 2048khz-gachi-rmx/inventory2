@@ -203,12 +203,16 @@ function bp.PickQuality(tier, wep)
 	local pool = {}
 	for k,v in ipairs(quals) do pool[k] = v end
 
+	print("quality pool length:", pool)
 	while true do
 		local key = math.random(#pool)
+		print("random from", #pool, ":", key)
+
 		local pick = pool[key]
 		if not pick then return false end -- ran out of mods in pool
 
-		if pick:GetType() == "Weapon" then return pick end
+		if pick:GetType() == "Weapon" then print("pick:", pick:GetName()) return pick end
+
 		table.remove(pool, key)
 	end
 end
@@ -268,7 +272,7 @@ function bp.DebugGenerate(tier, mods, stats, qual, rec)
 
 	local amtMods = bp.TierGetMods(tier)
 
-	qual = qual or bp.PickQuality(tier, wep)
+	qual = (qual and Inventory.Qualities.Get(qual)) or bp.PickQuality(tier, wep)
 	mods = mods or bp.GenerateMods(tier, qual, amtMods)
 	stats = stats or bp.GenerateStats(qual)
 

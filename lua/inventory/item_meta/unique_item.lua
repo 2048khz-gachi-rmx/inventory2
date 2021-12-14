@@ -43,7 +43,7 @@ function uq:GetRarity()
 end
 
 function uq:GetQuality()
-	return Inventory.Qualities.Get(self:GetQualityName())
+	return Inventory.Qualities.Get(self:GetQualityName()) or Inventory.Qualities.GetErrored()
 end
 
 function uq:SetQuality(ql)
