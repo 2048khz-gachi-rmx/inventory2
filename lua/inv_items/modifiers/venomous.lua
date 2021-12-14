@@ -4,8 +4,9 @@ local el; el = Inventory.BaseModifier:new("Venomous")
 	:SetMaxTier(3)
 	:SetMinBPTier(3)
 
-	:Hook("PostEntityTakeDamage", function(self, ent, dmg)
-		if not IsPlayer(ent) then return end
+	:Hook("PostEntityTakeDamage", function(self, ent, dmg, took)
+		if not IsPlayer(ent) or not took then return end
+		if Venom.Active then return end
 
 		local str = self:GetTierStrength(self:GetTier())
 		if not str then return end
@@ -14,7 +15,7 @@ local el; el = Inventory.BaseModifier:new("Venomous")
 		local atk = dmg:GetAttacker()
 		if not IsPlayer(atk) then return end
 
-		atk:AddVenom(dmg:GetDamage() * str)
+		ent:AddVenom(dmg:GetDamage() * str)
 	end)
 
 	:SetTierCalc(function(self, tier)
