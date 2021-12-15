@@ -10,6 +10,7 @@ DataAccessor(uq, "Modifiers", "ModNames") -- mods contained in data are just {[n
 function uq:GetStats(tbl)
 	local into = tbl or {}
 	local qualStats = self:GetQuality().Stats
+
 	for k,v in pairs(self:GetStatRolls()) do
 		if not qualStats[k] then continue end
 		into[k] = Lerp(v, unpack(qualStats[k]))

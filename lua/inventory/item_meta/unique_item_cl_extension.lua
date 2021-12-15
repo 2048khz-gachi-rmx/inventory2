@@ -25,6 +25,11 @@ function uq:GenerateModifiersText(cloud, markup, needSep)
 end
 
 function uq:GenerateStatsText(cloud, markup)
+	local pnl = cloud:AddPanel(vgui.Create("ItemStats"))
+	pnl:SetItem(self)
+
+	return not table.IsEmpty(self:GetStats())
+	--[[
 	local good = {}
 	local bad = {}
 
@@ -54,6 +59,7 @@ function uq:GenerateStatsText(cloud, markup)
 	end
 
 	return #good > 0 or #bad > 0
+	]]
 end
 
 function uq:GetRarityColor()
@@ -66,7 +72,7 @@ end
 
 function uq:GenerateRarityText(cloud, markup)
 	local pnl = cloud:AddPanel(vgui.Create("DPanel"))
-	pnl:SetTall(20)
+	pnl:SetTall(18)
 
 	local itm = self
 	local col = self:GetRarityColor()
@@ -89,9 +95,10 @@ function uq:GenerateRarityText(cloud, markup)
 		surface.DrawTexturedRect(w / 2, 0, w / 2, h)
 
 		local tx = itm:GetRarityText()
-		local font = Fonts.PickFont("BSB", tx, w - 16, 22, 22)
+		local font, sz = Fonts.PickFont("BSB", tx, w - 16, h + 1, h + 1)
 		local bfn = Fonts.GenerateBlur(font, 4)
 
+		self:SetTall(sz)
 		draw.SimpleText(tx, bfn, w / 2, h / 2, color_black, 1, 1)
 		draw.SimpleText(tx, font, w / 2, h / 2, txCol, 1, 1)
 	end
