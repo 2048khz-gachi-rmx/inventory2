@@ -192,6 +192,8 @@ function ITEM:OnCursorEntered()
 	local it = self:GetItem(true)
 	if not it then return end
 
+	hook.Run("InventoryItemHovered", self, it)
+
 	local cl = (IsValid(self.Cloud) and self.Cloud) or vgui.Create("ItemCloud", self)
 	cl:Popup()
 	cl:SetSize(self:GetSize())
@@ -210,6 +212,8 @@ end
 
 function ITEM:OnCursorExited()
 	self:Emit("Unhover")
+
+	hook.Run("InventoryItemUnhovered", self, self:GetItem(true))
 
 	local cl = IsValid(self.Cloud) and self.Cloud
 	if not cl then return end
