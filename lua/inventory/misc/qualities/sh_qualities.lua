@@ -107,6 +107,13 @@ function ql:AddStat(name, min, max, guarantee)
 	local nm = Inventory.Enums.WeaponIDToStat(name)
 	assertNHf(nm, "%s is not a stat!", name)
 	min, max = math.Sort(min or 0, max or 0)
+
+	if Inventory.Stats.IsGood(name) then
+		local t = min
+		min = max
+		max = t
+	end
+
 	self.Stats[nm] = {min, max}
 
 	if guarantee then
