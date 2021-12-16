@@ -6,13 +6,13 @@ function bp:CanCrossInventoryMove(it, inv2, slot)
 		return false
 	end
 
-	if not inv2:HasAccess(LocalPlayer(), "CrossInventoryTo") then return false end
-	if not self:HasAccess(LocalPlayer(), "CrossInventoryFrom") then return false end
-
 	if self == inv2 then
 		errorf("Can't cross-inv between the same inventory! %s vs. %s", self, inv2)
 		return false
 	end
+
+	if not inv2:HasAccess(LocalPlayer(), "CrossInventoryTo", it, self) then print("cant - to") return false end
+	if not self:HasAccess(LocalPlayer(), "CrossInventoryFrom", it, inv2) then print("cant - from") return false end
 
 	slot = slot or inv2:GetFreeSlot()
 	if not slot then
@@ -27,7 +27,7 @@ function bp:CanCrossInventoryMove(it, inv2, slot)
 
 	--check if inv2 can accept cross-inventory item
 	local can = inv2:Emit("CanMoveTo", it, self)
-	if can == false then return false end
+	if can == false then print("cant 1") return false end
 
 	--check if inv1 can give out the item
 	can = self:Emit("CanMoveFrom", it, inv2)

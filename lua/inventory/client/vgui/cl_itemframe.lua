@@ -98,6 +98,17 @@ function ITEM:TrackChanges(inv, slot)
 	end)
 end
 
+function ITEM:BindInventory(inv, slot)
+	self:SetSlot(slot)
+	self:SetInventory(inv)
+
+	self:TrackChanges(inv, slot)
+
+	if inv.Slots[slot] then
+		self:SetItem(inv.Slots[slot])
+	end
+end
+
 function ITEM:Init()
 	self:SetSize(iPan.SlotSize, iPan.SlotSize)
 	self:SetText("")
@@ -109,6 +120,7 @@ function ITEM:Init()
 	self.Highlighted = true
 
 	self:Receiver("Item", function(self, tbl, drop)
+		if self.DropDisabled then return end
 
 		if not drop then
 			self.DropHovered = true
@@ -165,6 +177,8 @@ function ITEM:OnMouseReleased(c)
 end
 
 function ITEM:OnDragStart()
+	if self:Emit("CanDrag") == false then dragndrop.Clear() return end
+
 	self:Emit("DragStart")
 	hook.Run("InventoryItemDragStart", self, self:GetItem(true))
 end
@@ -172,9 +186,10 @@ end
 function ITEM:OnDragStop()
 	local rec = dragndrop.m_Receiver
 
-	self:Emit("DragStop", rec)
+	local itm = self:GetItem(true)
 
-	hook.Run("InventoryItemDragStop", self, self:GetItem(true), rec)
+	self:Emit("DragStop", rec)
+	hook.Run("InventoryItemDragStop", self, itm, rec)
 end
 
 function ITEM:OnItemDrop(slot, it)
@@ -310,13 +325,8 @@ function ITEM:SetInventoryPanel(it)
 	if mf then self:SetSize(mf.SlotSize, mf.SlotSize) end
 end
 
-function ITEM:GetInventory()
-	return self.Inventory
-end
-
-function ITEM:GetInventoryPanel()
-	return self.InventoryPanel
-end
+ChainAccessor(ITEM, "Inventory", "Inventory", true)
+ChainAccessor(ITEM, "InventoryPanel", "InventoryPanel", true)
 
 function ITEM:SetItem(it)
 

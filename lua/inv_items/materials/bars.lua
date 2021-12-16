@@ -13,7 +13,7 @@ Inventory.BaseItemObjects.Generic("copper_bar")
 
 	:SetCountable(true)
 	:SetMaxStack(50)
-	:SetBaseTransferCost(17500)
+	:SetBaseTransferCost(11000)
 
 Inventory.BaseItemObjects.Generic("iron_bar")
 	:SetName("Iron Bar")
@@ -28,7 +28,7 @@ Inventory.BaseItemObjects.Generic("iron_bar")
 
 	:SetCountable(true)
 	:SetMaxStack(50)
-	:SetBaseTransferCost(10000)
+	:SetBaseTransferCost(7500)
 
 Inventory.BaseItemObjects.Generic("gold_bar")
 	:SetName("Gold Bar")
@@ -43,7 +43,7 @@ Inventory.BaseItemObjects.Generic("gold_bar")
 
 	:SetCountable(true)
 	:SetMaxStack(30)
-	:SetBaseTransferCost(35000)
+	:SetBaseTransferCost(20000)
 
 Inventory.BaseItemObjects.Generic("coal")
 	:SetName("Coal")

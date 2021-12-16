@@ -36,7 +36,7 @@ local function makeOre(name, skin, bigamt)
 	    end)
 
 		:SetCountable(true)
-		:SetBaseTransferCost(50000)
+		:SetBaseTransferCost(25000)
 
 	return ore
 end
@@ -123,7 +123,7 @@ makeOre("gold_ore", 3, 20)
 	:SetOreColor(Color(230, 220, 75))
 	:SetSmeltsTo("gold_bar")
 	:SetSmeltTime(45)
-	:SetBaseTransferCost(125000)
+	:SetBaseTransferCost(50000)
 
 
 

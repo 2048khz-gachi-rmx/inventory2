@@ -1,6 +1,6 @@
 local Inv = Inventory
 
-function Inv.GUIDesiredAction(slot, inv, itm)
+function Inv.GUIDesiredAction(slot, inv, itm, ipnlFrom, ipnlTo)
 	local action
 	inv = (IsInventory(inv) and inv) or (inv.GetInventory and inv:GetInventory())
 	if not inv then error("what are you giving") return end
@@ -16,6 +16,17 @@ function Inv.GUIDesiredAction(slot, inv, itm)
 
 	local can_split = itm:GetCountable() and inv.SupportsSplit and inv2.SupportsSplit
 
+	printf("can? %p, %p", ipnlFrom, ipnlTo)
+
+	if ipnlFrom and ((ipnlFrom.SupportsSplit == false) or ipnlFrom:Emit("CanSplit", itm, inv) == false) then
+		can_split = false
+	end
+
+	if ipnlTo and ((ipnlTo.SupportsSplit == false) or ipnlTo:Emit("CanSplit", itm, inv) == false) then
+		can_split = false
+	end
+
+	print("cansplit", can_split)
 	if itm2 and itm:GetItemID() == itm2:GetItemID() then -- second item exists and is the same ID = stack
 		local can = itm2:CanStack(itm)
 
@@ -37,8 +48,8 @@ end
 
 
 
-function Inv.GUICanAction(slot, inv, itm)
-	local action, is_cross = Inv.GUIDesiredAction(slot, inv, itm)
+function Inv.GUICanAction(slot, inv, itm, ipnlFrom, ipnlTo)
+	local action, is_cross = Inv.GUIDesiredAction(slot, inv, itm, ipnlFrom, ipnlTo)
 	if not action then return end
 
 	local inv2 = itm:GetInventory()
@@ -48,8 +59,8 @@ function Inv.GUICanAction(slot, inv, itm)
 		if not inv2:CanCrossInventoryMove(itm, inv, slot:GetSlot()) then return false end
 		--if not inv:CanCrossInventoryMove(itm, inv2, slot:GetSlot()) then return false end
 	else
-		if not inv:HasAccess(LocalPlayer(), action) then print("no access 1", inv) return false end
-		if not inv2:HasAccess(LocalPlayer(), action) then print("no access 2", inv2) return false end
+		if not inv:HasAccess(LocalPlayer(), action, itm) then print("no access 1", inv) return false end
+		if not inv2:HasAccess(LocalPlayer(), action, itm) then print("no access 2", inv2) return false end
 	end
 
 	if action == "Merge" then
@@ -66,7 +77,7 @@ end
 
 hook.Add("InventoryGetOptions", "DeletableOption", function(it, mn)
 	if not it:GetDeletable() then return end
-	if not it:GetInventory():HasAccess(LocalPlayer(), "Delete") then return end
+	if not it:GetInventory():HasAccess(LocalPlayer(), "Delete", it) then return end
 
 	local opt = mn:AddOption("Delete Item")
 	opt.HovMult = 1.15

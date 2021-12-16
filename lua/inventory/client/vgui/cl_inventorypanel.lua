@@ -9,6 +9,7 @@ function PANEL:Init()
 	scr.GradBorder = true
 	scr:GetCanvas():AddDockPadding(0, 8, 0, 8)
 
+	self.GradColor = scr.BorderColor
 	self.Scroll = scr
 
 	self.DisappearAnims = {}
@@ -305,7 +306,7 @@ function PANEL:ItemDrop(rec, drop, item, ...)
 		return
 	end
 
-	local action = Inventory.GUICanAction(rec, self:GetInventory(), item)
+	local action = Inventory.GUICanAction(rec, self:GetInventory(), item, self, drop:GetInventoryPanel())
 
 	if action == "Move" then
 		self:MoveItem(rec, drop, item)
@@ -319,7 +320,11 @@ end
 
 function PANEL.CheckCanDrop(slotTo, invpnl, slotFrom, itm)
 	-- HoverGradientColor
-	local can = Inventory.GUICanAction(slotTo, invpnl:GetInventory(), itm)
+
+	local can = Inventory.GUICanAction(
+		slotTo, invpnl:GetInventory(), itm,
+		slotFrom:GetInventoryPanel(), slotTo:GetInventoryPanel()
+	)
 
 	if not can and not slotTo.HoverGradientColor then
 		slotTo.HoverGradientColor = Colors.DarkerRed

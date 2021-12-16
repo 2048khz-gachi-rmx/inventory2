@@ -2,6 +2,7 @@ local bp = Inventory.Inventories.Backpack or Emitter:extend()
 Inventory.Inventories.Backpack = bp
 
 bp.IsInventory = true
+bp.IsPlayerInventory = true
 
 bp.Name = "Backpack"
 bp.SQLName = "ply_temp"
@@ -14,6 +15,7 @@ bp.UseSQL = true
 bp.IsBackpack = true
 bp.AutoFetchItems = true
 bp.SupportsSplit = true
+
 
 bp.Icon = {
 	URL = "https://i.imgur.com/KBYX2uQ.png",
@@ -62,6 +64,10 @@ end
 
 function bp:GetOwner()
 	return self.Owner, self.OwnerUID
+end
+
+function bp:IsOwner(w)
+	return w == self.Owner or w == self.OwnerUID
 end
 
 function bp:_SetSlot(it, slot)
@@ -268,17 +274,17 @@ function bp:Reset()
 	table.Empty(self.Slots)
 end
 
-function bp:HasAccess(ply, action)
+function bp:HasAccess(ply, action, ...)
 	if self.DisallowAllActions then return false end
 
-	local allow = self:Emit("Can" .. action, ply)
+	local allow = self:Emit("Can" .. action, ply, ...)
 	if allow ~= nil then return allow end
 
 	if self["ActionCan" .. action] ~= nil then
 		local allow
 
 		if isfunction(self["ActionCan" .. action]) then
-			allow = self["ActionCan" .. action] (self, ply)
+			allow = self["ActionCan" .. action] (self, ply, ...)
 		else
 			allow = self["ActionCan" .. action]
 		end
@@ -304,6 +310,14 @@ function bp:Register(addstack)
 	Inventory.Networking.InventoryIDs[self.NetworkID] = self
 
 	Inventory.RegisterClass(self.Name, self, Inventory.Inventories, (addstack or 0) + 1)
+end
+
+function bp:GetSlotBits()
+	return bit.GetLen(self.MaxItems)
+end
+
+function bp:ValidateSlot(sl)
+	return sl > 0 and sl <= self.MaxItems and sl
 end
 
 ChainAccessor(bp, "Name", "Name")

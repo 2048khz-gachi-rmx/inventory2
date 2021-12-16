@@ -22,7 +22,7 @@ basebp 	:SetName("Empty Blueprint")
 
 		:SetCountable(true)
 		:SetMaxStack(100)
-
+		:SetBaseTransferCost(2500)
 
 
 local blueprint = Inventory.BaseItemObjects.Blueprint("blueprint")

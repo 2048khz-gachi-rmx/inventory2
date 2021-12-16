@@ -168,6 +168,10 @@ function it:GetTransferCost()
 	return self:GetBase():GetBaseTransferCost()
 end
 
+function it:GetTotalTransferCost(amt)
+	return self:GetTransferCost() * (amt or self:GetAmount() or 1)
+end
+
 function it:GetBaseItem()
 	return Inventory.Util.GetBase(self.ItemID)
 end
@@ -196,6 +200,10 @@ function it:SetSlot(slot, sql)
 	if inv and SERVER and self:GetSQLExists() and sql ~= false then
 		Inventory.MySQL.SetSlot(self, inv)
 	end
+end
+
+function it:SetSlotRaw(slot)
+	self.Slot = slot
 end
 
 function it:GetSlot()

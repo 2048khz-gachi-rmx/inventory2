@@ -6,6 +6,9 @@ Inventory.Inventories.Entity = ent
 
 -- ent.UseSQL = false
 
+ent.IsEntityInventory = true
+ent.IsPlayerInventory = false
+
 ent.NetworkID = 100
 ent.Name = "Base Entity Inventory"
 ent.SQLName = "entity"
@@ -14,7 +17,7 @@ ent.MaxItems = 10
 ent.AutoFetchItems = false
 ent.MultipleInstances = true --there can be multiple inventory instances of the same class in a single table
 ent.EntityOwner = NULL
-ent.IsEntityInventory = true
+
 
 ent:Register()
 
@@ -71,9 +74,9 @@ local function isOwner(self, ply)
 	return true
 end
 
-function ent:HasAccess(ply, action)
+function ent:HasAccess(ply, action, ...)
 	if not isOwner(self, ply) then return false end
-	return self.__parent.HasAccess(self, ply, action)
+	return self.__parent.HasAccess(self, ply, action, ...)
 end
 
 ChainAccessor(ent, "PlayerOwner", "PlayerOwner", true)

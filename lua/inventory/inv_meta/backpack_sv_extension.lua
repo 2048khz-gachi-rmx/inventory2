@@ -127,10 +127,13 @@ function bp:NewItemNetwork(who, iid, cb, slot, dat, nostack, cbanyway)
 end
 
 -- can you move FROM this inv?
-function bp:CanCrossInventoryMove(it, inv2, slot)
+function bp:CanCrossInventoryMove(it, inv2, slot, ply)
 	-- check if they have that slot available
 
 	if slot and inv2:IsSlotLegal(slot) == false then return false end
+
+	if ply and not inv2:HasAccess(ply, "CrossInventoryTo", it, self) then print("cant - to") return false end
+	if ply and not self:HasAccess(ply, "CrossInventoryFrom", it, inv2) then print("cant - from") return false end
 
 	-- check if inv2 can accept cross-inventory item
 	if inv2:Emit("CanMoveTo", it, self, slot) == false then print("CanMoveTo no", inv2) return false end
@@ -163,7 +166,7 @@ local function ActuallyMove(inv1, inv2, it, slot)
 end
 
 -- move from bp to inv2
-function bp:CrossInventoryMove(it, inv2, slot)
+function bp:CrossInventoryMove(it, inv2, slot, ply)
 	if not IsInventory(inv2) then
 		errorf("CrossInventoryMove between what invs")
 		return
@@ -181,10 +184,10 @@ function bp:CrossInventoryMove(it, inv2, slot)
 	local other_item = inv2:GetItemInSlot(slot)
 
 	if other_item then
-		if not inv2:CanCrossInventoryMove(other_item, self, it:GetSlot()) then print(inv2, "#1 doesn't allow CIM") return false end
+		if not inv2:CanCrossInventoryMove(other_item, self, it:GetSlot(), ply) then print(inv2, "#1 doesn't allow CIM") return false end
 	end
 
-	if not self:CanCrossInventoryMove(it, inv2) then print(self, "#2 doesn't allow CIM") return false end
+	if not self:CanCrossInventoryMove(it, inv2, nil, ply) then print(self, "#2 doesn't allow CIM") return false end
 
 	if other_item then
 		ActuallyMove(inv2, self, other_item, it:GetSlot())

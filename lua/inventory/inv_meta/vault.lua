@@ -9,6 +9,7 @@ vt.SQLName = "ply_vault"
 vt.NetworkID = 2
 vt.Name = "Vault"
 vt.MaxItems = 50
+vt.IsVault = true
 
 vt:Register()
 
@@ -16,6 +17,22 @@ vt:Register()
 --vt.ActionCanCrossInventoryTo = CLIENT
 
 vt:On("CanMoveTo", "Vault", function(self, itm, inv2, slot)
+	if inv2 == self then return true end
+	if hook.Run("Vault_CanMoveTo", self, itm, inv2, slot) == true then return end
+
 	if not inv2.IsBackpack then return false end
-	return CLIENT and IsValid(Inventory.MatterDigitizerPanel) -- purely visual
+	if itm.AllowedVaultTransfer then
+		return
+	end
+
+	return false
+end)
+
+vt:On("CanCrossInventoryFrom", "Vault", function(self, ply, itm, inv2, slot)
+	if hook.Run("Vault_CanMoveFrom", self, ply, itm, inv2, slot) == true then return end
+	return false
+end)
+
+vt:On("CrossInventoryMovedTo", "Vault", function(self, itm, inv2, slot)
+	itm.AllowedVaultTransfer = false
 end)

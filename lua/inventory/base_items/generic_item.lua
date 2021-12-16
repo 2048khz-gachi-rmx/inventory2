@@ -175,7 +175,7 @@ ChainAccessor(Base, "ModelColor", "ModelColor")
 ChainAccessor(Base, "Color", "Color")
 ChainAccessor(Base, "Rarity", "Rarity")
 
-Base.BaseTransferCost = 25000
+Base.BaseTransferCost = 10000
 ChainAccessor(Base, "BaseTransferCost", "BaseTransferCost")
 
 ChainAccessor(Base, "CamPos", "CamPos")

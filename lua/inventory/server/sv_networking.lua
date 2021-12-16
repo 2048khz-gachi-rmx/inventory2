@@ -502,7 +502,7 @@ end
 PLAYER.RequestUpdateInventory = nw.RequestUpdate
 PLAYER.RequestUI = nw.RequestUpdate
 
-function nw.ReadInventory()
+function nw.ReadInventory(owCheck)
 	local ent = net.ReadEntity()
 	local id = net.ReadUInt(16)
 
@@ -514,12 +514,33 @@ function nw.ReadInventory()
 	if base.MultipleInstances then
 		local key = net.ReadUInt(16)
 
-		if not ent.Inventory[key] then errorf("didn't find inventory in the entity with NWID/key: %s/%s", id, key) return end
+		if not ent.Inventory[key] then
+			errorf("didn't find inventory in the entity with NWID/key: %s/%s", id, key)
+			return
+		end
+
+		if owCheck and not v:IsOwner(owCheck) then
+			return false, ("failed owner check (%s tried to use %s's '%s' inventory)"):format(
+				owCheck, ent, k
+			)
+		end
+
 		return ent.Inventory[key]
 	end
 
 	for k,v in pairs(ent.Inventory) do
 		if v.NetworkID == id then
+
+			if v.IsPlayerInventory and owCheck == nil then
+				errorNHf("Missing owner check on reading inventory; exploitable!!!")
+			end
+
+			if owCheck and not v:IsOwner(owCheck) then
+				return false, ("failed owner check (%s tried to use %s's '%s' inventory)"):format(
+					owCheck, ent, k
+				)
+			end
+
 			return v
 		end
 	end
