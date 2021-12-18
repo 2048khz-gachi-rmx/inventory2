@@ -173,7 +173,8 @@ function bp:CrossInventoryMove(it, inv2, slot, ply)
 	end
 
 	if it:GetInventory() ~= self then
-		errorf("Can't move an item from an inventory which it doesn't belong to! (item) %q vs %q (self)", it:GetInventory(), self)
+		errorf("Can't move an item from an inventory which it doesn't belong to!" ..
+			"(item) %s vs %s (self)", it:GetInventory(), self)
 		return
 	end
 
@@ -281,9 +282,6 @@ function bp:PickupItem(it, ignore_emitter, nochange)
 	local left, itStk, newStk = Inventory.GetInventoryStackInfo(self, it)
 
 	if not left and not itStk then
-		if not canAdd(self, it, ignore_emitter, false) then
-			return false, false
-		end
 
 		-- item unstackable, just add it
 		local slot = self:GetFreeSlot()
@@ -291,7 +289,7 @@ function bp:PickupItem(it, ignore_emitter, nochange)
 			return false, false
 		end
 
-		it:SetInventory(nil)
+		it:TakeOut()
 		it:SetSlot(slot)
 		self:AddItem(it, ignore_emitter, nochange)
 

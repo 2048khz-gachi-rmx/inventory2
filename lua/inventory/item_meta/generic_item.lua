@@ -113,6 +113,11 @@ function it:Delete()
 	self._Commited.Delete[self:IncrementToken()] = true
 end
 
+function it:TakeOut()
+	if self:GetInventory() then
+		self:GetInventory():RemoveItem(self)
+	end
+end
 
 
 function it:SetOwner(ply)

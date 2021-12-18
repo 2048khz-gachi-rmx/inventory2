@@ -188,7 +188,11 @@ function bp:_CanAddItem(it, ignore_emitter, ignore_slot, ignore_inv)
 	end
 
 	if not ignore_inv and it:GetInventory() and it:GetInventory() ~= self then
-		return false, "Can't add an item that already has an inventory, remove it from the old inventory first!\nItem: %s\nItem's inv: %s\nAttempted inv: %s\n----\n", {it, it:GetInventory(), self}
+		return false, "Can't add an item that already has an inventory," ..
+			"remove it from the old inventory first!\n" ..
+			"Item: %s\n" ..
+			"Item's inv: %s\n" ..
+			"Attempted inv: %s\n----\n", {it, it:GetInventory(), self}
 	end
 
 	if not ignore_emitter then

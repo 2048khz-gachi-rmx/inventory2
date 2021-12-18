@@ -336,6 +336,10 @@ function PANEL.CheckCanDrop(slotTo, invpnl, slotFrom, itm)
 
 end
 
+function PANEL.OnItemClick(itmpnl, invpnl, slot, itm)
+	invpnl:Emit("Click", itmpnl, slot, itm)
+end
+
 function PANEL:AddItemSlot()
 	local i = #self.Slots
 
@@ -355,6 +359,7 @@ function PANEL:AddItemSlot()
 	it:SetMainFrame(self:GetMainFrame())
 	it:On("ItemInserted", self, self.OnItemAddedIntoSlot, self)
 	it:On("ItemHover", self, self.CheckCanDrop, self)
+	it:On("Click", self, self.OnItemClick, self)
 
 	self:On("Change", it, function(self, inv, ...)
 		if inv:GetItemInSlot(it:GetSlot()) ~= it:GetItem(true) then
@@ -374,6 +379,10 @@ end
 
 function PANEL:GetSlots()
 	return self.Slots
+end
+
+function PANEL:GetSlot(i)
+	return self.Slots[i]
 end
 
 function PANEL:Draw(w, h)
