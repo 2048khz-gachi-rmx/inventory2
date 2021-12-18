@@ -18,6 +18,7 @@ local function retMark(self, it, mup, tier)
 	desc:SetAlignment(1)
 
 	desc:AddTag(MarkupTag("chartranslate", 0, function(char, i)
+		if not i then return end
 		return math.sin(CurTime() * 3 + i / 4) * 3
 	end))
 
