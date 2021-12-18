@@ -129,7 +129,6 @@ local function load()
 		local where = net.ReadUInt(16)
 
 		if not invto:ValidateSlot(where) then
-			print("crossinv move - invalid slot")
 			return false, "bad slot"
 		end
 
@@ -239,6 +238,32 @@ local function load()
 		end, GenerateErrorer("InventoryActions"))
 
 		return true
+	end
+
+	nw.Actions[INV_ACTION_PICKUP] = function(ply)
+		local inv = inv or readInv(ply)
+		local it = it or readItem(ply, inv, "CrossInventory")
+		local invto = invto or readInv(ply)
+
+		if not inv:HasAccess(ply, "CrossInventoryFrom", it, invto, where) then
+			return false, "no access - from"
+		end
+
+		if not invto:HasAccess(ply, "CrossInventoryTo", it, inv, where) then
+			return false, "no access - to"
+		end
+
+		local ok, prs, new = invto:PickupItem(it)
+		print(ok, prs, new)
+		if prs then
+			prs:Then(function(...)
+				print("pickedup good", ...)
+				ply:UpdateInventory(inv)
+				ply:UpdateInventory(invto)
+			end, function(...)
+				print("badabadbad", ...)
+			end)
+		end
 	end
 
 	nw.Actions[INV_ACTION_RESYNC] = function(ply)

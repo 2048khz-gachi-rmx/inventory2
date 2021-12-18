@@ -73,7 +73,7 @@ function bp:CrossInventoryMove(it, inv2, slot)
 	return true
 end
 
-function bp:StackInfo(it, ignore_emitter)
+function bp:PickupInfo(it, ignore_emitter)
 	CheckArg(1, it, IsItem, "Item")
 
 	local prs = {}
@@ -100,7 +100,10 @@ function bp:StackInfo(it, ignore_emitter)
 			return false, false
 		end
 
-		it:SetInventory(nil)
+		if it:GetInventory() then
+			it:GetInventory():RemoveItem(it)
+		end
+
 		it:SetSlot(slot)
 		self:AddItem(it, ignore_emitter)
 
@@ -129,6 +132,18 @@ function bp:StackInfo(it, ignore_emitter)
 	end
 
 	return left, itStk, newIts
+end
+
+function bp:RequestPickup(it, thenDo)
+	local ns = Inventory.Networking.Netstack()
+		ns:WriteInventory(it:GetInventory())
+		ns:WriteItem(it, true)
+		ns:WriteInventory(self)
+	Inventory.Networking.PerformAction(INV_ACTION_PICKUP, ns)
+
+	if thenDo then -- lole
+		self:PickupInfo(it)
+	end
 end
 
 function bp:RequestCrossInventoryMove(it, inv2, slot)

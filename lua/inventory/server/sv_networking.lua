@@ -519,13 +519,15 @@ function nw.ReadInventory(owCheck)
 			return
 		end
 
-		if owCheck and not v:IsOwner(owCheck) then
+		local inv = ent.Inventory[key]
+
+		if owCheck and not inv:IsOwner(owCheck) then
 			return false, ("failed owner check (%s tried to use %s's '%s' inventory)"):format(
 				owCheck, ent, k
 			)
 		end
 
-		return ent.Inventory[key]
+		return inv
 	end
 
 	for k,v in pairs(ent.Inventory) do
@@ -550,6 +552,7 @@ end
 
 function nw.ReadItem(inv)
 	local uid = net.ReadUInt(32)
+	if not inv then return false, ("no inventory given") end
 
 	local it = inv:GetItem(uid)
 	if not it then return false, ("[%d] didn't find item UID %d in %s"):format(

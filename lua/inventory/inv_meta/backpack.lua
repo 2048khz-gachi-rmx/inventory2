@@ -182,12 +182,12 @@ function bp:GetItemInSlot(slot)
 	return self.Slots[slot]
 end
 
-function bp:_CanAddItem(it, ignore_emitter, ignore_slot)
+function bp:_CanAddItem(it, ignore_emitter, ignore_slot, ignore_inv)
 	if not it:GetSlot() and not ignore_slot then
 		return false, "Can't add an item without a slot set! Set a slot first!\nItem: %s", {it}
 	end
 
-	if it:GetInventory() and it:GetInventory() ~= self then
+	if not ignore_inv and it:GetInventory() and it:GetInventory() ~= self then
 		return false, "Can't add an item that already has an inventory, remove it from the old inventory first!\nItem: %s\nItem's inv: %s\nAttempted inv: %s\n----\n", {it, it:GetInventory(), self}
 	end
 

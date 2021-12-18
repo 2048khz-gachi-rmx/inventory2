@@ -12,6 +12,7 @@ INV_ACTION_CROSSINV_MERGE = 6
 INV_ACTION_CROSSINV_SPLIT = 7
 INV_ACTION_EQUIP = 8
 INV_ACTION_RESYNC = 9
+INV_ACTION_PICKUP = 10
 
 --[[------------------------------]]
 --	  Inventory networking types

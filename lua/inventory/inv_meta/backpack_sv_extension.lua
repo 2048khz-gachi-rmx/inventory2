@@ -251,6 +251,20 @@ function bp:InsertItem(it, slot, cb)
 	return pr
 end
 
+local function canAdd(self, it, em, skipInv)
+	local can, why, fmts = self:_CanAddItem(it, em, true, skipInv)
+
+	if not can then
+		if why then
+			errorNHf(why, unpack(fmts or {}))
+		end
+
+		return false
+	end
+
+	return true
+end
+
 function bp:PickupItem(it, ignore_emitter, nochange)
 	CheckArg(1, it, IsItem, "Item")
 
@@ -260,19 +274,17 @@ function bp:PickupItem(it, ignore_emitter, nochange)
 		it:SetSlot(self:GetFreeSlot())
 	end]]
 
-	local can, why, fmts = self:_CanAddItem(it, ignore_emitter, true)
-
-	if not can then
-		if why then
-			errorf(why, unpack(fmts or {}))
-		end
-
-		return false
+	if not canAdd(self, it, ignore_emitter, true) then
+		return false, false
 	end
 
 	local left, itStk, newStk = Inventory.GetInventoryStackInfo(self, it)
 
 	if not left and not itStk then
+		if not canAdd(self, it, ignore_emitter, false) then
+			return false, false
+		end
+
 		-- item unstackable, just add it
 		local slot = self:GetFreeSlot()
 		if not slot then

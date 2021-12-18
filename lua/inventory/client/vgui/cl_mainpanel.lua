@@ -132,7 +132,7 @@ function f:SetInventory(inv, pnl, noanim)
 			slot:On("ItemTakenOut", "UntrackUIDs", unTrackFunc)
 
 			local item = inv:GetItemInSlot(i)
-			if item then
+			if item and item:GetUID() then
 				slot:SetItem(item)
 				uids[item:GetUID()] = slot
 			end
