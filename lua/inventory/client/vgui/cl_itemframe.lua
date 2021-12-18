@@ -334,7 +334,6 @@ function ITEM:SetItem(it)
 	if self.FakeItem then self:SetFakeItem(nil) end
 
 	if it then
-
 		self.BorderColor = it.BorderColor and it.BorderColor:Copy() or Colors.LightGray
 		self.FakeBorderColor = nil
 
@@ -354,7 +353,7 @@ function ITEM:SetItem(it)
 		self.Item:GetBaseItem():Emit("UpdatePanel", self.Item, self, self.ModelPanel)
 
 		--self:Emit("Item", it, true)
-
+		self:OnInventoryUpdated()
 	elseif self.Item then --nilling the existing item
 		self:Emit("ItemTakenOut", self.Item)
 		self:SetCursor("arrow")

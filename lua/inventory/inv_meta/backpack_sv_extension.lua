@@ -222,14 +222,11 @@ function bp:InsertItem(it, slot, cb)
 
 	local pr = Promise()
 
-	print("bp:InsertItem", it)
-
 	if it:GetUID() then
 
 		it:SetSlot(slot)
 
 		insSlot = self:AddItem(it)
-		print("had uid; insta add")
 		if insSlot then
 			cb(it, insSlot)
 			self:AddChange(it, INV_ITEM_ADDED)
@@ -238,11 +235,9 @@ function bp:InsertItem(it, slot, cb)
 			pr:Reject(it, insSlot)
 		end
 	else
-		print("no uid")
 		it:Once("AssignUID", function()
 			it:SetSlot(slot)
 			insSlot = self:AddItem(it)
-			print("uid assigned; added")
 			if insSlot then
 				cb(it, insSlot)
 				self:AddChange(it, INV_ITEM_ADDED)
@@ -252,8 +247,6 @@ function bp:InsertItem(it, slot, cb)
 			end
 		end)
 	end
-
-	print('at end', it:GetInventory())
 
 	return pr
 end

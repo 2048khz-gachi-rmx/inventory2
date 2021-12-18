@@ -73,6 +73,64 @@ function bp:CrossInventoryMove(it, inv2, slot)
 	return true
 end
 
+function bp:StackInfo(it, ignore_emitter)
+	CheckArg(1, it, IsItem, "Item")
+
+	local prs = {}
+
+	--[[if not it:GetSlot() then
+		it:SetSlot(self:GetFreeSlot())
+	end]]
+
+	local can, why, fmts = self:_CanAddItem(it, ignore_emitter, true)
+
+	if not can then
+		if why then
+			errorf(why, unpack(fmts or {}))
+		end
+
+		return false
+	end
+
+	local left, itStk, newStk = Inventory.GetInventoryStackInfo(self, it)
+
+	if not left and not itStk then
+		local slot = self:GetFreeSlot()
+		if not slot then
+			return false, false
+		end
+
+		it:SetInventory(nil)
+		it:SetSlot(slot)
+		self:AddItem(it, ignore_emitter)
+
+		return false, {}, {it} -- no left/ no stacked/ new item
+	end
+
+	for _, dat in ipairs(itStk) do
+		local v, amt = unpack(dat)
+		v:Stack(it)
+	end
+
+	local newIts = Inventory.CreateStackedItems(self, it, newStk)
+
+	for k,v in ipairs(newIts) do
+		prs[#prs + 1] = self:AddItem(v, ignore_emitter)
+	end
+
+	if not self.ReadingNetwork then
+		self:Emit("Change")
+	end
+
+	if left then
+		it:SetAmount(left)
+	else
+		it:Delete()
+	end
+
+	return left, itStk, newIts
+end
+
 function bp:RequestCrossInventoryMove(it, inv2, slot)
 	if not self:CrossInventoryMove(it, inv2, slot) then return false end
 
