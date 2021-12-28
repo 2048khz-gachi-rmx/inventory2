@@ -113,6 +113,7 @@ function ITEM:Init()
 	self:SetSize(iPan.SlotSize, iPan.SlotSize)
 	self:SetText("")
 	self:SetEnabled(false)
+	self:SetDoubleClickingEnabled(false)
 
 	self:Droppable("Item")
 	self:SetCursor("arrow") --"none" causes flicker wtf
@@ -420,7 +421,9 @@ function ITEM:DrawBorder(w, h, col)
 	self:Emit("PostDrawBorder", w, h, col)
 end
 
-local emptyCol = Color(30, 30, 30)
+local emptyCol = Color(26, 26, 26)
+local emptyGradCol = Color(30, 30, 30)
+--local emptyInCol = Color(26, 26, 26)
 
 function Inventory.Panels.ItemDraw(self, w, h)
 	local rnd = self.Rounding
@@ -453,7 +456,8 @@ function Inventory.Panels.ItemDraw(self, w, h)
 
 
 		self:DrawBorder(w, h, bordcol)
-		draw.RoundedBox(rnd, 2, 2, w-4, h-4, drawcol)
+		local bSz = 2
+		draw.RoundedBox(rnd, bSz, bSz, w - bSz * 2, h - bSz * 2, drawcol)
 
 		local preMult = surface.GetAlphaMultiplier()
 
@@ -469,12 +473,22 @@ function Inventory.Panels.ItemDraw(self, w, h)
 			w, h = w - x*2, h - y*2
 		end
 
+		local bSz = 2
+
 		draw.RoundedBox(rnd, x, y, w, h, self.EmptyColor or emptyCol)
+
+		--draw.RoundedBox(rnd, x, y, w, h, self.EmptyColor or emptyCol)
+		--draw.RoundedBox(rnd, x + bSz, y + bSz, w - bSz * 2, h - bSz * 2, self.EmptyColor or emptyInCol)
+
+		surface.SetMaterial(MoarPanelsMats.gd)
+		surface.SetDrawColor(emptyGradCol)
+		local gH = math.ceil(h)
+		surface.DrawTexturedRectUV(bSz, y + h - bSz - gH, w - bSz * 2, gH, 0, 0, 1, 1)
 	end
 
 	if self.DropFrac > 0 then
 		local f = self.DropFrac
-		local sz = math.Round(f*3)
+		local sz = math.Round(f * 3)
 		--self.MaskHoverGrad(self, w, h)
 		draw.Masked(self.MaskHoverGrad, self.DrawGradientBorder, nil, nil, self, w, h, sz, sz)
 	end

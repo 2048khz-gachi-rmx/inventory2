@@ -1,6 +1,4 @@
-setfenv(0, _G)
 local numCol, notNumCol, textCol = unpack(Inventory.Modifiers.DescColors)
-
 local dmgMult = 1.35
 
 local el; el = Inventory.BaseModifier:new("Executioner")

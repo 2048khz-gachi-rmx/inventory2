@@ -7,6 +7,7 @@ uq:NetworkVar("NetStack", function(it)
 
 	for i=1, mods do
 		local id = net.ReadUInt(8)
+		print(id, Inventory.Modifiers.IDToName(id), "brrrrt")
 		local name = Inventory.Modifiers.IDToName(id)
 		local tier = net.ReadUInt(8)
 

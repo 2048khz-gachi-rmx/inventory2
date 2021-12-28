@@ -179,3 +179,4 @@ mods.DescColors = {
 }
 
 include("sh_modifier_ext.lua")
+include("sh_active_ext.lua")
