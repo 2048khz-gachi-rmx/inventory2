@@ -172,30 +172,60 @@ end
 SonarTrack = SonarTrack or {}
 
 local t = {}
+local shitrt, shitmat
 
-hook.Add("PostDrawTranslucentRenderables", "Sonar", function(b, s)
-	if b or s then return end
+local dickfuck = CreateMaterial("sugma_bale", "VertexLitGeneric", {
+	["$basetexture"] = "models/debug/debugwhite",
+	["$model"] = 1,
+	["$ignorez"] = 1,
+})
 
-	for ply, _ in pairs(SonarTrack) do
+local white = Vector(1, 1, 1)
+local function renderTracked(ply)
+	if Settings.Get("halo_enable") then
 		if not ply:Alive() then
 			local rag = ply:GetRagdollEntity()
 			if rag:IsValid() then
 				t[1] = rag
-				halo.Add(t, Colors.Red, 2, 2, 2, true, true)
+				halo.Add(t, Colors.Red, 1, 1, 2, true, true)
 			end
 		else
 			t[1] = ply
-			halo.Add(t, Colors.Yellowish, 2, 2, 2, true, true)
+			halo.Add(t, Colors.Yellowish, 1, 1, 3, true, true)
 		end
+
+		return
+	end
+
+	dickfuck:SetVector("$color", white)
+	render.MaterialOverride(dickfuck)
+	render.SetColorModulation(1, 1, 1)
+	render.SuppressEngineLighting(true)
+	ply:DrawModel()
+
+	render.MaterialOverride(nil)
+	render.SuppressEngineLighting(false)
+	ply:DrawModel()
+end
+
+local end_me = 0
+
+hook.Add("PostDrawTranslucentRenderables", "Sonar", function(f, k, u)
+	if f or k or u then return end
+	if end_me == FrameNumber() then return end -- FUCK YOU
+
+	end_me = FrameNumber()
+
+	for ply, _ in pairs(SonarTrack) do
+		if not ply:IsValid() then SonarTrack[ply] = nil continue end
+		renderTracked(ply)
 	end
 end)
 
 hook.Add("NetworkableChanged", "SonarTrack", function(nw, changes)
-	if not nw.IsPrivateNW then print("meh not priv") return end
+	if not nw.IsPrivateNW then return end
 
 	table.Empty(SonarTrack)
-
-	print("average nwable enjoyer")
 
 	for k,v in pairs(nw:GetNetworked()) do
 		if not k:match("^Trk_") then  continue end

@@ -94,25 +94,25 @@ end
 local updateIntervalTicks = 8
 
 local function writeTrack(ply)
-	active_track[ply] = true
+	active_track[ply] = ply:UserID()
 end
 
-local function doTrack(ply, forply)
+local function doTrack(ply, forply, uid)
 	-- ply:AddEFlags(EFL_IN_SKYBOX)
 	AddOriginToPVS(ply:GetPos())
 	local priv = forply:GetPInfo():GetPrivateNW()
-	priv:Set("Trk_" .. ply:UserID(), true)
+	priv:Set("Trk_" .. uid, true)
 end
 
 local function doUntrack(ply, forply)
+	if not active_track[ply] then return end
+
 	local priv = forply:GetPInfo():GetPrivateNW()
-	local key = "Trk_" .. ply:UserID()
+	local key = "Trk_" .. active_track[ply]
 
 	if priv:Get(key) then
 		priv:Set(key, nil)
 	end
-
-	if not active_track[ply] then return end
 
 	active_track[ply] = nil
 	--ply:RemoveEFlags(EFL_IN_SKYBOX)
@@ -130,7 +130,9 @@ function ENT:CalculatePVS(forWhat)
 	if tick - self._lastTrack < updateIntervalTicks then
 		-- not time to rescan; just track who's needed
 		for k,v in ipairs(self._tracked) do
-			writeTrack(v)
+			if v:IsValid() then
+				writeTrack(v)
+			end
 		end
 		return
 	end
@@ -159,8 +161,8 @@ function ENT:CalculatePVS(forWhat)
 end
 
 local function untrackAll(who)
-	for k,v in pairs(player.GetConstAll()) do
-		doUntrack(v, who)
+	for k,v in pairs(active_track) do
+		doUntrack(k, who)
 	end
 end
 
@@ -180,9 +182,9 @@ hook.Add("SetupPlayerVisibility", "Sonar", function(ply)
 			v:CalculatePVS(fac)
 		end
 
-		--[[for who, forWhat in pairs(active_track) do
-			print("tracking", who, "pog")
-		end]]
+		for who, uid in pairs(active_track) do
+			doTrack(who, ply, uid)
+		end
 		AddOriginToPVS(ply:EyePos())
 	else
 		local srs = sonarOwners[ply]
@@ -196,8 +198,8 @@ hook.Add("SetupPlayerVisibility", "Sonar", function(ply)
 			v:CalculatePVS(ply)
 		end
 
-		for who, forWhat in pairs(active_track) do
-			doTrack(who, ply)
+		for who, uid in pairs(active_track) do
+			doTrack(who, ply, uid)
 		end
 
 		AddOriginToPVS(ply:EyePos())
