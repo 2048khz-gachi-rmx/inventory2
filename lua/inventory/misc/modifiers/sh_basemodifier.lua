@@ -10,6 +10,8 @@ local mod = Inventory.BaseModifier
 mods.Pool = mods.Pool or {}
 
 ChainAccessor(mod, "MaxTier", "MaxTier")
+ChainAccessor(mod, "PowerTier", "PowerTier")
+mod:SetPowerTier(1) -- default
 
 ChainAccessor(mod, "MinBlueprintTier", "MinBlueprintTier")
 ChainAccessor(mod, "MaxBlueprintTier", "MaxBlueprintTier")
@@ -18,6 +20,8 @@ ChainAccessor(mod, "MaxBlueprintTier", "MaxBPTier")
 
 ChainAccessor(mod, "Name", "Name")
 ChainAccessor(mod, "Retired", "Retired")
+
+
 ChainAccessor(mod, "_ModStats", "ModStats")
 
 mod.IsModifier = true

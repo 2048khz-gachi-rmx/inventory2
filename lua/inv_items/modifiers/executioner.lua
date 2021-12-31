@@ -5,6 +5,7 @@ local el; el = Inventory.BaseModifier:new("Executioner")
 	:SetMaxTier(3)
 	:SetMinBPTier(2)
 	:SetMaxBPTier(4)
+	:SetPowerTier(2)
 	:Hook("EntityTakeDamage", function(self, ent, dmg)
 		if not ent:IsPlayer() then return end
 

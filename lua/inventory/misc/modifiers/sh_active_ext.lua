@@ -4,6 +4,8 @@ Inventory.BaseActiveModifier = Inventory.BaseActiveModifier or Inventory.BaseMod
 local ac = Inventory.BaseActiveModifier
 ac._IsActive = true
 
+ac:SetPowerTier("Active")
+
 function Inventory.BaseModifier:IsActiveModifier()
 	return self._IsActive
 end

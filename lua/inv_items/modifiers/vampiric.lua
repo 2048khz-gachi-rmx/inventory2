@@ -3,6 +3,7 @@ local numCol, notNumCol, textCol = unpack(Inventory.Modifiers.DescColors)
 local curMod; curMod = Inventory.BaseModifier:new("Vampiric")
 	:SetMaxTier(3)
 	:SetMinBPTier(3)
+	:SetPowerTier(2)
 	:Hook("PostEntityTakeDamage", function(self, ent, dmg)
 		if not IsPlayer(ent) then return end
 

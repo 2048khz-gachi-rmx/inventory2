@@ -3,6 +3,7 @@ local numCol, notNumCol, textCol = unpack(Inventory.Modifiers.DescColors)
 local el; el = Inventory.BaseModifier:new("Elastic")
 	:SetMaxTier(3)
 	:SetMinBPTier(3)
+	:SetPowerTier(2)
 	:Hook("SetupMove", function(self, ply, mv, cmd)
 		if not bit.Has( mv:GetButtons(), IN_JUMP, IN_SPEED ) or
 			bit.Has( mv:GetOldButtons(), IN_JUMP ) or

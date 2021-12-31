@@ -13,17 +13,32 @@ local chances = {
 }
 
 Inventory.Blueprints.TierMods = {
-	[1] = function(ply) return math.random() > 0.0 and 1 or 0 end, --15% of 1 mod
-	[2] = function(ply) return math.random() > 0.75 and 2 or 1 end, --75% of 1 mod, 25% of 2 mods
+	[1] = function(ply)
+		return 1
+	end,
+	[2] = function(ply)
+		--75% of 1 t1 mod, 1 t2 mod; 2 t1 mods otherwise
+		local t1 = math.random() > 0.75 and 2 or 1
+		return t1, 2 - t1
+	end,
 
 	[3] = function(ply)
-		-- 20% of 1 mod, 60% of 2 mods, 20% of 3 mods
-		return math.ceil(zeroClamp(math.random() - 0.2) / 0.6) + 1
+		-- 25% of 3 T1, 1 T2;
+		-- 75% of 2 T1, 1 T2
+		local t1 = math.random() > 0.75 and 3 or 2
+		return {
+			t1, 1,
+			Active = math.random() > 0.25 and 1 or 0
+		}
 	end,
 
 	[4] = function(ply)
-		--30% of 2 mods, 50% of 3 mods, 20% of 4 mods
-		return math.ceil(zeroClamp(math.random() - 0.3) / 0.5) + 2
+		-- 3 T1, (25%/75%) (2/1) T2, 1 T3
+		local t2 = math.random() > 0.75 and 2 or 1
+		return {
+			3, t2, 1,
+			Active = 1
+		}
 	end,
 
 	[5] = 4, --also has a talent
@@ -63,7 +78,7 @@ function bp.GetWeapon(typ, tier) --weapon pools are defined in sh_blueprints.lua
 end
 
 function bp.TierGetMods(tier)
-	return eval(Inventory.Blueprints.TierMods[tier])
+	return table.PackUp( eval(Inventory.Blueprints.TierMods[tier]) )
 end
 
 function bp.GetRandomType()
@@ -89,6 +104,10 @@ function bp.GetRandomType()
 end
 
 function bp.GenerateMods(tier, qual, amt)
+	amt = istable(amt) and amt or {amt}
+	print("GenerateMods: allowed")
+	PrintTable(amt)
+
 	local pool = {}
 	local guar = {} -- guaranteed mods
 
@@ -109,22 +128,40 @@ function bp.GenerateMods(tier, qual, amt)
 
 	table.Shuffle(guar)
 
-	for i=1, math.min(amt, #guar) do
+	local total = 0
+	for k,v in ipairs(amt) do
+		total = total + v
+	end
+
+	for i=1, math.min(total, #guar) do
 		local modtbl = guar[i]
-		local tier = math.random(1, modtbl:GetMaxTier() or 1)
-		ret[modtbl:GetName()] = tier
+		local modTier = math.random(1, modtbl:GetMaxTier() or 1)
+
+		local power = modtbl:GetPowerTier()
+		if not amt[power] or amt[power] == 0 then continue end
+
+		amt[power] = (amt[power] or 1) - 1
+
+		ret[modtbl:GetName()] = modTier
 		count = count + 1
 	end
 
-	if count == amt then return ret end
+	if count == total then return ret end
 
 	table.Shuffle(pool)
 
-	for i=1, math.min(amt - count, #pool) do
-		local modtbl = pool[i]
-		local tier = math.random(1, modtbl:GetMaxTier() or 1)
-		ret[modtbl:GetName()] = tier
+	print("picking from pooled...", count, total)
+	PrintTable(amt)
+
+	for _, mod in ipairs(pool) do
+		local power = mod:GetPowerTier()
+		if not amt[power] or amt[power] == 0 then continue end
+
+		local modTier = math.random(1, mod:GetMaxTier() or 1)
+		ret[mod:GetName()] = modTier
 		count = count + 1
+		amt[power] = amt[power] - 1
+		if count == total then break end -- all obtained
 	end
 
 	return ret

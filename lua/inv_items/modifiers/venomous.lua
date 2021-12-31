@@ -3,6 +3,7 @@ local numCol, notNumCol, textCol = unpack(Inventory.Modifiers.DescColors)
 local el; el = Inventory.BaseModifier:new("Venomous")
 	:SetMaxTier(3)
 	:SetMinBPTier(3)
+	:SetPowerTier(3)
 
 	:Hook("PostEntityTakeDamage", function(self, ent, dmg, took)
 		if not IsPlayer(ent) or not took then return end
