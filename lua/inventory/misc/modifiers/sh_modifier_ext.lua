@@ -26,6 +26,8 @@ BaseAccessor(mod, "_Name", "Name")
 BaseAccessor(mod, "_BaseTier", "BaseTier")
 BaseAccessor(mod, "_ModStats", "ModStats")
 
+ChainAccessor(mod, "_Cooldown", "Cooldown")
+
 function mod:GetTierStrength(...)
 	return self:GetBase():GetTierStrength(...)
 end

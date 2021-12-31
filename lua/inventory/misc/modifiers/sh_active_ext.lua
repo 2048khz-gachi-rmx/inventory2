@@ -11,7 +11,33 @@ end
 function ac:Initialize(id)
 	self.OffhandTable = self.OffhandTable or {
 		Use = function(ply)
-			return self:OnActivate(ply)
+			local mod = self:GetModFromPlayer(ply)
+			if not mod then return end -- !?
+			if mod:GetCooldown() and mod:GetCooldown() > CurTime() then
+				return
+			end
+
+			mod:SetCooldown(nil)
+
+			local ns = netstack:new()
+			local ok = self:OnActivate(ply, mod)
+
+			if not ok then
+				return false
+			end
+
+			
+			local nextCd = mod:GetCooldown()
+
+			if not nextCd then
+				-- no custom cd set; eval a new one...
+				local dur = eval(self:GetCooldown(), self, mod, ply) or 0
+				nextCd = CurTime() + dur
+			end
+
+			ns:WriteFloat(nextCd)
+
+			return true, ns
 		end,
 
 		Paint = function(...)
@@ -32,7 +58,9 @@ function ac:SetIcon(ic)
 	return self
 end
 
+-- point in curtime after which cooldown is off (ie when putting, set to ct + cooldown)
 ChainAccessor(ac, "Cooldown", "Cooldown")
+
 ChainAccessor(ac, "Description", "Description")
 
 function ac:OnActivate() end
@@ -68,8 +96,14 @@ function ac:GetModFromPlayer(ply)
 end
 
 if CLIENT then
-	function ac:RequestAction(ns)
-		return Offhand.RequestAction(self.ActionName, ns)
+	function ac:RequestAction(mod, ns)
+		local pr = Offhand.RequestAction(mod:GetBase().ActionName, ns)
+		pr:Then(function()
+			local cd = net.ReadFloat()
+			mod:SetCooldown(cd)
+		end)
+
+		return pr
 	end
 end
 
