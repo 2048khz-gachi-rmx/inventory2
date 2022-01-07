@@ -91,8 +91,9 @@ function ITEM:DetourStuff() --eh
 end
 
 function ITEM:TrackChanges(inv, slot)
-	self:GetInventory():On("Change", self, function()
+	inv:On("Change", self, function(...)
 		if inv:GetItemInSlot(slot) ~= self:GetItem(true) then
+			print("!!! change happened", inv:GetItemInSlot(slot), slot)
 			self:SetItem(inv:GetItemInSlot(slot))
 		end
 	end)
@@ -330,7 +331,6 @@ ChainAccessor(ITEM, "Inventory", "Inventory", true)
 ChainAccessor(ITEM, "InventoryPanel", "InventoryPanel", true)
 
 function ITEM:SetItem(it)
-
 	self:SetEnabled(Either(it, true, false))
 	if self.FakeItem then self:SetFakeItem(nil) end
 

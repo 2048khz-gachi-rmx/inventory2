@@ -15,6 +15,7 @@ function wep:UseCharge(ply)
 		self:SetUses(self:GetUses() - 1)
 
 		if self:GetUses() == 0 then
+			print("weapon ran out of uses(", self, "), deleting...")
 			self:Delete()
 		end
 

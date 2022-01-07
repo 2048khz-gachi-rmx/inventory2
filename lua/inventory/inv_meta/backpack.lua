@@ -243,6 +243,7 @@ function bp:AddItem(it, ignore_emitter, nochange)
 	end
 
 	self:Emit("AddItem", it, it:GetUID())
+
 	if not self.ReadingNetwork then
 		self:Emit("Change")
 	end

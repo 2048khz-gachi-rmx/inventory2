@@ -80,21 +80,14 @@ function ENT:SetReleaser(ply) -- ?? nice name
 	end
 end
 
-function ENT:OnRemove()
-	table.RemoveByValue(sonarOwners[self._rel], self)
-	if self._fac then
-		table.RemoveByValue(self._fac._sonars, self)
-	end
-end
-
 function ENT:UpdateTransmitState()
 	return TRANSMIT_ALWAYS
 end
 
 local updateIntervalTicks = 8
 
-local function writeTrack(ply)
-	active_track[ply] = ply:UserID()
+local function writeTrack(where, who)
+	where[who] = who:UserID()
 end
 
 local function doTrack(ply, forply, uid)
@@ -104,25 +97,36 @@ local function doTrack(ply, forply, uid)
 	priv:Set("Trk_" .. uid, true)
 end
 
-local function doUntrack(ply, forply)
-	if not active_track[ply] then return end
-
+local function doUntrack(ply, forply, force)
 	local priv = forply:GetPInfo():GetPrivateNW()
-	local key = "Trk_" .. active_track[ply]
+	local key = "Trk_" .. (active_track[ply] or ply:UserID())
 
 	if priv:Get(key) then
 		priv:Set(key, nil)
 	end
 
-	active_track[ply] = nil
-	--ply:RemoveEFlags(EFL_IN_SKYBOX)
+	forply._track[ply] = nil
 end
 
 local function isTracked(ply)
 	return active_track[ply]
 end
 
-function ENT:CalculatePVS(forWhat)
+function ENT:OnRemove()
+	table.RemoveByValue(sonarOwners[self._rel], self)
+	if self._fac then
+		table.RemoveByValue(self._fac._sonars, self)
+	end
+
+	for k,v in ipairs(self._tracked) do
+		print("have tracked", v)
+		if v:IsValid() then
+			doUntrack(v, self._rel, true)
+		end
+	end
+end
+
+function ENT:CalculatePVS(trkTbl)
 	if self:GetLandTime() == 0 then return end
 
 	local tick = engine.TickCount()
@@ -131,7 +135,7 @@ function ENT:CalculatePVS(forWhat)
 		-- not time to rescan; just track who's needed
 		for k,v in ipairs(self._tracked) do
 			if v:IsValid() then
-				writeTrack(v)
+				writeTrack(trkTbl, v)
 			end
 		end
 		return
@@ -156,13 +160,13 @@ function ENT:CalculatePVS(forWhat)
 
 		-- all good; start tracking
 		t[#t + 1] = v
-		writeTrack(v)
+		writeTrack(trkTbl, v)
 	end
 end
 
-local function untrackAll(who)
-	for k,v in pairs(active_track) do
-		doUntrack(k, who)
+local function untrackAll(ply, trkTbl)
+	for k,v in pairs(trkTbl) do
+		doUntrack(k, ply)
 	end
 end
 
@@ -170,38 +174,44 @@ hook.Add("SetupPlayerVisibility", "Sonar", function(ply)
 	local pin = ply:GetPInfo()
 	local fac = pin:GetFaction()
 
+	ply._track = ply._track or {}
+
 	if fac then
 		local srs = fac._sonars
-		untrackAll(ply)
+
+		untrackAll(ply, ply._track) -- everyone the player was tracking gets reset
 
 		if not srs or #srs == 0 then
 			return
 		end
 
-		for k,v in ipairs(srs) do
-			v:CalculatePVS(fac)
+		if fac._trackFilled ~= engine.TickCount() then
+			for k,v in ipairs(srs) do
+				v:CalculatePVS(ply._track) -- then refilled
+			end
+
+			fac._trackFilled = engine.TickCount()
 		end
 
-		for who, uid in pairs(active_track) do
-			doTrack(who, ply, uid)
+		for who, uid in pairs(ply._track) do
+			doTrack(who, ply, uid) -- then marked as tracked (and networked)
 		end
-		AddOriginToPVS(ply:EyePos())
+
 	else
 		local srs = sonarOwners[ply]
-		untrackAll(ply)
+
+		untrackAll(ply, ply._track)
 
 		if not srs or #srs == 0 then
 			return
 		end
 
 		for k,v in ipairs(srs) do
-			v:CalculatePVS(ply)
+			v:CalculatePVS(ply._track)
 		end
 
-		for who, uid in pairs(active_track) do
+		for who, uid in pairs(ply._track) do
 			doTrack(who, ply, uid)
 		end
-
-		AddOriginToPVS(ply:EyePos())
 	end
 end)

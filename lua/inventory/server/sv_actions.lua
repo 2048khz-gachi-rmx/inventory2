@@ -275,7 +275,6 @@ local function load()
 		local token = net.ReadUInt(16)
 		if not nw.Actions[act] then errorf("Failed to find action for enum %d from player %s", act, ply) return end
 
-		print("received action", act)
 		ply:SetInventoryNWToken(token)
 		local ok, succ, inv = xpcall(nw.Actions[act], GenerateErrorer("InventoryActions"), ply)
 

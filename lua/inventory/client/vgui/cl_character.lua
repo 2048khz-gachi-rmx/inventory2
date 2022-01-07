@@ -106,8 +106,8 @@ function PANEL.EquipItem(slot, self, itemfr, item)
 		ns:WriteUInt(slot:GetSlot(), 16)
 	Inventory.Networking.PerformAction(INV_ACTION_EQUIP, ns)
 
-	slot:SetItem(item)
-	itemfr:SetItem(nil)
+	-- slot:SetItem(item)
+	-- itemfr:SetItem(nil)
 end
 
 function PANEL:UnequipItem(recslot, dropslot, item)
@@ -124,8 +124,8 @@ function PANEL:UnequipItem(recslot, dropslot, item)
 	local inv = item:GetInventory()
 	inv:CrossInventoryMove(item, recslot:GetInventory(), recslot:GetSlot())
 
-	recslot:SetItem(item)
-	dropslot:SetItem(nil)
+	-- recslot:SetItem(item)
+	-- dropslot:SetItem(nil)
 end
 
 function PANEL:HighlightFit(btn, itemfr, item)

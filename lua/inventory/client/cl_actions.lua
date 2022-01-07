@@ -16,8 +16,6 @@ function Inv.GUIDesiredAction(slot, inv, itm, ipnlFrom, ipnlTo)
 
 	local can_split = itm:GetCountable() and inv.SupportsSplit and inv2.SupportsSplit
 
-	printf("can? %p, %p", ipnlFrom, ipnlTo)
-
 	if ipnlFrom and ((ipnlFrom.SupportsSplit == false) or ipnlFrom:Emit("CanSplit", itm, inv) == false) then
 		can_split = false
 	end
@@ -26,7 +24,6 @@ function Inv.GUIDesiredAction(slot, inv, itm, ipnlFrom, ipnlTo)
 		can_split = false
 	end
 
-	print("cansplit", can_split)
 	if itm2 and itm:GetItemID() == itm2:GetItemID() then -- second item exists and is the same ID = stack
 		local can = itm2:CanStack(itm)
 

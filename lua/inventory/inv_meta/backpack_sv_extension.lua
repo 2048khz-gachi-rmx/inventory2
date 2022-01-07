@@ -152,7 +152,7 @@ end
 
 -- inv1: from, inv2: to
 local function ActuallyMove(inv1, inv2, it, slot)
-	local em = Inventory.MySQL.SetInventory(it, inv2, slot)
+	--local em = Inventory.MySQL.SetInventory(it, inv2, slot)
 
 	inv1:RemoveItem(it, true, true) -- don't write the change 'cause we have crossmoves as a separate change
 	it:SetSlot(slot)
@@ -162,7 +162,6 @@ local function ActuallyMove(inv1, inv2, it, slot)
 
 	inv2:AddChange(it, INV_ITEM_CROSSMOVED)
 
-	return em
 end
 
 -- move from bp to inv2
@@ -190,13 +189,29 @@ function bp:CrossInventoryMove(it, inv2, slot, ply)
 
 	if not self:CanCrossInventoryMove(it, inv2, nil, ply) then print(self, "#2 doesn't allow CIM") return false end
 
-	if other_item then
-		ActuallyMove(inv2, self, other_item, it:GetSlot())
-	end
-	local em = ActuallyMove(self, inv2, it, slot)
+	local em
 
-	self:Emit("CrossInventoryMovedFrom", it, inv2, slot)
-	inv2:Emit("CrossInventoryMovedTo", it, self, slot)
+	if other_item then
+		em = Inventory.MySQL.SwapInventories(it, other_item)
+			:Then(function()
+				if other_item then
+					ActuallyMove(inv2, self, other_item, it:GetSlot())
+				end
+				ActuallyMove(self, inv2, it, slot)
+
+				self:Emit("CrossInventoryMovedFrom", it, inv2, slot)
+				inv2:Emit("CrossInventoryMovedTo", it, self, slot)
+				return true
+			end)
+	else
+		em = Inventory.MySQL.SetInventory(it, inv2, slot)
+			:Then(function()
+				ActuallyMove(self, inv2, it, slot)
+				self:Emit("CrossInventoryMovedFrom", it, inv2, slot)
+				inv2:Emit("CrossInventoryMovedTo", it, self, slot)
+				return true
+			end)
+	end
 
 	return em
 end

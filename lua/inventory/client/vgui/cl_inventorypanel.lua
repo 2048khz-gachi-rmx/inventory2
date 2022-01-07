@@ -361,13 +361,15 @@ function PANEL:AddItemSlot()
 	it:On("ItemHover", self, self.CheckCanDrop, self)
 	it:On("Click", self, self.OnItemClick, self)
 
-	self:On("Change", it, function(self, inv, ...)
+	it:BindInventory(self:GetInventory(), it:GetSlot())
+
+	--[[self:On("Change", it, function(self, inv, ...)
 		if inv:GetItemInSlot(it:GetSlot()) ~= it:GetItem(true) then
 			it:SetItem(inv:GetItemInSlot(it:GetSlot()))
 		end
 
 		it:OnInventoryUpdated()
-	end)
+	end)]]
 
 	it:On("Drop", "FrameItemDrop", function(...) self:ItemDrop(...) end)
 	return it

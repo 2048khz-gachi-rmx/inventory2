@@ -59,11 +59,9 @@ function bp:CrossInventoryMove(it, inv2, slot)
 	if not self:CanCrossInventoryMove(it, inv2, slot) then return false end
 
 	if other_item then
-		--print("other item:", other_item)
 		ActuallyMove(inv2, self, other_item, it:GetSlot())
 	end
 
-	--print("this item:", it, inv2, slot)
 	ActuallyMove(self, inv2, it, slot)
 
 	self:Emit("CrossInventoryMovedFrom", it, inv2, slot)

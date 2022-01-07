@@ -150,6 +150,7 @@ it.GetPermaData = it.GetData
 
 DataAccessor(it, "Amount", "Amount", function(it, amt)
 	if amt == 0 then
+		print("item ran out of amount (amt = ", amt, ", ", it, "), deleting...")
 		it:Delete()
 	end
 end)

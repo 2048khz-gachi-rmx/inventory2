@@ -36,7 +36,7 @@ function Inventory.LaunchSonar(ply)
 
 		ent:Spawn()
 		ent:Activate()
-		ent:Timer("r", 999, function() ent:Remove() end)
+		ent:Timer("r", 15, function() ent:Remove() end)
 		ent:SetReleaser(ply)
 
 		local p = ent:GetPhysicsObject()

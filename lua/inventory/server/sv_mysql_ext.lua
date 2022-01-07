@@ -5,7 +5,7 @@ local qerr = function(self, err, q)
 	ms.LogError("\n	Query: '%s'\n	Error: '%s'\n 	Trace: %s", q, err, debug.traceback("", 2))
 end
 
-local trerr = function(tr, err)
+local trerr = function(_, tr, err)
 	local qs = tr:getQueries()
 	local errs = {}
 	for k,v in ipairs(qs) do
@@ -389,9 +389,9 @@ function ms.SetInventory(it, inv, slot, dat)
 	local q2
 
 	if it:GetUIDFake() then
-		q2 = ("INSERT IGNORE INTO %s (puid%s) VALUES (%s, %s%s)"):format(inv.SQLName, columns, puid, values )
+		q2 = ("INSERT INTO %s (puid%s) VALUES (%s, %s%s)"):format(inv.SQLName, columns, puid, values )
 	else
-		q2 = ("INSERT IGNORE INTO %s (uid, puid%s) VALUES (%s, %s%s)"):format(
+		q2 = ("INSERT INTO %s (uid, puid%s) VALUES (%s, %s%s)"):format(
 			inv.SQLName, columns, it:GetUID(), puid, values )
 	end
 
@@ -407,8 +407,60 @@ function ms.SetInventory(it, inv, slot, dat)
 		t:addQuery(qo2)
 	end
 
-	return MySQLEmitter:new(t, true):Catch(trerr)
+	local em = MySQLEmitter:new(t, true)
+	print(qo1:GetSQL(), qo2:GetSQL())
+	em:Then(function()
+		print("mysql setinv complete", qo1:GetSQL(), qo2:GetSQL())
+	end)
+
+	em:Catch(trerr)
+
+	return em
 end
+
+function ms.SwapInventories(it1, it2, dat)
+	local t = ms.DB:createTransaction()
+
+	local q1
+
+	local inv1 = it1:GetInventory()
+	local inv2 = it2:GetInventory()
+
+	if inv1 == inv2 then
+		errorf("cant swap same inventories (%s)", inv1)
+		return
+	end
+
+	if inv1 and inv1.UseSQL ~= false then
+		t:addQuery(db:query( ("DELETE FROM %s WHERE uid = %s"):format(inv1.SQLName, it1:GetUID()) ))
+	end
+
+	if inv2 and inv2.UseSQL ~= false then
+		t:addQuery(db:query( ("DELETE FROM %s WHERE uid = %s"):format(inv2.SQLName, it2:GetUID()) ))
+	end
+
+	local _, owuid = inv1:GetOwner()
+
+	local puid = mysqloo.quote(ms.DB, owuid)
+	local q2 = "INSERT INTO %s (uid, puid, slotid) VALUES (%s, %s, %s)"
+
+	local qo1, qo2
+
+	if inv1.UseSQL ~= false then
+		t:addQuery(db:query( q2:format(inv2.SQLName, it1:GetUID(), puid, it2:GetSlot()) ))
+	end
+
+	if inv2.UseSQL then
+		t:addQuery(db:query( q2:format(inv1.SQLName, it2:GetUID(), puid, it1:GetSlot()) ))
+	end
+
+	local em = MySQLEmitter:new(t, true)
+
+	em:Catch(trerr)
+
+	return em
+end
+
 
 
 																							 -- SQL inventory name | SteamID64 as an int

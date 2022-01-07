@@ -43,7 +43,6 @@ function char:Initialize()
 end
 
 function char:Unequip(it, slot, inv)
-	print("unequipping", it)
 	if not IsInventory(inv) then error("Unequip where dude") return end
 
 	--local it = self.Slots[slot]
@@ -56,8 +55,6 @@ function char:Unequip(it, slot, inv)
 end
 
 function char:Equip(it, slot)
-	print("equipping", it)
-
 	if IsItem(self.Slots[slot]) then
 		-- item there already; unequip and it'll make us crossinv move
 		self.Allowed[it:GetUID()] = true
