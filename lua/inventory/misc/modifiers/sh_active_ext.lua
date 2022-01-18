@@ -5,50 +5,14 @@ local ac = Inventory.BaseActiveModifier
 ac._IsActive = true
 
 ac:SetPowerTier("Active")
+ac.ActionName = "inv_active_mod"
 
 function Inventory.BaseModifier:IsActiveModifier()
 	return self._IsActive
 end
 
 function ac:Initialize(id)
-	self.OffhandTable = self.OffhandTable or {
-		Use = function(ply)
-			local mod = self:GetModFromPlayer(ply)
-			if not mod then return end -- !?
-			if mod:GetCooldown() and mod:GetCooldown() > CurTime() then
-				return
-			end
-
-			mod:SetCooldown(nil)
-
-			local ns = netstack:new()
-			local ok = self:OnActivate(ply, mod)
-
-			if not ok then
-				return false
-			end
-
-			
-			local nextCd = mod:GetCooldown()
-
-			if not nextCd then
-				-- no custom cd set; eval a new one...
-				local dur = eval(self:GetCooldown(), self, mod, ply) or 0
-				nextCd = CurTime() + dur
-			end
-
-			ns:WriteFloat(nextCd)
-
-			return true, ns
-		end,
-
-		Paint = function(...)
-			self:Paint(...)
-		end
-	}
-
-	self.ActionName = "actmod_" .. id
-	Offhand.Register(self.ActionName, self.OffhandTable)
+	
 end
 
 ChainAccessor(ac, "Icon", "Icon")
@@ -109,10 +73,105 @@ if CLIENT then
 	end
 end
 
+
+local function getActiveMod(ply)
+	local lp = ply or CachedLocalPlayer()
+	local wep = lp:GetActiveWeapon()
+	if not wep:IsValid() then return end
+
+	local wdt = wep:GetWeaponData()
+	if not wdt then return end
+
+	return wdt:GetActiveMod()
+end
+
+Offhand.Register("inv_active_mod", {
+	Paint = function(...)
+		local ac = getActiveMod(CachedLocalPlayer())
+		if not ac then return end
+
+		ac:GetBase():Paint(...)
+	end,
+
+	ShouldPaint = function()
+		local ac = getActiveMod(CachedLocalPlayer())
+		if not ac then return false end
+	end,
+
+	Use = function(ply)
+		local mod = getActiveMod(ply)
+		if not mod then return end -- !?
+
+		if mod:GetCooldown() and mod:GetCooldown() > CurTime() then
+			return
+		end
+
+		mod:SetCooldown(nil)
+
+		local base = mod:GetBase()
+		local ns = netstack:new()
+		local ok = base:OnActivate(ply, mod)
+
+		if not ok then
+			return false
+		end
+
+		local nextCd = mod:GetCooldown()
+
+		if not nextCd then
+			-- no custom cd set; eval a new one...
+			local dur = eval(base:GetCooldown(), base, mod, ply) or 0
+			nextCd = CurTime() + dur
+		end
+
+		ns:WriteFloat(nextCd)
+
+		return true, ns
+	end,
+})
+
+local function createEmptyAction(wheel)
+	local wep = CachedLocalPlayer():GetActiveWeapon()
+	local desc = ("%s\"%s\" has no abilities!")
+
+	if not IsValid(wep) then
+		desc = "Well, ya can't have a weapon ability without a weapon now, can you?"
+	else
+		local name = wep.PrintName or wep:GetClass()
+		local your = (wep.ArcCW or wep.CW20Weapon) and "Your " or ""
+		desc = desc:format(your, name)
+	end
+
+	Offhand.AddChoice(ac.ActionName,
+		"Weapon Ability", desc)
+end
+
 hook.Add("Offhand_GenerateSelection", "BaseActiveModifier", function(bind, wheel)
 	local lp = LocalPlayer()
 
-	for k,v in ipairs(lp:GetWeapons()) do
+	local wep = lp:GetActiveWeapon()
+	if not wep:IsValid() then createEmptyAction(wheel) return end
+
+	local wdt = wep:GetWeaponData()
+	if not wdt then createEmptyAction(wheel) return end
+
+	local have = false
+
+	for name, mod in pairs(wdt:GetMods()) do
+		if not mod:GetBase():IsActiveModifier() then continue end
+
+		local base = mod:GetBase()
+		if base:CanBind(mod) == false then continue end
+
+		have = true
+		base:CreateOption(mod)
+	end
+
+	if not have then
+		createEmptyAction(wheel)
+	end
+
+	--[[for k,v in ipairs(lp:GetWeapons()) do
 		local wdt = v:GetWeaponData()
 		if not wdt then continue end
 
@@ -124,5 +183,5 @@ hook.Add("Offhand_GenerateSelection", "BaseActiveModifier", function(bind, wheel
 
 			base:CreateOption(mod)
 		end
-	end
+	end]]
 end)

@@ -21,6 +21,7 @@ local function nwAccessor(t, key, func)
 	t["Set" .. func] = function(self, val)
 		self[key] = val
 		self.NW:Set(func, val)
+		self:ResetCache()
 		return self
 	end
 end
@@ -30,6 +31,21 @@ nwAccessor(wd, "Mods", "Mods")
 nwAccessor(wd, "Mods", "Modifiers")
 nwAccessor(wd, "Stats", "Stats")
 ChainAccessor(wd, "ID", "ID")
+
+function wd:GetActiveMod()
+	if self._cachedActive ~= nil then return self._cachedActive end
+
+	local ac = false
+	for k,v in pairs(self:GetMods()) do
+		if v:GetBase() and v:GetBase():IsActiveModifier() then
+			ac = v
+			break
+		end
+	end
+
+	self._cachedActive = ac
+	return ac
+end
 
 function wd:SetMods(tbl)
 	for name, tier in pairs(tbl) do
@@ -45,6 +61,7 @@ function wd:SetMods(tbl)
 		self.Mods[name] = mod
 	end
 
+	self:ResetCache()
 	self.NW:Set("Mods", tbl)
 end
 wd.SetModifiers = wd.SetMods
@@ -72,9 +89,14 @@ function wd:Initialize(id)
 end
 
 function wd:ResetWeaponBuffs(wep)
+	self:ResetCache()
 	if IsWeapon(wep) and wep.RecalcAllBuffs then
 		wep:RecalcAllBuffs()
 	end
+end
+
+function wd:ResetCache()
+	self._cachedActive = nil
 end
 
 function wd:SetStats(t)
@@ -83,6 +105,7 @@ function wd:SetStats(t)
 	end
 
 	self.NW:Set("Stats", self.Stats)
+	self:ResetCache()
 end
 
 function wd:Remove()
