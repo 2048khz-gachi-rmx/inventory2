@@ -115,10 +115,10 @@ el:SetDescription("Fire a sonar beacon, revealing nearby enemies.")
 function el:GenerateMarkup(it, mup, tier)
 	local mod = mup:AddPiece()
 	mod:SetAlignment(1)
-	mod.Font = "OS20"
+	mod.Font = "EXB28"
 
 	local tx = mod:AddText("Sonar " .. string.ToRoman(tier))
-	mod:SetColor(Color(220, 60, 60))
+	mod:SetColor(Color(220, 210, 60))
 
 	local desc = mup:AddPiece()
 	desc.Font = "OS16"
@@ -126,9 +126,8 @@ function el:GenerateMarkup(it, mup, tier)
 	desc:SetColor(textCol)
 	desc:SetAlignment(1)
 
-	desc:AddText("NYI lol ")
-	--desc:AddText(dmgMult * 100 - 100 .. "% ").color = numCol
-	desc:AddText("brrt ")
+	desc:AddText("Fire a destructible sonar beacon, which highlights enemies within its' radius " ..
+		" even through walls. Cooldown: ")
 
 	for i=1, self:GetMaxTier() do
 		local tx2 = desc:AddText(tostring(self:GetTierStrength(i)))
@@ -140,7 +139,7 @@ function el:GenerateMarkup(it, mup, tier)
 		end
 	end
 
-	desc:AddText(" bwrwrrw")
+	desc:AddText("s.")
 end
 
 hook.Add("PostDrawViewModel", "SonarCam", function()

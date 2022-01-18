@@ -5,7 +5,7 @@ local el; el = Inventory.BaseActiveModifier:new("Sonar")
 	:SetMaxBPTier(4)
 
 	:SetTierCalc(function(self, tier)
-		return 20 - 5 * tier -- 15/10/5
+		return 25 - 5 * tier -- 20/15/10
 	end)
 	:SetCooldown(function(base, mod, ply)
 		return mod:GetTierStrength(mod:GetTier())
