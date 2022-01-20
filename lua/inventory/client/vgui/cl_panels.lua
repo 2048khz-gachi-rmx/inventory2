@@ -6,7 +6,6 @@ iPan.SlotPadding = 4
 iPan.CloseTime = 0
 
 function iPan.CreateInventory(inv, multiple, set)
-
 	if not multiple and iPan.IFrame and iPan.IFrame:IsValid() then iPan.IFrame:Remove() end
 
 	local multi_invs = false
@@ -48,9 +47,7 @@ function iPan.CreateInventory(inv, multiple, set)
 	function f:OnKeyCodePressed(key)
 		if key == self.CloseByKey then
 			iPan.CloseTime = UnPredictedCurTime()
-			CloseDermaMenus()
-			f:SetInput(false)
-			f:PopOut()
+			self:Disappear()
 		end
 	end
 
@@ -107,6 +104,23 @@ function iPan.CreateInventory(inv, multiple, set)
 	return f
 end
 
+function iPan.Open()
+	if IsValid(iPan.IFrame) then
+		iPan.IFrame:Appear()
+		return iPan.IFrame
+	end
+
+	local f = iPan.CreateInventory()
+	f:SetFull(true)
+	--f:SetTall(math.max(ScrH() * 0.4, 350))
+	f:MakePopup()
+	f:Center()
+	f:DoAnim()
+	f:SelectTab("Backpack")
+
+	return f
+end
+
 function Inventory.Panels.PickSettings(width)
 	local sz = 	(ScrW() < 1200 and ScrW() > 800 and 80)  or		-- 800 - 1200 = 80x80 (with 4 slots per row)
 				(ScrW() >= 1200 and ScrW() < 1900 and 64) or	-- 1200 - 1900 = 64x64
@@ -149,12 +163,6 @@ hook.Add("PlayerButtonDown", "Inventory", function(p, k)
 	if k ~= KEY_F4 or not IsFirstTimePredicted() then return end
 	if UnPredictedCurTime() - iPan.CloseTime < 0.2 then return end
 
-	local f = iPan.CreateInventory()
-	f:SetFull(true)
-	--f:SetTall(math.max(ScrH() * 0.4, 350))
-	f:MakePopup()
-	f:Center()
-	f:DoAnim()
-	f:SelectTab("Backpack")
+	local f = iPan.Open()
 	f.CloseByKey = KEY_F4
 end)
