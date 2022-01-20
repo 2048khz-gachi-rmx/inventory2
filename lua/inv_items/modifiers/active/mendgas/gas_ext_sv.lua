@@ -10,8 +10,8 @@ local function deployGas(pos)
 		fxd:SetMagnitude(el.Duration)
 	util.Effect("mendgas", fxd)
 
-	sound.Play("physics/glass/glass_impact_bullet" .. math.random(1, 3) .. ".wav",
-		pos + Vector(0, 0, 2), 65, math.random(100, 110), 1)
+	sound.Play("arccw_go/smokegrenade/smoke_emit.wav",
+		pos + Vector(0, 0, 2), 65, math.random(130, 140), 1)
 
 	table.insert(areas, {CurTime(), pos + Vector(0, 0, 2), 0})
 end
@@ -61,8 +61,23 @@ local el = Inventory.Modifiers.Get("MendGas")
 		return true
 	end)
 
+MendingAffected = MendingAffected or {}
+local aff = MendingAffected
+local has = not table.IsEmpty(MendingAffected)
 
 timer.Create("MendGasThink", el.TickInterval, 0, function()
+	if has then
+		for k,v in pairs(aff) do
+			if k:IsValid() then
+				k:GetPrivateNW():Set("Mending", nil)
+			end
+
+			aff[k] = nil
+		end
+
+		has = false
+	end
+
 	if #areas == 0 then return end
 
 	local ct = CurTime()
@@ -82,7 +97,6 @@ timer.Create("MendGasThink", el.TickInterval, 0, function()
 			el.HealTotal - healed
 		)
 		areas[i][3] = areas[i][3] + toHeal
-		print("healing:", toHeal, areas[i][3])
 
 		for k,v in pairs(poses) do
 			local vz = v.z
@@ -95,6 +109,12 @@ timer.Create("MendGasThink", el.TickInterval, 0, function()
 			if v:Distance(pos) > el.Radius then continue end
 			-- todo: trace?
 			k:AddHealth(toHeal)
+			aff[k] = true
+			has = true
 		end
+	end
+
+	for k,v in pairs(aff) do
+		k:GetPrivateNW():Set("Mending", true)
 	end
 end)

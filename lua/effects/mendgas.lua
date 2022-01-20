@@ -8,6 +8,11 @@ function EFFECT:Init( data )
 	self.Radius = data:GetRadius() or 64
 	self.Length = data:GetMagnitude() or 5
 
+	self.DisappearOvertime = 1.5
+	self.DisappearLength = 2
+
+	self.SnuffOutTime = 1
+
 	self.FT = 0
 	self.InitFreq = 1 / 90
 	self.Freq = self.InitFreq
@@ -21,12 +26,16 @@ end
 
 function EFFECT:Think()
 	local left = self.Length - (CurTime() - self.CT)
-	local needExist = left > 0
+	local sn = self.SnuffOutTime
 
-	if left < 2 then
-		self.Freq = Lerp((2 - left) / 2, self.InitFreq, 1 / 10)
+	if left < sn then
+		self.Freq = Lerp((sn - left) / sn, self.InitFreq, 1 / 10)
+		if left < 0 then
+			self.Freq = math.huge
+		end
 	end
 
+	local needExist = (left + self.DisappearOvertime) > 0
 	if not needExist then
 		table.RemoveByValue(FX, self)
 	end
@@ -45,9 +54,11 @@ function EFFECT:DrawBeam()
 	local t = self:GetExistTime()
 	local fr = Ease(math.min(1, t / 1.8), 0.1)
 
-	local tLeft = self.Length - t
-	if tLeft < 0.4 then
-		fr = Ease(math.max(0, tLeft / 0.4), 0.1)
+	local tLeft = (self.Length + self.DisappearOvertime) - t
+
+	local dl = self.DisappearLength
+	if tLeft < dl then
+		fr = Ease(math.max(0, tLeft / dl), 0.3)
 	end
 
 	render.StartBeam(segs + 1)

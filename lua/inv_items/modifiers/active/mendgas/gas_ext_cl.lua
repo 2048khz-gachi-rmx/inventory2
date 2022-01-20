@@ -66,7 +66,7 @@ end)
 
 	pr:Then(function()
 		-- ?
-		print("success")
+
 		me:LiveTimer("MendGas_Pull", 0.5, function()
 			me:ViewPunch(Angle(-2, 0.3, -1))
 		end)
@@ -113,3 +113,46 @@ function el:GenerateMarkup(it, mup, tier)
 
 	desc:AddText(" bwrwrrw")
 end
+
+local mat = Material("overwatch/overlays/lowhealth")
+
+local tab = {
+	[ "$pp_colour_addr" ] = 0.02,
+	[ "$pp_colour_addg" ] = 0.02,
+	[ "$pp_colour_addb" ] = 0,
+	[ "$pp_colour_brightness" ] = 0,
+	[ "$pp_colour_contrast" ] = 1,
+	[ "$pp_colour_colour" ] = 3,
+	[ "$pp_colour_mulr" ] = 0,
+	[ "$pp_colour_mulg" ] = 0.02,
+	[ "$pp_colour_mulb" ] = 0
+}
+
+hook.Add("DrawOverlay", "MendOverlay", function()
+	local me = CachedLocalPlayer()
+
+	if not me:GetPrivateNW():Get("Mending") then
+		anim:To("MendFrac", 0, 1.8, 0, 2.7)
+	else
+		anim:To("MendFrac", 1, 0.5, 0, 0.3)
+	end
+
+	local fr = anim.MendFrac or 0
+	if fr == 0 then return end
+
+	local w, h = ScrW(), ScrH()
+	local x, y = -w * (1 - fr) * 0.5, -h * (1 - fr) * 0.5
+	w = w * (1 + (1 - fr) * 1)
+	h = h * (1 + (1 - fr) * 1)
+
+	surface.SetDrawColor(255, 255, 255)
+	surface.SetMaterial(mat)
+
+	mat:SetVector("$color2", Vector(0, 1, 1))
+	mat:SetVector("$color", Vector(fr * 0.7, 1, 1))
+	mat:SetFloat("$pulsing_strength", 0)
+	mat:SetFloat("$pulsing_speed_mul", 0)
+	mat:SetFloat("$osc_tan_multiplier", 0)
+
+	surface.DrawTexturedRect(x, y, w, h)
+end)
