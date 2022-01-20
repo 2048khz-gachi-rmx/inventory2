@@ -14,7 +14,7 @@ end)
 
 handle.cached = false
 
-local el = Inventory.Modifiers.Pool.Sonar
+local el = Inventory.Modifiers.Get("Sonar")
 
 local mdl
 local anim = Animatable("sonar")
@@ -126,7 +126,7 @@ function el:GenerateMarkup(it, mup, tier)
 	desc:SetColor(textCol)
 	desc:SetAlignment(1)
 
-	desc:AddText("Fire a destructible sonar beacon, which highlights enemies within its' radius " ..
+	desc:AddText("Fire a destructible sonar beacon, highlighting enemies within its' radius, " ..
 		" even through walls. Cooldown: ")
 
 	for i=1, self:GetMaxTier() do
