@@ -115,18 +115,16 @@ function el:GenerateMarkup(it, mup, tier)
 end
 
 local mat = Material("overwatch/overlays/lowhealth")
+mat:SetVector("$color2", Vector(0, 1, 1))
+mat:SetVector("$color", Vector(1, 1, 0.4))
+mat:SetFloat("$pulsing_strength", 0)
+mat:SetFloat("$pulsing_speed_mul", 0)
 
-local tab = {
-	[ "$pp_colour_addr" ] = 0.02,
-	[ "$pp_colour_addg" ] = 0.02,
-	[ "$pp_colour_addb" ] = 0,
-	[ "$pp_colour_brightness" ] = 0,
-	[ "$pp_colour_contrast" ] = 1,
-	[ "$pp_colour_colour" ] = 3,
-	[ "$pp_colour_mulr" ] = 0,
-	[ "$pp_colour_mulg" ] = 0.02,
-	[ "$pp_colour_mulb" ] = 0
-}
+hdl.DownloadFile("http://vaati.net/Gachi/shared/mend_overlay.vtf",
+"mend_overlay.vtf", function(fn)
+
+	mat:SetTexture("$basetexture", "../" .. fn:gsub("%.vtf$", ""))
+end)
 
 hook.Add("DrawOverlay", "MendOverlay", function()
 	local me = CachedLocalPlayer()
@@ -145,14 +143,8 @@ hook.Add("DrawOverlay", "MendOverlay", function()
 	w = w * (1 + (1 - fr) * 1)
 	h = h * (1 + (1 - fr) * 1)
 
-	surface.SetDrawColor(255, 255, 255)
+	surface.SetDrawColor(255, 255, 255, 255)
 	surface.SetMaterial(mat)
-
-	mat:SetVector("$color2", Vector(0, 1, 1))
-	mat:SetVector("$color", Vector(fr * 0.7, 1, 1))
-	mat:SetFloat("$pulsing_strength", 0)
-	mat:SetFloat("$pulsing_speed_mul", 0)
-	mat:SetFloat("$osc_tan_multiplier", 0)
 
 	surface.DrawTexturedRect(x, y, w, h)
 end)
