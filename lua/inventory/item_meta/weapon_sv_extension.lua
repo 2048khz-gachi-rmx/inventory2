@@ -47,7 +47,9 @@ end)
 
 hook.Add("InventoryWeaponGiven", "WeaponData", function(itm, ply, wep)
 	local wdt = Inventory.WeaponData
-	local wd = wdt.Get(itm:GetUID()) or wdt.Object:new(itm:GetUID())
+	local wd = wdt.Object:new(wep:EntIndex())
+
+	--local wd = wdt.Get(itm:GetUID()) or wdt.Object:new(itm:GetUID())
 
 	wd:SetQuality(itm:GetQuality())
 	wd:SetMods(itm:GetModifiers())

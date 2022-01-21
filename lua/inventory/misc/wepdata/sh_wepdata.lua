@@ -12,7 +12,6 @@ local wd = Inventory.WeaponData.Object
 
 wdt.EIDToWD = wdt.EIDToWD or Networkable("eidToWD")
 
-
 local function nwAccessor(t, key, func)
 	t["Get" .. func] = function(self)
 		return self[key]
@@ -67,6 +66,12 @@ end
 wd.SetModifiers = wd.SetMods
 
 function wd:Initialize(id)
+	id = id or uniq.Seq("wdata", 24)
+
+	if wdt.Get(id) then
+		wdt.Get(id):Remove()
+	end
+
 	self.NW = Networkable("WD:" .. id)
 	self.Networkable = self.NW
 	self.Networkable.WeaponData = self
