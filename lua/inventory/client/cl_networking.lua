@@ -2,7 +2,7 @@
 setfenv(0, _G)
 local nw = Inventory.Networking or {InventoryIDs = {}}
 Inventory.Networking = nw
-nw.Verbose = true
+nw.Verbose = false
 
 local realLog = Inventory.Log
 
