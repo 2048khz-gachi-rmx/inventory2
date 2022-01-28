@@ -51,6 +51,6 @@ end
 function Inventory.Rarities.Get(nm)
 	if IsRarity(nm) then return nm end
 	if isstring(nm) then
-		return Inventory.Qualities.All[nm] or Inventory.Qualities.ByName[nm]
+		return Inventory.Rarities.All[nm] or Inventory.Rarities.ByName[nm]
 	end
 end

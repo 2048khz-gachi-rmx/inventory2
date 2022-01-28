@@ -13,6 +13,11 @@ Inventory.Rarity("uncommon")
 	:SetColor(Color(70, 250, 70))
 	:SetRarity(2)
 
+Inventory.Rarity("rare")
+	:SetName("Rare")
+	:SetColor(Color(50, 170, 240))
+	:SetRarity(2)
+
 Inventory.Rarity("legendary")
 	:SetName("Legendary")
 	:SetColor(Color(255, 80, 20))

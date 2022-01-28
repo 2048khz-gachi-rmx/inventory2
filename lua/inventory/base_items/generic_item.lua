@@ -78,6 +78,18 @@ function Base:Initialize(name)
 	Inventory:Emit("BaseItemInit", self)
 end
 
+function Base:SetRarity(rar)
+	if IsRarity(rar) then self.Rarity = rar return self end
+	local r = Inventory.Rarities.Get(rar)
+	if not r then
+		errorf("unknown rarity: %s", r)
+	end
+
+	self.Rarity = r
+
+	return self
+end
+
 function Base:SetID(id)
 	if not isnumber(id) then errorf('Base:SetID(): expected "number", got %q instead (%s)', type(id), id) end
 
@@ -173,7 +185,7 @@ ChainAccessor(Base, "ItemName", "ItemName")
 ChainAccessor(Base, "Model", "Model")
 ChainAccessor(Base, "ModelColor", "ModelColor")
 ChainAccessor(Base, "Color", "Color")
-ChainAccessor(Base, "Rarity", "Rarity")
+ChainAccessor(Base, "Rarity", "Rarity", true)
 
 Base.BaseTransferCost = 10000
 ChainAccessor(Base, "BaseTransferCost", "BaseTransferCost")

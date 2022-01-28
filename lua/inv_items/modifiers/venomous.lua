@@ -48,7 +48,7 @@ function el:GenerateMarkup(it, mup, tier)
 	desc:DockMargin(8, 0, 8, 0)
 	desc:SetColor(textCol)
 	desc:SetAlignment(1)
-	local tx = desc:AddText("Every time you deal damage, deal ")
+	local tx = desc:AddText("Deal ")
 
 	for i=1, self:GetMaxTier() do
 		local tx2 = desc:AddText(tostring(self:GetTierStrength(i)) .. "%")
@@ -60,5 +60,5 @@ function el:GenerateMarkup(it, mup, tier)
 		end
 	end
 
-	desc:AddText(" more as stackable venom.\nVenom ignores armor, but can be cured.")
+	desc:AddText(" more damage as stackable venom, which ignores armor but can be cured.")
 end
