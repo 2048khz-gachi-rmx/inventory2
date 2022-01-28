@@ -141,6 +141,7 @@ Inventory.BaseItemObjects.Generic("ejectdick")
 	:SetRarity(Inventory.Rarities.All.legendary)
 
 	:SetName("ejectdick but with less dick and more cock and rob")
+
 	:On("Paint", "PaintBlueprint", function(base, item, slot, w, h)
 		local w, h = slot:GetSize()
 		surface.SetDrawColor(color_white)

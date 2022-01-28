@@ -11,6 +11,7 @@ Inventory.BaseItemObjects.Generic("thruster_t1")
 
 	:SetCountable(true)
 	:SetMaxStack(10)
+	:SetRarity("uncommon")
 
 Inventory.BaseItemObjects.Generic("thruster_t2")
 	:SetName("Ion Thruster")
@@ -23,6 +24,7 @@ Inventory.BaseItemObjects.Generic("thruster_t2")
 
 	:SetCountable(true)
 	:SetMaxStack(5)
+	:SetRarity("rare")
 
 --[[Inventory.BaseItemObjects.Generic("adhesive")
 	:SetName("Adhesive")

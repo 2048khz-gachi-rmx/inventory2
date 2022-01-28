@@ -16,6 +16,8 @@ Inventory.BaseItemObjects.Generic("circuit_board")
 		ent:SetMaterial("phoenix_storms/wire/pcb_green")
 	end)
 
+	:SetRarity("uncommon")
+
 Inventory.BaseItemObjects.Generic("capacitor")
 	:SetName("Capacitor")
 	:SetModel("models/cyborgmatt/capacitor_large.mdl")
@@ -28,38 +30,7 @@ Inventory.BaseItemObjects.Generic("capacitor")
 	:SetCountable(true)
 	:SetMaxStack(25)
 
-Inventory.BaseItemObjects.Generic("cpu")
-	:SetName("Processor")
-	:SetModel("models/cheeze/wires/cpu.mdl")
-
-	:SetCamPos( Vector(58.7, -37.7, 51.2) )
-	:SetLookAng( Angle(36.1, -212.7, 0.0) )
-	:SetFOV( 4.7 )
-
-	:SetCountable(true)
-	:SetMaxStack(10)
-
-Inventory.BaseItemObjects.Generic("tgt_finder")
-	:SetName("Locator")
-	:SetModel("models/beer/wiremod/targetfinder.mdl")
-
-	:SetCamPos( Vector(-39.5, -67.7, 36.7) )
-	:SetLookAng( Angle(24.7, 59.8, 0.0) )
-	:SetFOV( 9.5 )
-
-	:SetCountable(true)
-	:SetMaxStack(5)
-
-Inventory.BaseItemObjects.Generic("emitter")
-	:SetName("Emitter")
-	:SetModel("models/cheeze/wires/wireless_card.mdl")
-
-	:SetCamPos( Vector(-38.3, -65.7, 42.2) )
-	:SetLookAng( Angle(28.5, 59.3, 0.0) )
-	:SetFOV( 8.9 )
-
-	:SetCountable(true)
-	:SetMaxStack(5)
+	:SetRarity("uncommon")
 
 -- its supposed to be small, aight?
 Inventory.BaseItemObjects.Generic("radiator")
@@ -77,6 +48,51 @@ Inventory.BaseItemObjects.Generic("radiator")
 	:On("UpdateModel", "ResourceSkin", function(base, item, ent)
 		ent:SetSkin(1)
 	end)
+
+	:SetRarity("uncommon")
+
+Inventory.BaseItemObjects.Generic("cpu")
+	:SetName("Processor")
+	:SetModel("models/cheeze/wires/cpu.mdl")
+	:SetColor(Color(220, 220, 220))
+
+	:SetCamPos( Vector(58.7, -37.7, 51.2) )
+	:SetLookAng( Angle(36.1, -212.7, 0.0) )
+	:SetFOV( 4.7 )
+
+	:SetCountable(true)
+	:SetMaxStack(10)
+
+	:SetRarity("rare")
+
+Inventory.BaseItemObjects.Generic("tgt_finder")
+	:SetName("Locator")
+	:SetModel("models/beer/wiremod/targetfinder.mdl")
+	:SetColor(Color(60, 180, 250))
+
+	:SetCamPos( Vector(-39.5, -67.7, 36.7) )
+	:SetLookAng( Angle(24.7, 59.8, 0.0) )
+	:SetFOV( 9.5 )
+
+	:SetCountable(true)
+	:SetMaxStack(5)
+
+	:SetRarity("rare")
+
+Inventory.BaseItemObjects.Generic("emitter")
+	:SetName("Emitter")
+	:SetModel("models/cheeze/wires/wireless_card.mdl")
+	:SetColor(Color(80, 220, 80))
+
+	:SetCamPos( Vector(-38.3, -65.7, 42.2) )
+	:SetLookAng( Angle(28.5, 59.3, 0.0) )
+	:SetFOV( 8.9 )
+
+	:SetCountable(true)
+	:SetMaxStack(5)
+
+	:SetRarity("rare")
+
 
 --[[
 Inventory.BaseItemObjects.Generic("nutsbolts")
