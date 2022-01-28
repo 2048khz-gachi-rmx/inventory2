@@ -243,7 +243,7 @@ function ITEM:OpenOptions()
 	if not it then return end --e?
 
 	local mn = vgui.Create("FMenu")
-	mn:PopIn()
+	mn:PopIn(0.05)
 
 	mn.WOverride = 150
 
@@ -256,8 +256,8 @@ function ITEM:OpenOptions()
 
 	local toX, toY = self:LocalToScreen(self:GetWide() + 4, self:GetTall() / 2 - mn:GetTall() / 2)
 
-	mn:SetPos(toX - 8, toY)
-	mn:MoveTo(toX, toY, 0.2, 0, 0.3)
+	mn:SetPos(toX - 16, toY)
+	mn:MoveTo(toX, toY, 0.1, 0, 0.3)
 end
 
 function ITEM:CreateModelPanel(it)
