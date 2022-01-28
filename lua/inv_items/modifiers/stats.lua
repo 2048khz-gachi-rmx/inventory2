@@ -73,30 +73,28 @@ make("Stabilized", Color(105, 220, 200))
 	:SetMinBPTier(1)
 	:SetMaxBPTier(2)
 
-	:SetTierCalc(function(_, t) return 40 + 15 * t, 30 + 15 * t end)
+	:SetTierCalc(function(_, t)
+		return 30 + 20 * t
+	end)
 
 	:SetModStats({
-		RecoilVertical = function(self)
-			local r1 = -self:GetTierStrength(self:GetTier())
-			return r1
+		Recoil = function(self)
+			return -self:GetTierStrength(self:GetTier())
 		end,
 
-		RecoilSide = function(self)
+		--[[RecoilSide = function(self)
 			local _, r2 = self:GetTierStrength(self:GetTier())
 
 			return -r2
-		end,
+		end,]]
 
 		RecoilPunch = function(self)
-			local r1 = -self:GetTierStrength(self:GetTier())
-			return r1
+			return -self:GetTierStrength(self:GetTier())
 		end,
-
-		Any = function(self, key) print(self, key) end
 	})
 
 	function curMod:GenerateDescription(it, mup, tier, desc)
-		local tx = desc:AddText("Reduce vertical recoil by ")
+		local tx = desc:AddText("Reduce recoil by ")
 		local vrecs, hrecs = {}, {}
 
 		for i=1, self:GetMaxTier() do
@@ -112,7 +110,8 @@ make("Stabilized", Color(105, 220, 200))
 				sep.color = notNumCol
 			end
 		end
-		desc:AddText(" and horizontal recoil by ")
+
+		--[[desc:AddText(" and horizontal recoil by ")
 
 		for i=1, self:GetMaxTier() do
 			local tx2 = desc:AddText(tostring(hrecs[i]) .. "%")
@@ -122,7 +121,8 @@ make("Stabilized", Color(105, 220, 200))
 				local sep = desc:AddText("/")
 				sep.color = notNumCol
 			end
-		end
+		end]]
+
 		desc:AddText(".")
 	end
 
