@@ -76,13 +76,17 @@ function Base:Paint3D_Model(pos, ang, itm)
 		mdl:SetNoDraw(false)
 
 			if itm:GetModelColor() then
-				mdl:SetColor(itm:GetModelColor())
-				print(itm:GetModelColor(), mdl:GetModel())
+				local r, g, b = itm:GetModelColor():Unpack()
+				render.SetColorModulation(r / 255, g / 255, b / 255)
 			end
 
 			itm:GetBase():Emit("PrePaintModel", itm, mdl)
 			mdl:DrawModel()
 			itm:GetBase():Emit("PostPaintModel", itm, mdl)
+
+			if itm:GetModelColor() then
+				render.SetColorModulation(1, 1, 1)
+			end
 
 		mdl:SetNoDraw(true)
 	render.OverrideDepthEnable(false, false)
