@@ -4,6 +4,12 @@ AddCSLuaFile("cl_init.lua")
 
 util.AddNetworkString("dropped_item_itm")
 
+local sfx = {
+	common = 4,
+	uncommon = 4,
+	rare = 3
+}
+
 function ENT:SVInit()
 	if not self.Item and SERVER then
 		self:Remove()
@@ -11,7 +17,7 @@ function ENT:SVInit()
 		return
 	end
 
-	self:SetCreationTime(CurTime())
+	self:SetCreatedTime(CurTime())
 	self:SetModel(self.Model)
 	self:SetSkin(self.Skin)
 
@@ -29,6 +35,22 @@ function ENT:SVInit()
 	self:Activate()
 	self:Timer("AutoRemoval", Inventory.DropCleanupTime, 1, function()
 		self:Remove()
+	end)
+
+
+	self:Timer("sfx", self.TimeToAnimate, 1, function()
+		local itm = self:GetItem()
+		if not itm then return end
+
+		local rar = itm:GetRarity()
+		if not rar then return end
+		if not sfx[rar:GetID()] then print("no sfx for", rar:GetID()) return end
+
+		local play = (self:EntIndex() % sfx[rar:GetID()]) + 1
+
+		print("playing", "grp/items/imp_" .. rar:GetID() .. play .. ".mp3")
+		self:EmitSound("grp/items/imp_" .. rar:GetID() .. play .. ".mp3",
+			80, 100, 1)
 	end)
 end
 

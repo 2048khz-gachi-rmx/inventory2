@@ -39,6 +39,8 @@ end
 function rar:Initialize(id)
 	assert(isstring(id))
 
+	self:SetID(id)
+
 	Inventory.Rarities.All[id] = self
 	self:SetName(id)
 	self:SetColor(Colors.Red)

@@ -292,7 +292,7 @@ function ENT:Draw()
 	local zOff = Vector(0, 0, self:OBBMins().z / 2)
 	local pos = self:GetPos() - zOff
 
-	local fr = CurTime() - self:GetCreationTime()
+	local fr = CurTime() - self:GetCreatedTime()
 	local ubFr = fr / self.TimeToAnimate -- unbound frac
 	self:DrawBeamAnimation(pos, ubFr)
 

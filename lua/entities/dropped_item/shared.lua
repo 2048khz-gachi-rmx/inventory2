@@ -17,7 +17,7 @@ end
 
 function ENT:SetupDataTables()
 	self:NetworkVar("Vector", 0, "DropOrigin")
-	self:NetworkVar("Float", 0, "CreationTime")
+	self:NetworkVar("Float", 0, "CreatedTime")
 	self:NetworkVar("Int", 0, "NWItemID")
 end
 
@@ -37,7 +37,7 @@ function ENT:SetItem(itm)
 end
 
 function ENT:CanInteract()
-	return (CurTime() - self:GetCreationTime()) > self.TimeToPickupable
+	return (CurTime() - self:GetCreatedTime()) > self.TimeToPickupable
 end
 
 function ENT:Initialize()
