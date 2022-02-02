@@ -12,6 +12,39 @@ function ENT:CLInit()
 
 	local mins = Vector(-self.GlowRadius, -self.GlowRadius, -self.BeamHeight)
 	self:SetRenderBounds(mins, -mins, Vector(4, 4, 4))
+
+	self.BeamSound = audio.Stream:new("http://vaati.net/Gachi/shared/float.wav",
+		"sfx/float.dat")
+
+	self.BeamSound:Bind(self)
+	self.BeamSound:EnableLooping(true)
+	self.BeamSound:SetVolume(0)
+	self.BeamSound:Play()
+
+	self.Jingle = audio.Stream:new("http://vaati.net/Gachi/shared/jingle_loop.mp3",
+		"audio/item_jingle.dat")
+
+	self.Jingle:SetVolume(0.3)
+	self.Jingle:Bind(self)
+	self.Jingle:Set3DFadeDistance(128, 512)
+	self.Jingle:Preload()
+end
+
+function ENT:Think()
+	local exT = CurTime() - self:GetCreatedTime()
+
+	if not self.Jingle:IsPlaying() and exT > self.TimeToAnimate + 0.3 then
+		self.Jingle:Play()
+	end
+
+	if exT > self.TimeToAnimate then
+		self.BeamSound:SetVolume( math.max(0, self.BeamSound:GetVolume() - FrameTime() * 0.2) )
+		if self.BeamSound:GetHandle() then
+			self.BeamSound:GetHandle():SetPlaybackRate(self.BeamSound:GetHandle():GetPlaybackRate() + FrameTime())
+		end
+	else
+		self.BeamSound:SetVolume(math.min(0.15, self.BeamSound:GetVolume() + FrameTime() * 0.7))
+	end
 end
 
 local cab = Material("trails/physbeam") -- Material("models/wireframe") -- Material("trails/laser")
@@ -238,15 +271,6 @@ function ENT:DrawGlow(pos, fr)
 		render.EndBeam()
 	end
 
-	if self:GetItem() and fr >= 1 then
-		local b = self:GetItem():GetBase()
-		if b then
-			temp:Set(pos)
-			temp[3] = temp[3] + math.sin((CurTime() + self.Random * math.pi * 2) * 2.4) * 1.4
-			b:Paint3D(temp, self:GetAngles(), self:GetItem())
-		end
-	end
-
 	rarityCol:Set(rCol)
 
 	local flashTime = (self.NextFlashTime or 0)
@@ -281,9 +305,21 @@ function ENT:DrawGlow(pos, fr)
 		render.SetMaterial(glows[3])
 		render.DrawSprite(pos + (self.NextFlashOffset or vector_origin), gfr * sz, gfr * sz, rarityCol)
 	end
+
+	if self:GetItem() and fr >= 0.2 then
+		local b = self:GetItem():GetBase()
+		if b then
+			temp:Set(pos)
+			temp[3] = temp[3] + math.sin((CurTime() + self.Random * math.pi * 2) * 2.4) * 1.4
+			b:Paint3D(temp, self:GetAngles(), self:GetItem())
+		end
+	end
 end
 
 function ENT:Draw()
+end
+
+function ENT:DrawTranslucent()
 	--[[
 	self:DrawModel()
 	self:SetColor(Color(255, 255, 255, 100))
@@ -309,7 +345,9 @@ function ENT:Draw()
 	self:DrawGlow(pos, ringFr)
 
 
-	self:DrawWisps(pos)
+	if ubFr >= 1 then
+		self:DrawWisps(pos)
+	end
 end
 
 function ENT:GetItem()

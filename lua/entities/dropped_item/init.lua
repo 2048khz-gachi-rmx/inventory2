@@ -37,7 +37,6 @@ function ENT:SVInit()
 		self:Remove()
 	end)
 
-
 	self:Timer("sfx", self.TimeToAnimate, 1, function()
 		local itm = self:GetItem()
 		if not itm then return end
@@ -48,10 +47,16 @@ function ENT:SVInit()
 
 		local play = (self:EntIndex() % sfx[rar:GetID()]) + 1
 
-		print("playing", "grp/items/imp_" .. rar:GetID() .. play .. ".mp3")
-		self:EmitSound("grp/items/imp_" .. rar:GetID() .. play .. ".mp3",
-			80, 100, 1)
+		sound.Play("grp/items/imp_" .. rar:GetID() .. play .. ".mp3",
+			self:GetPos() + self:OBBCenter(),
+			70 + (rar:GetRarity() or 0) * 15, math.random(95, 105), 1)
+
 	end)
+end
+
+function ENT:PlayDropSound(num)
+	num = num or 0
+	sound.Play("new2/cointoss1.ogg", self:GetDropOrigin(), 75, math.min(150, 100 + num * 15), 1)
 end
 
 function ENT:Think()

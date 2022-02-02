@@ -2,6 +2,7 @@ AddCSLuaFile()
 ENT.Base = "base_gmodentity"
 ENT.Type = "anim"
 ENT.PrintName = "Base Dropped Item"
+ENT.RenderGroup = RENDERGROUP_BOTH
 
 ENT.Model = "models/hunter/blocks/cube075x075x075.mdl"
 ENT.Skin = 0
