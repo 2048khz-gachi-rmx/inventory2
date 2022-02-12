@@ -201,11 +201,22 @@ local function renderTracked(ply)
 	render.MaterialOverride(dickfuck)
 	render.SetColorModulation(1, 1, 1)
 	render.SuppressEngineLighting(true)
-	ply:DrawModel()
+
+	if not ply:Alive() then
+		local rag = ply:GetRagdollEntity()
+		if rag:IsValid() then rag:DrawModel() end
+	else
+		ply:DrawModel()
+	end
 
 	render.MaterialOverride(nil)
 	render.SuppressEngineLighting(false)
-	ply:DrawModel()
+	if not ply:Alive() then
+		local rag = ply:GetRagdollEntity()
+		if rag:IsValid() then rag:DrawModel() end
+	else
+		ply:DrawModel()
+	end
 end
 
 local end_me = 0
