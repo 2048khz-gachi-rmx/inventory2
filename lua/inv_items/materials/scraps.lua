@@ -94,9 +94,9 @@ Inventory.BaseItemObjects.Generic("emitter")
 	:SetRarity("rare")
 
 
---[[
-Inventory.BaseItemObjects.Generic("nutsbolts")
-	:SetName("Nuts & Bolts")
+
+Inventory.BaseItemObjects.Generic("weaponparts")
+	:SetName("Weapon Parts")
 	:SetModel("models/items/sniper_round_box.mdl")
 	:SetColor(Color(120, 140, 160))
 
@@ -112,7 +112,9 @@ Inventory.BaseItemObjects.Generic("nutsbolts")
 			ent:SetModelScale(1.5)
 		end
 	end)
-]]
+
+	:SetRarity("uncommon")
+
 
 Inventory.BaseItemObjects.Generic("lube")
 	:SetName("Lubricant")
@@ -126,6 +128,8 @@ Inventory.BaseItemObjects.Generic("lube")
 
 	:SetCountable(true)
 	:SetMaxStack(10)
+
+	:SetRarity("uncommon")
 
 --[[
 Inventory.BaseItemObjects.Generic("adhesive")
