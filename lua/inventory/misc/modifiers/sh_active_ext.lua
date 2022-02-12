@@ -124,9 +124,11 @@ Offhand.Register("inv_active_mod", {
 			nextCd = CurTime() + dur
 		end
 
+		mod:SetCooldown(nextCd)
+
 		ns:WriteFloat(nextCd)
 
-		return true, ns
+		return ns
 	end,
 })
 

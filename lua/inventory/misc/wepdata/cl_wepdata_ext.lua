@@ -53,6 +53,8 @@ function wd:DeserializeMods()
 	for i=1, mods do
 		local id = net.ReadUInt(8)
 		local name = Inventory.Modifiers.IDToName(id)
+		if not name then errorf("What %s %s", id, name) return end
+
 		local tier = net.ReadUInt(8)
 
 		out[name] = tier

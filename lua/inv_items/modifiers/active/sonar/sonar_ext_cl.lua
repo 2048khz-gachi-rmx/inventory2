@@ -109,6 +109,8 @@ end)
 		me:RemoveTimer("SonarCannon")
 		base:EndCannon()
 	end)
+
+	return true
 end)
 
 el:SetDescription("Fire a sonar beacon, revealing nearby enemies.")
@@ -164,7 +166,6 @@ hook.Add("PostDrawViewModel", "SonarCam", function()
 		+ ea:Up() * 4
 		)
 	mdl:SetAngles(ea)
-	
 
 	local base_fr = mdl.active and math.min(1, fr / 0.4) or fr
 
