@@ -173,7 +173,7 @@ local function CreateSlots(self, tbl)
 		btn:SetSize(eqBtnSize, eqBtnSize)
 		btn:SetInventoryPanel(self)
 		btn.Rounding = 4
-		btn.Border = {col = Colors.LightGray}
+		-- btn.Border = {col = Colors.LightGray}
 		btn.YFrac = frac * (k - 0.5)
 
 		btn.Side = side
