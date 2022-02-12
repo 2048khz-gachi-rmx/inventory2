@@ -4,7 +4,7 @@ function Inventory.IncludeClass(fold, name)
 
 	local included = 0
 
-	FInc.Recursive("inventory/" .. fold:gsub("/$", "") .. "/*", _SH, nil, function(path)
+	FInc.Recursive("inventory/" .. fold:gsub("/$", "") .. "/*", _SH, function(path)
 		local fn = path:match(name .. "[%.lua]*$")
 		if not fn then return false, false end --returning false stops the inclusion (twice for shared inclusion)
 

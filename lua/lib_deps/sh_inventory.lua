@@ -114,17 +114,17 @@ local function ContinueLoading()
 	end
 
 	-- loading core
-	FInc.Recursive("inventory/shared/*", _SH, nil, shouldIncludeCore)
+	FInc.Recursive("inventory/shared/*", _SH, shouldIncludeCore)
 
-	FInc.Recursive("inventory/inv_meta/*", _SH, nil, shouldIncludeItem)
-	FInc.Recursive("inventory/base_items/*", _SH, nil, shouldIncludeItem)
-	FInc.Recursive("inventory/item_meta/*", _SH, nil, shouldIncludeItem)
+	FInc.Recursive("inventory/inv_meta/*", _SH, shouldIncludeItem)
+	FInc.Recursive("inventory/base_items/*", _SH, shouldIncludeItem)
+	FInc.Recursive("inventory/item_meta/*", _SH, shouldIncludeItem)
 
-	FInc.Recursive("inventory/server/*", _SV, nil, shouldIncludeCore)
-	FInc.Recursive("inventory/client/*", _CL, nil, shouldIncludeCore)
+	FInc.Recursive("inventory/server/*", _SV, shouldIncludeCore)
+	FInc.Recursive("inventory/client/*", _CL, shouldIncludeCore)
 
 	-- loading extensions
-	FInc.Recursive("inventory/misc/*", _SH, nil, FInc.RealmResolver())
+	FInc.Recursive("inventory/misc/*", _SH, FInc.RealmResolver())
 
 	-- loading items
 	include("inv_items/load.lua") --that will handle the loading itself
