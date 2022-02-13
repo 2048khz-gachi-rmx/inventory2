@@ -95,17 +95,18 @@ Inventory.BaseItemObjects.Generic("emitter")
 
 
 
+
 Inventory.BaseItemObjects.Generic("weaponparts")
 	:SetName("Weapon Parts")
-	:SetModel("models/items/sniper_round_box.mdl")
+	:SetModel("models/z-o-m-b-i-e/st/equipment_cache/st_equipment_instrument_01.mdl")
 	:SetColor(Color(120, 140, 160))
 
-	:SetCamPos( Vector(-48.8, 65.2, 35.2) )
-	:SetLookAng( Angle(21.5, -53.5, 0.0) )
-	:SetFOV( 5.0 )
+	:SetCamPos( Vector(44.7, 70.3, 31.5) )
+	:SetLookAng( Angle(18.9, -122.4, 0.0) )
+	:SetFOV( 13.3 )
 
 	:SetCountable(true)
-	:SetMaxStack(10)
+	:SetMaxStack(5)
 	:On("UpdateModel", "ResourceSkin", function(base, item, ent, inPnl)
 		ent:SetSubMaterial(1, "Models/effects/vol_light001") -- ugly hack but oldschool, lol
 		if not inPnl then
@@ -115,6 +116,37 @@ Inventory.BaseItemObjects.Generic("weaponparts")
 
 	:SetRarity("uncommon")
 
+-- models/z-o-m-b-i-e/st/box/st_box_metall_01.mdl
+
+Inventory.BaseItemObjects.Generic("laserdiode")
+	:SetName("Laser Diode")
+	:SetModel("models/jaanus/wiretool/wiretool_beamcaster.mdl")
+	:SetColor(Color(250, 80, 80))
+	:SetCamPos( Vector(-70.3, 3.2, 33.6) )
+	:SetLookAng( Angle(22.6, -2.6, -30.0) )
+	:SetFOV( 11.1 )
+
+	:SetCountable(true)
+	:SetMaxStack(20)
+	:On("UpdateModel", "ResourceSkin", function(base, item, ent, inPnl)
+		--ent:SetMaterial("models/props_combine/health_charger_glass")
+	end)
+
+	:SetRarity("uncommon")
+
+Inventory.BaseItemObjects.Generic("wepkit")
+	:SetName("Gunsmith Kit")
+	:SetModel("models/maver1k_xvii/stalker/props/devices/dev_merger.mdl")
+	:SetColor(Color(230, 230, 230))
+
+	:SetCamPos( Vector(59, -48.7, 46.5) )
+	:SetLookAng( Angle(29.2, -219.4, 0.0) )
+	:SetFOV( 12.5 )
+
+	:SetCountable(true)
+	:SetMaxStack(3)
+
+	:SetRarity("rare")
 
 Inventory.BaseItemObjects.Generic("lube")
 	:SetName("Lubricant")
