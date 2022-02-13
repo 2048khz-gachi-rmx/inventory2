@@ -59,7 +59,7 @@ end
 -- if returned true that means the item was stacked in some existing items
 -- if returned table then that's a table of new items it had ta create (the second arg will be how much was left unstacked)
 
-function Inventory.CheckStackability(inv, iid, cb, dat)
+function Inventory.CheckStackability(inv, iid, dat)
 	local base = Inventory.Util.GetBase(iid)
 
 	if not dat or not dat.Amount then

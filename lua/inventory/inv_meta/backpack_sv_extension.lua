@@ -8,13 +8,11 @@ ChainAccessor(bp, "LastResync", "LastResync")
 	the maybe number is the amount of items left which couldnt be stacked in anywhere
 ]]
 
-function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
+function bp:NewItem(iid, slot, dat, nostack)
 	if not isstring(iid) and not isnumber(iid) then
 		errorf("Attempted to create item with IID: %s (%s)", iid, type(iid))
 		return
 	end
-
-	cb = cb or BlankFunc
 
 	local pr = Promise()
 
@@ -23,7 +21,7 @@ function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
 
 
 	if not nostack then
-		local its, left = Inventory.CheckStackability(self, iid, cb, dat)
+		local its, left = Inventory.CheckStackability(self, iid, dat)
 
 		-- table of new items given; now to insert them in SQL
 		if istable(its) then
@@ -38,12 +36,10 @@ function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
 
 					v:On("AssignUID", "InsertIntoInv", function(v, uid)
 						self:AddChange(v, INV_ITEM_ADDED)
-						cb(v, slot)
 						newPr:Resolve(v)
 					end)
 				else
 					newPr:Resolve(v)
-					cb(v, slot)
 				end
 			end
 
@@ -52,7 +48,6 @@ function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
 		end
 
 		if its == true then
-			if cbanyway then cb() end
 			pr:Resolve(false, left)
 			return pr, 0
 		end
@@ -72,53 +67,31 @@ function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
 		self:AddItem(it, true)
 
 		it:Once("AssignUID", function()
-			cb(it, slot)
 			pr:Resolve({it})
 		end)
 	else
-		cb(it, slot)
 		pr:Resolve({it})
 	end
 
 	return pr, 0
-	--[[else
-		self:AddItem(it, true)
-		cb(it, slot)
-	end]]
-
-
 end
 
-function bp:NewItemNetwork(who, iid, cb, slot, dat, nostack, cbanyway)
+function bp:NewItemNetwork(who, iid, slot, dat, nostack)
 
 	if isnumber(who) or isstring(who) then
 		-- shift args 1 up
-		cbanyway = nostack
 		nostack = dat
 		dat = slot
-		slot = cb
-		cb = iid
+		slot = iid
 		iid = who
 
 		who = self:GetOwner()
 	end
 
-	local real_cb = function(...)
-		if cb then cb(...) end
+	local pr, left = self:NewItem(iid, slot, dat, nostack)
 
+	pr:Then(function(...)
 		if IsValid(self:GetOwner()) then
-			Inventory.Networking.NetworkInventory(who, self, INV_NETWORK_UPDATE)
-		end
-	end
-
-	local pr, left = self:NewItem(iid, real_cb, slot, dat, nostack, cbanyway)
-
-	-- true is the only case where we need to call cb and network manually
-
-	pr:Then(function()
-		if cbanyway then
-			real_cb() --already takes care of networking
-		elseif IsValid(self:GetOwner()) then
 			Inventory.Networking.NetworkInventory(who, self, INV_NETWORK_UPDATE)
 		end
 	end)
@@ -223,9 +196,7 @@ end
 --for adding an existing both in-game and in-sql item, use bp:AddItem(item)
 --takes an existing item object and inserts it into the inventory as well as mysql
 
-function bp:InsertItem(it, slot, cb)
-	cb = cb or BlankFunc
-
+function bp:InsertItem(it, slot)
 	slot = slot or it:GetSlot()
 
 	if not slot then
@@ -244,7 +215,6 @@ function bp:InsertItem(it, slot, cb)
 
 		insSlot = self:AddItem(it)
 		if insSlot then
-			cb(it, insSlot)
 			self:AddChange(it, INV_ITEM_ADDED)
 			pr:Resolve(it, insSlot)
 		else
@@ -255,7 +225,6 @@ function bp:InsertItem(it, slot, cb)
 			it:SetSlot(slot)
 			insSlot = self:AddItem(it)
 			if insSlot then
-				cb(it, insSlot)
 				self:AddChange(it, INV_ITEM_ADDED)
 				pr:Resolve(it, insSlot)
 			else
