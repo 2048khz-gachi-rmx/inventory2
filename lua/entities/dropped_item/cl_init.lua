@@ -28,12 +28,14 @@ function ENT:CLInit()
 	self.Jingle:Bind(self)
 	self.Jingle:Set3DFadeDistance(128, 512)
 	self.Jingle:Preload()
+	self.Jingle:RandomizeTime()
 end
 
 function ENT:Think()
 	local exT = CurTime() - self:GetCreatedTime()
 
 	if not self.Jingle:IsPlaying() and exT > self.TimeToAnimate + 0.3 then
+
 		self.Jingle:Play()
 	end
 
