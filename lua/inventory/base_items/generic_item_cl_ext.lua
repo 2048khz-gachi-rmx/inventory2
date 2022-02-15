@@ -60,6 +60,9 @@ function Base:Paint3D_Model(pos, ang, itm)
 
 	if not dat[3] then
 		local mins, maxs = mdl:GetModelBounds()
+		mins:Mul(mdl:GetModelScale())
+		maxs:Mul(mdl:GetModelScale())
+
 		mins:Add(maxs)
 		mins:Mul(vector_up)
 		mins:Div(2)
@@ -69,7 +72,7 @@ function Base:Paint3D_Model(pos, ang, itm)
 
 	pos = pos - dat[3]
 
-	render.OverrideDepthEnable(true, false)
+	--render.OverrideDepthEnable(true, false)
 		mdl:SetPos(pos)
 		mdl:SetAngles(ang)
 
@@ -89,7 +92,7 @@ function Base:Paint3D_Model(pos, ang, itm)
 			end
 
 		mdl:SetNoDraw(true)
-	render.OverrideDepthEnable(false, false)
+	--render.OverrideDepthEnable(false, false)
 end
 
 local tVec = Vector()

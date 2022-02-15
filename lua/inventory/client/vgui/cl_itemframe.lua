@@ -93,7 +93,6 @@ end
 function ITEM:TrackChanges(inv, slot)
 	inv:On("Change", self, function(...)
 		if inv:GetItemInSlot(slot) ~= self:GetItem(true) then
-			print("!!! change happened", inv:GetItemInSlot(slot), slot)
 			self:SetItem(inv:GetItemInSlot(slot))
 		end
 	end)
