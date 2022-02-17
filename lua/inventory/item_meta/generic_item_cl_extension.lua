@@ -1,7 +1,8 @@
 local it = Inventory.ItemObjects.Generic
 
 function it:_CallTextGenerators(cloud)
-	cloud:SetFont("EXSB24")
+	cloud:SetFont("EXM28")
+	cloud.FontShit = 0.125
 	cloud:SetText(self:GetName())
 	cloud:SetMaxW(300)
 	--cloud.MinW = 250

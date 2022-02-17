@@ -3,8 +3,8 @@ local PANEL = {}
 function PANEL:Init()
 	self.Good = {}
 	self.Bad = {}
-	self.Font = "EXM16"
-	self.ExtraFont = "EX14"
+	self.Font = "EXSB18"
+	self.ExtraFont = "EXM14"
 
 	if input.IsControlDown() then
 		self.InfoFrac = 1
