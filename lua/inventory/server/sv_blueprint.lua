@@ -206,7 +206,7 @@ function bp.GenerateRecipe(itm)
 		rec.copper_bar = math.random(5, 15)
 		rec.iron_bar = math.random(10, 20)
 		--rec.nutsbolts = math.random(1, 4)
-		rec.adhesive = math.random(1, 2)
+		-- rec.adhesive = math.random(1, 2)
 
 	elseif tier == 2 then
 		rec.copper_bar = math.random(5, 15)
@@ -214,7 +214,7 @@ function bp.GenerateRecipe(itm)
 		rec.gold_bar = math.random(5, 10)
 		--rec.nutsbolts = math.random(3, 7)
 		--rec.adhesive = math.random(2, 4)
-		rec.lube = math.random(3, 6)
+		-- rec.lube = math.random(3, 6)
 
 	elseif tier == 3 then
 		rec.copper_bar = math.random(20, 60)
@@ -222,10 +222,10 @@ function bp.GenerateRecipe(itm)
 		rec.gold_bar = math.random(15, 30)
 		--rec.nutsbolts = math.random(6, 13)
 		--rec.adhesive = math.random(4, 7)
-		rec.lube = math.random(5, 12)
+		-- rec.lube = math.random(5, 12)
 
 		for k,v in pairs(mods) do
-			Inventory.Modifiers.Get(k):Emit("AlterRecipe", itm, rec, v)
+			-- Inventory.Modifiers.Get(k):Emit("AlterRecipe", itm, rec, v)
 		end
 	else
 		rec.copper_bar = 9999
