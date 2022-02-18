@@ -1,4 +1,24 @@
 --
+Inventory.BaseItemObjects.Generic("wire")
+	:SetName("Copper Wire")
+	:SetModel("models/z-o-m-b-i-e/st/big_object/st_katushka_03.mdl")
+	:SetColor(Color(190, 110, 125))
+
+	:SetCamPos( Vector(71.5, -131.3, 80.1) )
+	:SetLookAng( Angle(20.9, 121.0, 90.0) )
+	:SetFOV( 50.4 )
+
+	:SetCountable(true)
+	:SetMaxStack(25)
+	:SetBaseTransferCost(7500)
+
+	:SetRarity("common")
+
+	:On("UpdateModel", "ResourceSkin", function(base, item, ent, inPnl)
+		if not inPnl then
+			ent:SetModelScale(0.2)
+		end
+	end)
 
 Inventory.BaseItemObjects.Generic("circuit_board")
 	:SetName("Circuit Board")
@@ -29,6 +49,7 @@ Inventory.BaseItemObjects.Generic("capacitor")
 
 	:SetCountable(true)
 	:SetMaxStack(25)
+	:SetBaseTransferCost(1000)
 
 	:SetRarity("uncommon")
 
@@ -76,6 +97,7 @@ Inventory.BaseItemObjects.Generic("tgt_finder")
 
 	:SetCountable(true)
 	:SetMaxStack(5)
+	:SetBaseTransferCost(25000)
 
 	:SetRarity("rare")
 
@@ -94,8 +116,6 @@ Inventory.BaseItemObjects.Generic("emitter")
 	:SetRarity("rare")
 
 
-
-
 Inventory.BaseItemObjects.Generic("weaponparts")
 	:SetName("Weapon Parts")
 	:SetModel("models/z-o-m-b-i-e/st/equipment_cache/st_equipment_instrument_01.mdl")
@@ -107,10 +127,11 @@ Inventory.BaseItemObjects.Generic("weaponparts")
 
 	:SetCountable(true)
 	:SetMaxStack(5)
+	:SetBaseTransferCost(25000)
 	:On("UpdateModel", "ResourceSkin", function(base, item, ent, inPnl)
 		ent:SetSubMaterial(1, "Models/effects/vol_light001") -- ugly hack but oldschool, lol
 		if not inPnl then
-			ent:SetModelScale(1.5)
+			ent:SetModelScale(0.8)
 		end
 	end)
 
@@ -128,6 +149,7 @@ Inventory.BaseItemObjects.Generic("laserdiode")
 
 	:SetCountable(true)
 	:SetMaxStack(20)
+	:SetBaseTransferCost(15000)
 	:On("UpdateModel", "ResourceSkin", function(base, item, ent, inPnl)
 		--ent:SetMaterial("models/props_combine/health_charger_glass")
 	end)
@@ -145,7 +167,7 @@ Inventory.BaseItemObjects.Generic("wepkit")
 
 	:SetCountable(true)
 	:SetMaxStack(3)
-
+	:SetBaseTransferCost(75000)
 	:SetRarity("rare")
 
 Inventory.BaseItemObjects.Generic("lube")
@@ -160,7 +182,7 @@ Inventory.BaseItemObjects.Generic("lube")
 
 	:SetCountable(true)
 	:SetMaxStack(10)
-
+	:SetBaseTransferCost(10000)
 	:SetRarity("uncommon")
 
 --[[
