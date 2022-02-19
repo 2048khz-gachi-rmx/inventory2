@@ -242,7 +242,7 @@ function Base:SetMaxStack(st)
 	if self.Countable then
 		for k,v in ipairs(self.NetworkedVars) do
 			if v.what == "Amount" then
-				v.args[1] = bit.GetLen(st)
+				v.args[1] = math.max(8, bit.GetLen(self:GetMaxStack()))
 			end
 		end
 	end
