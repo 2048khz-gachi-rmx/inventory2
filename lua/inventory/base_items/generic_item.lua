@@ -200,7 +200,8 @@ function Base:SetCountable(b)
 	if not self.Countable and b == true then
 		if self.NetworkedVars[1] and self.NetworkedVars[1].what == "Amount" then return self end --already countable or somethin'?
 
-		local len = self:GetMaxStack() and bit.GetLen(self:GetMaxStack())
+		local mx = self:GetMaxPossibleStack() or self:GetMaxStack()
+		local len = mx and math.max(8, bit.GetLen(mx))
 
 		table.insert(self.NetworkedVars, 1, {
 			type = "UInt",
@@ -249,6 +250,8 @@ function Base:SetMaxStack(st)
 	self.MaxStack = st
 	return self
 end
+
+ChainAccessor(Base, "MaxPossibleStack", "MaxPossibleStack") -- for NW
 
 function Base:On(...) --convert :On() into a chainable function
 	Emitter.On(self, ...)
