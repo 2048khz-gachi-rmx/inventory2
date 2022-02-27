@@ -186,6 +186,8 @@ function bp:CrossInventoryMove(it, inv2, slot, ply)
 			end)
 	end
 
+	self:RemoveItem(it)
+
 	return em
 end
 

@@ -16,6 +16,9 @@ bp.IsBackpack = true
 bp.AutoFetchItems = true
 bp.SupportsSplit = true
 
+function bp:ActionCanInteract(ply, act, ...)
+	return self.IsBackpack and self:GetOwner() == ply
+end
 
 bp.Icon = {
 	URL = "https://i.imgur.com/KBYX2uQ.png",
@@ -279,11 +282,23 @@ function bp:Reset()
 	table.Empty(self.Slots)
 end
 
+function bp:vprint(...)
+	if not self.VerbosePermissions then return end
+	print(...)
+end
+
 function bp:HasAccess(ply, action, ...)
 	if self.DisallowAllActions then return false end
 
-	local allow = self:Emit("Can" .. action, ply, ...)
-	if allow ~= nil then return allow end
+	-- step 1. can they interact at all?
+	local allow = self:Emit("AllowInteract", ply, action, ...)
+	if allow == false then self:vprint("caninteract gave no") return false end
+
+	-- step 2.1. can they do this particular action? check via emitter
+	allow = self:Emit("Can" .. action, ply, ...)
+	if allow ~= nil then self:vrint("Can" .. action, "gave no") return allow end
+
+	-- step 2.2. same but check via ActionCan["action"] function or bool
 
 	if self["ActionCan" .. action] ~= nil then
 		local allow
@@ -296,7 +311,17 @@ function bp:HasAccess(ply, action, ...)
 		return allow
 	end
 
-	return ply == self:GetOwner()
+
+	-- step 3. earlier checks didnt tell us anything; do default behavior
+	allow = self:Emit("CanInteract", ply, action, ...)
+
+	if allow == nil and self.ActionCanInteract then
+		allow = eval(self.ActionCanInteract, self, ply, action, ...)
+	end
+
+	self:vprint("HasAccess every check failed -- default emitter said", allow)
+
+	return allow == nil and false or allow -- ply == self:GetOwner()
 end
 
 function bp:RemoveChange(it, what)

@@ -1,7 +1,13 @@
 local ms = Inventory.MySQL
 local db = ms.DB
 
-local qerr = function(self, err, q)
+local qerr = function(q, err, sql, a)
+	if istable(q) then
+		q = err
+		err = sql
+		sql = a
+	end
+
 	ms.LogError("\n	Query: '%s'\n	Error: '%s'\n 	Trace: %s", q, err, debug.traceback("", 2))
 end
 
@@ -263,41 +269,37 @@ function ms.NewInventoryItem(item, inv, ply)
 
 	if not invname then
 		errorf("Failed to find inventory (inv = %q, invname = %q).", tostring(inv), tostring(invname))
-		--[[if isstring(iid) then
-			newitem_name_query:setString(1, iid)
-			qobj = newitem_name_query
-		else
-			newitem_id_query:setNumber(1, iid)
-			qobj = newitem_id_query
-		end]]
-	else
-		local pin = GetPlayerInfo(ply)
-		local sid = pin and pin:SteamID64() or
-			errorf("Inventory.MySQL.NewItem: expected player or steamid64 as arg #3, got %q instead", type(ply))
-
-		if isstring(iid) then
-			newitem_inv_query:setString(1, iid)
-			qobj = newitem_inv_query
-		else
-			newitem_idinv_query:setNumber(1, iid)
-			qobj = newitem_idinv_query
-		end
-
-		qobj:setString(2, invname)
-		qobj:setString(3, sid)
-
-		local json = ms.SerializeData(item)
-
-		if json then
-			qobj:setString(4, json)
-		else
-			qobj:setNull(4)
-		end
-
-		--qobj:setNumber(4, slot)
+		return
 	end
 
-	local qem = MySQLEmitter(qobj, true):Catch(qerr):Then(function(self, qry, dat)
+	local pin = GetPlayerInfoMaybe(ply)
+	local sid = pin and pin:SteamID64() or "0" -- terrible hack
+		--errorf("Inventory.MySQL.NewItem: expected player or steamid64 as arg #3, got %q instead", type(ply))
+
+	if isstring(iid) then
+		qobj = newitem_inv_query
+	else
+		qobj = newitem_idinv_query
+	end
+
+	qobj:setString(1, ("%.f"):format(iid))
+	qobj:setString(2, invname)
+	qobj:setString(3, sid)
+
+
+	local json = ms.SerializeData(item)
+
+	if json then
+		qobj:setString(4, json)
+	else
+		qobj:setNull(4)
+	end
+
+	--qobj:setNumber(4, slot)
+
+	local qem = MySQLEmitter(qobj, true)
+	:Catch(qerr)
+	:Then(function(self, qry, dat)
 		item:SetSQLExists(true)
 		ms._PostQuerySetUID(item, qobj, dat)
 		ms.UpdateProperties(item, inv)
@@ -385,7 +387,7 @@ function ms.SetInventory(it, inv, slot, dat)
 
 	local ow, owuid = inv:GetOwner()
 
-	local puid = mysqloo.quote(ms.DB, owuid)
+	local puid = owuid and mysqloo.quote(ms.DB, owuid) or "NULL"
 	local q2
 
 	if it:GetUIDFake() then

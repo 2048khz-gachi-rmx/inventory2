@@ -323,12 +323,21 @@ function nw.NetworkInventory(ply, inv, typ, just_return, key) --mark 'just_retur
 	hook.Run("InventoryNetwork", ply, inv)
 
 	if IsInventory(inv) then
-		inv:SetLastResync(CurTime()) -- track when we last resynced the inventory
+		inv:SetLastResync(CurTime()) 	-- track when we last resynced the inventory
+										-- seems to not be used anymore?
 
 		if inv.MultipleInstances and not key then 	-- if there can exist multiple instances of the same type of inventory
 													-- then you need a key with which to differentiate which one it is
 													-- if we weren't given one, we try to find it
-			for k,v in pairs(inv:GetOwner().Inventory) do
+
+			local ow = inv:GetOwner()
+			if not ow or not ow.Inventory then
+				errorf("Inventory owner has no `.Inventory` table (owner: %s, inventory: %s)",
+					ow, inv)
+				return
+			end
+
+			for k,v in pairs(ow.Inventory) do
 				if v == inv then
 					key = k
 					break
@@ -495,6 +504,7 @@ function nw.RequestUpdate(ply, ...)
 	if #nw.UpdateQueue[ply] > 0 then
 		for k,v in ipairs(nw.UpdateQueue[ply]) do
 			ply:UpdateInventory(v)
+			nw.UpdateQueue[ply][k] = nil
 		end
 	end
 end

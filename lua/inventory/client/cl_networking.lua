@@ -2,7 +2,7 @@
 setfenv(0, _G)
 local nw = Inventory.Networking or {InventoryIDs = {}}
 Inventory.Networking = nw
-nw.Verbose = false
+nw.Verbose = nw.Verbose or false
 
 local realLog = Inventory.Log
 
@@ -226,6 +226,12 @@ function nw.ReadUpdate(len, type)
     local tok
     if has_tok then
         tok = net.ReadUInt(16)
+    end
+
+    if not IsValid(ent) then
+    	realLog("CL-NW: Update: Received %d inventories for AN INVALID ENTITY!!!", invs)
+    	realLog("       Packet length is %d bytes, ignoring...", len / 8)
+    	return
     end
 
     realLog("CL-NW: Update: Received %d inventories for %s; packet length is %d bytes", invs, ent, len / 8)

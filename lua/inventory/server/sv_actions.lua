@@ -68,7 +68,7 @@ local function load()
 		end
 
 		if where > inv.MaxItems or inv:GetItemInSlot(where) then
-			print("where > maxitems or", inv:GetItemInSlot(where))
+			print("where > maxitems or item already in slot:", inv:GetItemInSlot(where), where, inv.MaxItems)
 			return
 		end
 
