@@ -11,8 +11,8 @@ function bp:CanCrossInventoryMove(it, inv2, slot)
 		return false
 	end
 
-	if not inv2:HasAccess(LocalPlayer(), "CrossInventoryTo", it, self) then print("cant - to") return false end
-	if not self:HasAccess(LocalPlayer(), "CrossInventoryFrom", it, inv2) then print("cant - from") return false end
+	if not inv2:HasAccess(LocalPlayer(), "CrossInventoryTo", it, self) then return false end
+	if not self:HasAccess(LocalPlayer(), "CrossInventoryFrom", it, inv2) then return false end
 
 	slot = slot or inv2:GetFreeSlot()
 	if not slot then

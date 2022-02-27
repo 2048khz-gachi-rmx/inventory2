@@ -105,8 +105,8 @@ function bp:CanCrossInventoryMove(it, inv2, slot, ply)
 
 	if slot and inv2:IsSlotLegal(slot) == false then return false end
 
-	if ply and not inv2:HasAccess(ply, "CrossInventoryTo", it, self) then print("cant - to") return false end
-	if ply and not self:HasAccess(ply, "CrossInventoryFrom", it, inv2) then print("cant - from") return false end
+	if ply and not inv2:HasAccess(ply, "CrossInventoryTo", it, self) then return false end
+	if ply and not self:HasAccess(ply, "CrossInventoryFrom", it, inv2) then return false end
 
 	-- check if inv2 can accept cross-inventory item
 	if inv2:Emit("CanMoveTo", it, self, slot) == false then print("CanMoveTo no", inv2) return false end
