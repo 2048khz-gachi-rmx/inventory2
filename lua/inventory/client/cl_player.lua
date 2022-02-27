@@ -1,7 +1,6 @@
 
 
 function Inventory.LoadClient()
-	print("Inventory loading on client...")
 	local me = LocalPlayer()
 	me.Inventory = {}
 

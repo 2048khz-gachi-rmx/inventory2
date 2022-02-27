@@ -392,7 +392,7 @@ function PANEL:Draw(w, h)
 	if self.NoPaint then return end
 
 	local inv = self.Inventory
-	draw.SimpleText(inv.Name, "OS28", w/2, 16, color_white, 1, 1)
+	draw.SimpleText(inv:GetName(), "OS28", w/2, 16, color_white, 1, 1)
 end
 
 function PANEL:Paint(w, h)

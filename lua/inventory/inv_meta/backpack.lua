@@ -4,7 +4,15 @@ Inventory.Inventories.Backpack = bp
 bp.IsInventory = true
 bp.IsPlayerInventory = true
 
+ChainAccessor(bp, "Name", "Name")
+ChainAccessor(bp, "Description", "Description")
+ChainAccessor(bp, "Items", "Items")
+ChainAccessor(bp, "Slots", "Slots")
+ChainAccessor(bp, "OwnerUID", "OwnerID")
+ChainAccessor(bp, "OwnerUID", "OwnerUID")
+
 bp.Name = "Backpack"
+bp:SetDescription("Contents dropped on death")
 bp.SQLName = "ply_temp"
 bp.NetworkID = 1
 bp.MaxItems = 20
@@ -16,14 +24,14 @@ bp.IsBackpack = true
 bp.AutoFetchItems = true
 bp.SupportsSplit = true
 
-function bp:ActionCanInteract(ply, act, ...)
-	return self.IsBackpack and self:GetOwner() == ply
-end
-
 bp.Icon = {
 	URL = "https://i.imgur.com/KBYX2uQ.png",
 	Name = "bag.png"
 }
+
+function bp:ActionCanInteract(ply, act, ...)
+	return self.IsBackpack and self:GetOwner() == ply
+end
 
 function bp:__tostring()
 	return ("%s [%p](owner: %s)"):format(
@@ -37,6 +45,7 @@ function bp:OnExtend(new_inv)
 	new_inv.SQLName = false 	--set these yourself!!
 	new_inv.NetworkID = false
 	new_inv.Name = "unnamed inventory!?"
+	new_inv:SetDescription(nil)
 	new_inv.IsBackpack = false
 
 	new_inv.Icon = false
@@ -349,12 +358,6 @@ end
 function bp:ValidateSlot(sl)
 	return sl > 0 and sl <= self.MaxItems and sl
 end
-
-ChainAccessor(bp, "Name", "Name")
-ChainAccessor(bp, "Items", "Items")
-ChainAccessor(bp, "Slots", "Slots")
-ChainAccessor(bp, "OwnerUID", "OwnerID")
-ChainAccessor(bp, "OwnerUID", "OwnerUID")
 
 if SERVER then
 	include("inventory/inv_meta/backpack_sv_extension.lua")

@@ -5,16 +5,23 @@ if not bp then error("Something went wrong while loading Vault: backpack is miss
 local vt = Inventory.Inventories.Vault or bp:extend()
 Inventory.Inventories.Vault = vt
 
+vt.Name = "Vault"
+vt:SetDescription("Safe storage for your items")
+
 vt.SQLName = "ply_vault"
 vt.NetworkID = 2
-vt.Name = "Vault"
 vt.MaxItems = 50
 vt.IsVault = true
+
 
 vt:Register()
 
 --vt.ActionCanCrossInventoryFrom = CLIENT
 --vt.ActionCanCrossInventoryTo = CLIENT
+
+vt:On("CanOpen", "NoOpen", function()
+	return false
+end)
 
 vt:On("CanMoveTo", "Vault", function(self, itm, inv2, slot)
 	if inv2 == self then return true end

@@ -61,7 +61,7 @@ function iPan.CreateInventory(inv, multiple, set)
 	local function createTab(invobj)
 		if invobj:Emit("CanOpen") == false then return end --uhkay
 
-		local tab = f:AddTab(invobj.Name, f.OnSelectTab, f.OnDeselectTab)
+		local tab = f:AddTab(invobj:GetName(), f.OnSelectTab, f.OnDeselectTab)
 		tab:SetTall(64)
 		tab.Inventory = invobj
 
@@ -76,6 +76,10 @@ function iPan.CreateInventory(inv, multiple, set)
 			if icDat.OnCreate then
 				icDat.OnCreate(ic)
 			end
+		end
+
+		if invobj:GetDescription() then
+			tab:SetDescription(invobj:GetDescription())
 		end
 
 		return tab
@@ -116,7 +120,7 @@ function iPan.Open()
 	f:MakePopup()
 	f:Center()
 	f:DoAnim()
-	f:SelectTab("Backpack")
+	f:SelectTab("Backpack", true)
 
 	return f
 end
