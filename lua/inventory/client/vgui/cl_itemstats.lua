@@ -110,7 +110,7 @@ function PANEL:Paint(w, h)
 		--surface.DrawRect(self.MaxWGood + 16, y + barY, w - self.MaxWGood - 8 - 16, barH)
 		DarkHUD.PaintBar(4,
 			self.MaxWGood + 16, y + barY, barW, barH,
-			roll, empty, skyBord, Colors.Sky, textDat)
+			roll, empty, skyBord, Colors.Sky, textDat, true)
 
 		local add = xfH * ifr
 		if ifr > 0 then
