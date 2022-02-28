@@ -268,7 +268,6 @@ function bp:PickupItem(it, ignore_emitter, nochange)
 	local left, itStk, newStk = Inventory.GetInventoryStackInfo(self, it)
 
 	if not left and not itStk then
-
 		-- item unstackable, just add it
 		local slot = self:GetFreeSlot()
 		if not slot then
@@ -277,10 +276,16 @@ function bp:PickupItem(it, ignore_emitter, nochange)
 
 		it:TakeOut()
 		it:SetSlot(slot)
+
 		self:AddItem(it, ignore_emitter, nochange)
+		it:AssignInventory()
 
 		local pr = Promise()
 		pr:Resolve() -- instant resolve, nice
+
+		if not self.ReadingNetwork then
+			self:Emit("Change")
+		end
 
 		return false, pr, {it}
 	end
@@ -296,14 +301,14 @@ function bp:PickupItem(it, ignore_emitter, nochange)
 		prs[#prs + 1] = self:InsertItem(v)
 	end
 
-	if not self.ReadingNetwork then
-		self:Emit("Change")
-	end
-
 	if left then
 		it:SetAmount(left)
 	else
 		it:Delete()
+	end
+
+	if not self.ReadingNetwork then
+		self:Emit("Change")
 	end
 
 	local pr = Promise.OnAll(prs)
