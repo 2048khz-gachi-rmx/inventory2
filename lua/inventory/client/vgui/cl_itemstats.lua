@@ -99,7 +99,7 @@ function PANEL:Paint(w, h)
 	local barH = math.floor(fH * 0.8)
 	local barY = math.floor(fH / 2 - barH / 2)
 
-	local barW = w - self.MaxWGood - 8 - 16
+	local barW = w - self.MaxWAll - 8 - 16
 
 	surface.SetDrawColor(30, 80, 30)
 	for k,v in ipairs(self.Good) do
@@ -107,9 +107,9 @@ function PANEL:Paint(w, h)
 
 		draw.SimpleText2(statName, self.Font, 8, y, color_white, 0)
 		textDat.Text = num
-		--surface.DrawRect(self.MaxWGood + 16, y + barY, w - self.MaxWGood - 8 - 16, barH)
+		--surface.DrawRect(self.MaxWAll + 16, y + barY, w - self.MaxWGood - 8 - 16, barH)
 		DarkHUD.PaintBar(4,
-			self.MaxWGood + 16, y + barY, barW, barH,
+			self.MaxWAll + 16, y + barY, barW, barH,
 			roll, empty, skyBord, Colors.Sky, textDat, true)
 
 		local add = xfH * ifr
@@ -124,10 +124,10 @@ function PANEL:Paint(w, h)
 			end
 
 			draw.SimpleText2(min, self.ExtraFont,
-				self.MaxWGood + 16, y + fH * 0.675 + fH * 0.2 * ifr, nil, 0)
+				self.MaxWAll + 16, y + fH * 0.675 + fH * 0.2 * ifr, nil, 0)
 
 			draw.SimpleText2(max, self.ExtraFont,
-				self.MaxWGood + 16 + barW, y + fH * 0.675 + fH * 0.2 * ifr, nil, 2)
+				self.MaxWAll + 16 + barW, y + fH * 0.675 + fH * 0.2 * ifr, nil, 2)
 		end
 
 		y = y + fH + add
@@ -140,10 +140,10 @@ function PANEL:Paint(w, h)
 		textDat.Text = num
 
 		draw.SimpleText2(statName, self.Font, 8, y, color_white, 0)
-		--surface.DrawRect(self.MaxWGood + 16, y + barY, w - self.MaxWGood - 8 - 16, barH)
+		--surface.DrawRect(self.MaxWAll + 16, y + barY, w - self.MaxWAll - 8 - 16, barH)
 		roll = 1 - roll
 		DarkHUD.PaintBar(4,
-			self.MaxWGood + 16, y + barY, barW, barH,
+			self.MaxWAll + 16, y + barY, barW, barH,
 			roll, empty, badBord, bad, textDat, nil, true)
 
 		local add = xfH * ifr
@@ -159,10 +159,10 @@ function PANEL:Paint(w, h)
 			end
 
 			draw.SimpleText2(min, self.ExtraFont,
-				self.MaxWGood + 16, y + fH * 0.675 + fH * 0.2 * ifr, nil, 0)
+				self.MaxWAll + 16, y + fH * 0.675 + fH * 0.2 * ifr, nil, 0)
 
 			draw.SimpleText2(max, self.ExtraFont,
-				self.MaxWGood + 16 + barW, y + fH * 0.675 + fH * 0.2 * ifr, nil, 2)
+				self.MaxWAll + 16 + barW, y + fH * 0.675 + fH * 0.2 * ifr, nil, 2)
 		end
 
 		y = y + fH + add
