@@ -3,9 +3,18 @@
 local gen = Inventory.GetClass("item_meta", "generic_item")
 local uq = Inventory.ItemObjects.Unique or gen:Extend("Unique")
 
-DataAccessor(uq, "QualityName", "QualityName")
-DataAccessor(uq, "Stats", "StatRolls") -- stats contained in data are merely rolls 0-1 for their strengths
-DataAccessor(uq, "Modifiers", "ModNames") -- mods contained in data are just {[name] = tier} values
+DataAccessor(uq, "QualityName", "QualityName", nil, FORCE_STRING)
+DataAccessor(uq, "Stats", "StatRolls", nil, istable) -- stats contained in data are merely rolls 0-1 for their strengths
+DataAccessor(uq, "Modifiers", "ModNames", nil, function(v)
+	-- mods contained in data are just {[name] = tier} values
+	if not istable(v) then return false end
+
+	for k,v in pairs(v) do
+		if not isstring(k) or not isnumber(v) then return false end
+	end
+
+	return true
+end)
 
 function uq:GetStats(tbl)
 	local into = tbl or {}

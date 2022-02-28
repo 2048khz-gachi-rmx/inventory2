@@ -116,12 +116,37 @@ function BaseItemAccessorFn(it, varname, getname)
 	end
 end
 
-function DataAccessor(it, varname, getname, setcallback)
+local checks = {
+	[FORCE_STRING] = isstring,
+	[FORCE_NUMBER] = isnumber,
+}
+
+function DataAccessor(it, varname, getname, setcallback, force_type)
+	local forceFn
+
+	if isnumber(setcallback) then
+		force_type = setcallback
+		setcallback = nil
+	end
+
+	if force_type then
+		if isnumber(force_type) then
+			forceFn = checks[force_type] or errorf("unknown force enum: %s", force_type)
+		elseif isfunction(force_type) then
+			forceFn = force_type
+		end
+	end
+
 	it["Get" .. getname] = function(self)
 		return self.Data[varname]
 	end
 
 	it["Set" .. getname] = function(self, v)
+		if forceFn and not forceFn(v) then
+			errorf("bad #1 type to Set%s: %s (%s)", getname, v, type(v))
+			return
+		end
+
 		self.Data[varname] = v
 		local inv = self:GetInventory()
 
