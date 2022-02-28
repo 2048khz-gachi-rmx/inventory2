@@ -20,7 +20,15 @@ function wep:UseCharge(ply)
 		end
 
 		hook.NHRun("InventoryWeaponGiven", self, ply, new)
+		return new
 	end
+end
+
+function wep:PlayerUse(ply)
+	print("player used weapon", ply)
+	if not self:GetInventory() or not self:GetInventory().IsBackpack then print("not backpack retard") return false end
+	local new = self:UseCharge(ply)
+	if new then return true end
 end
 
 hook.NHAdd("PlayerLoadout", "InventoryWeapons", function(ply)

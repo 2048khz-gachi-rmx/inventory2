@@ -242,7 +242,7 @@ local function load()
 
 	nw.Actions[INV_ACTION_PICKUP] = function(ply)
 		local inv = inv or readInv(ply)
-		local it = it or readItem(ply, inv, "CrossInventory")
+		local it = readItem(ply, inv, "CrossInventory")
 		local invto = invto or readInv(ply)
 
 		if not inv:HasAccess(ply, "CrossInventoryFrom", it, invto, where) then
@@ -254,21 +254,48 @@ local function load()
 		end
 
 		local ok, prs, new = invto:PickupItem(it)
-		print(ok, prs, new)
+
 		if prs then
 			prs:Then(function(...)
-				print("pickedup good", ...)
 				ply:UpdateInventory(inv)
 				ply:UpdateInventory(invto)
 			end, function(...)
-				print("badabadbad", ...)
+				print("bad pickup request from", ply, ...)
 			end)
+		end
+	end
+
+	nw.Actions[INV_ACTION_USE] = function(ply)
+		local inv = inv or readInv(ply)
+		local it = readItem(ply, inv, "Use")
+		if not it then return end
+
+		if not inv:HasAccess(ply, "Use", it) then
+			return false, "no access from inventory"
+		end
+
+		local meta = Inventory.Util.GetMeta(it:GetIID())
+		if not meta.PlayerUse then
+			print(ply, "tried to use item without a .Use method", it:GetIID(), it:GetUID())
+			return
+		end
+
+		local needUpdate, needFull = meta.PlayerUse(it, ply)
+
+		if needUpdate then
+			if needFull then
+				ply:NetworkInventory(isbool(needUpdate) and inv or needUpdate)
+			else
+				ply:UpdateInventory(isbool(needUpdate) and inv or needUpdate)
+			end
 		end
 	end
 
 	nw.Actions[INV_ACTION_RESYNC] = function(ply)
 		nw.RequestResync(ply)
 	end
+
+	
 
 	net.Receive("Inventory", function(len, ply)
 		local act = net.ReadUInt(16)
