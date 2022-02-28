@@ -17,6 +17,7 @@ function wep:InitializeNew()
 	self:SetUses(self:GetStartUses())
 end
 
+
 local allowed = table.KeysToValues({"primary", "secondary", "utility"})
 
 wep:On("CanEquip", "WeaponCanEquip", function(self, ply, slot)

@@ -42,3 +42,23 @@ function wep:PostGenerateText(cloud, markup)
 
 	sepPrePost = false
 end
+
+function wep:GenerateOptions(mn)
+	local inv = self:GetInventory()
+	if inv ~= Inventory.GetTemporaryInventory(CachedLocalPlayer()) then return end
+
+	local opt = mn:AddOption("Use")
+	opt.HovMult = 1.15
+	opt.Color = Colors.Sky:Copy()
+	opt.DeleteFrac = 0
+	opt.Description = "Spend a charge to equip this weapon"
+
+	local item = self
+
+	function opt:DoClick()
+		local ns = Inventory.Networking.Netstack()
+			ns:WriteInventory(inv)
+			ns:WriteItem(item, true)
+		Inventory.Networking.PerformAction(INV_ACTION_USE, ns)
+	end
+end

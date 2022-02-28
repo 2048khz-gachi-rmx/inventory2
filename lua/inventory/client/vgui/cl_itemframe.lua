@@ -239,7 +239,7 @@ end
 
 function ITEM:OpenOptions()
 	local it = self:GetItem(true)
-	if not it then return end --e?
+	if not it then  return end --e?
 
 	local mn = vgui.Create("FMenu")
 	mn:PopIn(0.05)
@@ -249,6 +249,11 @@ function ITEM:OpenOptions()
 	hook.Run("InventoryGetOptions", it, mn)
 	it:Emit("GenerateOptions", mn)
 	it:GetBase():Emit("GenerateOptions", mn)
+
+	local meta = Inventory.Util.GetMeta(it:GetItemID())
+	if meta and meta.GenerateOptions then
+		meta.GenerateOptions(it, mn)
+	end
 
 	mn:Open()
 	mn:InvalidateLayout(true)
