@@ -240,10 +240,8 @@ function bp.PickQuality(tier, wep)
 	local pool = {}
 	for k,v in ipairs(quals) do pool[k] = v end
 
-	print("quality pool length:", pool)
-	while true do
+	while true do -- monka
 		local key = math.random(#pool)
-		print("random from", #pool, ":", key)
 
 		local pick = pool[key]
 		if not pick then return false end -- ran out of mods in pool

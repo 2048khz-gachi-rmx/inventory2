@@ -258,7 +258,7 @@ function ms._PostQuerySetUID(item, qry, dat)
 	item:Emit("AssignUID", uid)
 end
 
--- takes an item object and sticks it in the inventory
+-- takes an item object and sticks it in the `items` table AND in the inventory
 function ms.NewInventoryItem(item, inv, ply)
 	if inv.UseSQL == false then print("cant use sql", inv) return end
 
