@@ -23,11 +23,15 @@ vt:On("ShouldShowF4", "DontShow", function()
 	return false
 end)
 
-vt:On("CanMoveTo", "Vault", function(self, itm, inv2, slot)
-	if inv2 == self then return true end
-	if hook.Run("Vault_CanMoveTo", self, itm, inv2, slot) == true then return end
+vt:On("CanCrossInventoryTo", "Vault", function(self, ply, itm, inv2, slot)
+	--if inv2 == self then return true end
 
-	if not inv2.IsBackpack then return false end
+	if hook.Run("Vault_CanMoveTo", self, itm, inv2, slot) == true then return true end
+
+	if inv2.IsBackpack then
+		return true
+	end
+
 	if itm.AllowedVaultTransfer then
 		return
 	end
@@ -36,7 +40,7 @@ vt:On("CanMoveTo", "Vault", function(self, itm, inv2, slot)
 end)
 
 vt:On("CanCrossInventoryFrom", "Vault", function(self, ply, itm, inv2, slot)
-	if hook.Run("Vault_CanMoveFrom", self, ply, itm, inv2, slot) == true then return end
+	if hook.Run("Vault_CanMoveFrom", self, ply, itm, inv2, slot) == true then return true end
 	return false
 end)
 

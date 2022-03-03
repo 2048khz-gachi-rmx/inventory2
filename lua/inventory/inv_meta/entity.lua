@@ -18,7 +18,6 @@ ent.AutoFetchItems = false
 ent.MultipleInstances = true --there can be multiple inventory instances of the same class in a single table
 ent.EntityOwner = NULL
 
-
 ent:Register()
 
 ChainAccessor(ent, "EntityOwner", "EntityOwner")

@@ -1,3 +1,4 @@
+setfenv(1, _G)
 local ms = Inventory.MySQL
 local db = ms.DB
 
