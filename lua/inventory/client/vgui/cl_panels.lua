@@ -11,22 +11,27 @@ function iPan.CreateInventory(inv, multiple, set)
 	local multi_invs = false
 
 	local has_invs
-
 	if inv then
 		local _, firstinv = next(inv)
 		has_invs = firstinv
+	else --no inv provided; do all of em
+		multi_invs = true
+		inv = {}
+
+		for k,v in pairs(LocalPlayer().Inventory) do
+			local em = v:Emit("ShouldShowF4")
+
+			if em or em == nil then
+				inv[k] = v
+			end
+		end
 	end
 
-	if not inv then --no inv provided; do all of em
-		multi_invs = true
-		inv = LocalPlayer().Inventory
-
-	elseif IsInventory(inv) then --only one inventory provided
+	if IsInventory(inv) then --only one inventory provided
 		--nuthin i guess
 
-	elseif IsInventory(has_invs) then --table of inventories provided
+	elseif IsInventory(has_invs) or multi_invs then --table of inventories provided
 		multi_invs = true
-
 	else --??
 		errorf("Inventory.Panels.CreateInventory: expected nil or table of inventories at arg #2, got %q instead (no inventories there)", type(inv))
 	end
@@ -57,9 +62,10 @@ function iPan.CreateInventory(inv, multiple, set)
 
 
 	f.Inventory = inv
+	f.AllInventories = all_invs
 
 	local function createTab(invobj)
-		if invobj:Emit("CanOpen") == false then return end --uhkay
+		if invobj:Emit("CanOpen", inv) == false then return end --uhkay
 
 		local tab = f:AddTab(invobj:GetName(), f.OnSelectTab, f.OnDeselectTab)
 		tab:SetTall(64)
@@ -91,6 +97,11 @@ function iPan.CreateInventory(inv, multiple, set)
 		end
 	elseif inv then --only one inventory
 		local tab = createTab(inv)
+		if not tab then
+			errorf("Attempted to open an inventory tab that didn't allow opening! (%s)", inv)
+			return
+		end
+
 		f:SetRetractedSize(0)
 		tab:Select(true)
 	end

@@ -24,7 +24,11 @@ function PLAYER:InitializeInventories()
 	if Inventory.InDev then
 		self.bp = self.Inventory.Backpack
 		self.its = self.Inventory.Backpack.Items
-		self.invun = UnionTable(self.Inventory)
+
+		local invs = {}
+		for k,v in pairs(self.Inventory) do invs[k] = v end
+
+		self.invun = UnionTable(invs)
 		self.inv = self.Inventory
 	end
 end

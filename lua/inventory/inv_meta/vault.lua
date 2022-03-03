@@ -19,7 +19,7 @@ vt:Register()
 --vt.ActionCanCrossInventoryFrom = CLIENT
 --vt.ActionCanCrossInventoryTo = CLIENT
 
-vt:On("CanOpen", "NoOpen", function()
+vt:On("ShouldShowF4", "DontShow", function()
 	return false
 end)
 

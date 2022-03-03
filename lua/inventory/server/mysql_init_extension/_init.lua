@@ -144,7 +144,7 @@ function ms.WaitStates(cb, ...)
 				if not ms._States[v] then return end
 			end
 
-			cb()
+			xpcall(cb, GenerateErrorer("StateChangeError"))
 			Inventory.MySQL:RemoveListener("StatesChanged", num)
 		end)
 	end
