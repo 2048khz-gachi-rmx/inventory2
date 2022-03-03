@@ -105,8 +105,6 @@ end
 
 function bp.GenerateMods(tier, qual, amt)
 	amt = istable(amt) and amt or {amt}
-	print("GenerateMods: allowed")
-	PrintTable(amt)
 
 	local pool = {}
 	local guar = {} -- guaranteed mods
@@ -149,9 +147,6 @@ function bp.GenerateMods(tier, qual, amt)
 	if count == total then return ret end
 
 	table.Shuffle(pool)
-
-	print("picking from pooled...", count, total)
-	PrintTable(amt)
 
 	for _, mod in ipairs(pool) do
 		local power = mod:GetPowerTier()
@@ -246,23 +241,33 @@ function bp.PickQuality(tier, wep)
 		local pick = pool[key]
 		if not pick then return false end -- ran out of mods in pool
 
-		if pick:GetType() == "Weapon" then print("pick:", pick:GetName()) return pick end
+		if pick:GetType() == "Weapon" then return pick end
 
 		table.remove(pool, key)
 	end
 end
 
 function bp.Generate(tier, typ)
+	print("requested bp gen...", typ)
+
 	if typ == "random" then
 		typ = bp.GetRandomType()
+		print("	random type ->", typ)
 	end
 
 	local wep = bp.GetWeapon(typ, tier)
+	print("	class:", wep)
 
 	local qual = bp.PickQuality(tier, wep)
+	print("	quality:", qual)
 	local amtMods = bp.TierGetMods(tier)
 	local mods = bp.GenerateMods(tier, qual, amtMods)
+	print("	mods:")
+	PrintTable(mods, 1)
+
 	local stats = bp.GenerateStats(qual)
+	print("	stats:")
+	PrintTable(stats, 1)
 
 	local item = Inventory.Blueprints.CreateBlank()
 	item:SetResult(wep)
@@ -273,6 +278,7 @@ function bp.Generate(tier, typ)
 	item:SetStatRolls(stats)
 
 	item:SetRecipe(bp.GenerateRecipe(item))
+	print("success")
 
 	return item
 end
