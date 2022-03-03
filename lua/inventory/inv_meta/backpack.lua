@@ -305,7 +305,7 @@ function bp:HasAccess(ply, action, ...)
 
 	-- step 2.1. can they do this particular action? check via emitter
 	allow = self:Emit("Can" .. action, ply, ...)
-	if allow ~= nil then self:vrint("Can" .. action, "gave no") return allow end
+	if allow ~= nil then self:vprint("Can" .. action, "gave no") return allow end
 
 	-- step 2.2. same but check via ActionCan["action"] function or bool
 
