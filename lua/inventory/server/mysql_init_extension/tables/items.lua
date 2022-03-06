@@ -24,13 +24,14 @@ end
 
 
 --------------------------------
-
 local q = [[CREATE TABLE IF NOT EXISTS `items` (
-	`uid` int NOT NULL AUTO_INCREMENT,
-	`iid` int NOT NULL,
-	`data` json DEFAULT NULL,
+	`uid` INT NOT NULL AUTO_INCREMENT,
+	`iid` INT NOT NULL,
+	`data` JSON NULL DEFAULT NULL,
+	`inventory` VARCHAR(64) NULL DEFAULT NULL,
+	`slot` INT NULL DEFAULT NULL,
 	PRIMARY KEY (`uid`),
-	UNIQUE KEY `uid_UNIQUE` (`uid`)
+	UNIQUE INDEX `uid_UNIQUE` (`uid`)
 )
 ]]
 
