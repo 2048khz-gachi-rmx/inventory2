@@ -21,7 +21,7 @@ bp.UseSlots = true
 bp.UseSQL = true
 
 bp.IsBackpack = true
-bp.AutoFetchItems = true
+bp.AutoFetchItems = false -- true
 bp.SupportsSplit = true
 
 bp.Icon = {
@@ -323,14 +323,15 @@ function bp:HasAccess(ply, action, ...)
 
 	-- step 3. earlier checks didnt tell us anything; do default behavior
 	allow = self:Emit("CanInteract", ply, action, ...)
+	self:vprint("HasAccess every check failed -- default emitter said", allow)
 
 	if allow == nil and self.ActionCanInteract then
 		allow = eval(self.ActionCanInteract, self, ply, action, ...)
+		self:vprint("HasAccess every check failed -- ActionCanInteract said", allow)
 	end
 
-	self:vprint("HasAccess every check failed -- default emitter said", allow)
-
-	return allow == nil and false or allow -- ply == self:GetOwner()
+	if allow ~= nil then return allow end
+	return ply == self:GetOwner()
 end
 
 function bp:RemoveChange(it, what)
