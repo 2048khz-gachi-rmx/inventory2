@@ -3,7 +3,7 @@
 local areas = {}
 local el = Inventory.Modifiers.Get("MendGas")
 
-local function deployGas(pos)
+local function deployGas(pos, toHeal)
 	local fxd = EffectData()
 		fxd:SetOrigin(pos)
 		fxd:SetRadius(el.Radius)
@@ -13,10 +13,10 @@ local function deployGas(pos)
 	sound.Play("arccw_go/smokegrenade/smoke_emit.wav",
 		pos + Vector(0, 0, 2), 65, math.random(130, 140), 1)
 
-	table.insert(areas, {CurTime(), pos + Vector(0, 0, 2), 0})
+	table.insert(areas, {toHeal, pos + Vector(0, 0, 2), 0})
 end
 
-function Inventory.DeployMendGas(ply)
+function Inventory.DeployMendGas(ply, mod)
 	local wep = ply:GetActiveWeapon()
 
 	--SuppressHostEvents(ply)
@@ -32,6 +32,14 @@ function Inventory.DeployMendGas(ply)
 		ply:SetViewPunchAngles(Angle(1, -1, 1))
 	end)
 
+	local tier = (IsInvModifier(mod) and mod:GetTier()) or (isnumber(mod) and mod)
+	if not tier then
+		errorNHf("MendGas: second arg not number nor mod (%s: %s)", type(mod), mod)
+		tier = 1
+	end
+
+	local str = el:GetTierStrength(tier)
+
 	ply:LiveTimer("MendGas_Deploy", 0.8, function()
 		local pos = ply:GetPos() + Vector(0, 0, 2)
 		local tr = util.TraceHull({
@@ -46,18 +54,17 @@ function Inventory.DeployMendGas(ply)
 
 		pos = tr.HitPos
 
-
 		if dist > 64 then
-			timer.Simple( ((dist - 64) ^ 0.7) / 768, function() deployGas(pos) end )
+			timer.Simple( ((dist - 64) ^ 0.7) / 768, function() deployGas(pos, str) end )
 		else
-			deployGas(pos)
+			deployGas(pos, str)
 		end
 	end)
 end
 
 local el = Inventory.Modifiers.Get("MendGas")
 	:SetOnActivate(function(base, ply, mod)
-		Inventory.DeployMendGas(ply)
+		Inventory.DeployMendGas(ply, mod)
 		return true
 	end)
 
@@ -89,21 +96,24 @@ timer.Create("MendGasThink", el.TickInterval, 0, function()
 	end
 
 	for i=#areas, 1, -1 do
-		local time, pos, healed = unpack(areas[i])
-		if healed >= el.HealTotal then table.remove(areas, i) continue end
+		local dat = areas[i]
+		local healTotal, pos, healed = unpack(dat)
+
+		if healed >= healTotal then table.remove(areas, i) continue end
 
 		local toHeal = math.min(
-			el.HealTotal / el.Duration * el.TickInterval,
-			el.HealTotal - healed
+			healTotal / el.Duration * el.TickInterval,
+			healTotal - healed
 		)
-		areas[i][3] = areas[i][3] + toHeal
+
+		dat[3] = dat[3] + toHeal
 
 		for k,v in pairs(poses) do
 			local vz = v.z
 			local pz = pos.z
 
-			if vz + 64 < pz then continue end
-			if vz - 32 > pz then continue end
+			if vz + 64 < pz then continue end -- 64u above the gas = cutoff
+			if vz - 32 > pz then continue end -- 32u below the gas = cutoff
 
 			v.z = pos.z
 			if v:Distance(pos) > el.Radius then continue end
