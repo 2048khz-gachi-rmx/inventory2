@@ -4,6 +4,8 @@ local mod = Inventory.Modifier
 local mods = Inventory.Modifiers
 local hooks = mods.Hooks
 
+mod.IsInventoryModifier = true
+
 -- [name] = {inst, inst, ...}
 mods.InstancePool = mods.InstancePool or muldim:new()
 
@@ -16,6 +18,9 @@ local function BaseAccessor(tbl, varname, getname)
 	end
 end
 
+function IsInvModifier(what)
+	return istable(what) and what.IsInventoryModifier
+end
 
 ChainAccessor(mod, "_Tier", "Tier")
 

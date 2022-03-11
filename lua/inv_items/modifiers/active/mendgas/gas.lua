@@ -5,13 +5,13 @@ local el; el = Inventory.BaseActiveModifier:new("MendGas")
 	:SetMaxBPTier(4)
 
 	:SetTierCalc(function(self, tier)
-		return 15 - 5 * tier -- 15/10/5
+		return 50 + tier * 25
 	end)
 	:SetCooldown(function(base, mod, ply)
-		return mod:GetTierStrength(mod:GetTier())
+		return 15
 	end)
 
-el.HealTotal = 100
+-- el.HealTotal = 100
 el.TickInterval = 0.25
 el.Radius = 128
 el.Duration = 10

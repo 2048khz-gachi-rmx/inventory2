@@ -24,7 +24,7 @@ ChainAccessor(mod, "Retired", "Retired")
 
 ChainAccessor(mod, "_ModStats", "ModStats")
 
-mod.IsModifier = true
+mod.IsBaseModifier = true
 
 function IsBaseModifier(what)
 	return istable(what) and what.IsBaseModifier
