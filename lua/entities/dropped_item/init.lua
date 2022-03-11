@@ -134,7 +134,7 @@ end
 
 function ENT:PlayDropSound(num, params)
 	num = num or 0
-	sound.Play("new2/cointoss1.ogg", self:GetDropOrigin(), 75, math.min(150, 100 + num * 15), 1)
+	sound.Play("grp/items/cointoss.mp3", self:GetDropOrigin(), 75, math.min(150, 100 + num * 15), 1)
 
 	self:Timer("sfx", CurTime() - self:GetCreatedTime() + self.TimeToAnimate, 1, function()
 		local itm = self:GetItem()
