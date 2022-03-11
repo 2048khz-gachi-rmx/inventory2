@@ -60,3 +60,7 @@ prm:On("CanCreateItem", "EquippableOnly", function(self, iid, dat, slot)
 end)
 
 prm:Register()
+
+function prm:ActionCanInteract(ply, act)
+	return self:GetOwner() == ply
+end
