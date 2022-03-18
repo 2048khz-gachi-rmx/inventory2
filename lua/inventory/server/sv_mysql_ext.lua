@@ -317,7 +317,7 @@ function ms.NewInventoryItem(item, inv, ply)
 	if item:GetSlot() then
 		qobj:setNumber(5, item:GetSlot())
 	else
-		qobj:SetNull(5)
+		qobj:setNull(5)
 	end
 
 	local qem = MySQLEmitter(qobj, true)
