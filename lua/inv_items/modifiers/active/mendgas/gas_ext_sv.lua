@@ -30,6 +30,11 @@ function Inventory.DeployMendGas(ply, mod)
 	ply:LiveTimer("MendGas_RevPunch", 0.75, function()
 		ply:ViewPunch(Angle(1, 1, 1))
 		ply:SetViewPunchAngles(Angle(1, -1, 1))
+
+		if math.random() < 0.01 then
+			PlayURLSound(ply, "http://vaati.net/Gachi/shared/fart.mp3")
+		end
+
 	end)
 
 	local tier = (IsInvModifier(mod) and mod:GetTier()) or (isnumber(mod) and mod)
