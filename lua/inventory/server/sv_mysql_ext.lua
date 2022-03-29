@@ -473,10 +473,16 @@ function ms.FetchPlayerItems(inv, ply)
 		return
 	end
 
-	q:setString(1, ply:SteamID64())
+	local sid = ply:SteamID64()
+	q:setString(1, sid)
 
 	local em = MySQLEmitter(q, true)
 	em:Then(function(_, self, dat)
+		if not IsValid(ply) then
+			Inventory.Log("Player %s left before we could fetch their items.", sid)
+			return
+		end
+		
 		Inventory.Log("MySQL: Fetched info for %q's %s; %d items", ply:Nick(), isbool(inv) and "all inventories" or inv.SQLName, #dat)
 
 		for k,v in ipairs(dat) do
