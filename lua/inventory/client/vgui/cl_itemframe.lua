@@ -172,6 +172,8 @@ function ITEM:OnMouseReleased(c)
 	vgui.GetControlTable("DButton").OnMouseReleased(self, c)
 
 	timer.Simple(0, function()
+		if not IsValid(self) then return end -- wtf lol
+	
 		-- let dragndrop run first
 		self.IsWheelHeld = false
 	end)
