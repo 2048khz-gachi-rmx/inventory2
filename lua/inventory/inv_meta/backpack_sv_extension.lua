@@ -127,6 +127,13 @@ end
 local function ActuallyMove(inv1, inv2, it, slot)
 	--local em = Inventory.MySQL.SetInventory(it, inv2, slot)
 
+	if not slot then
+		print("!!! ActualalyMove: slot is missing !!!")
+		print(inv1, inv2)
+		print(it, slot)
+		print(debug.traceback())
+	end
+
 	inv1:RemoveItem(it, true, true) -- don't write the change 'cause we have crossmoves as a separate change
 	it:SetSlot(slot)
 	inv2:AddItem(it, true, true) -- same shit
