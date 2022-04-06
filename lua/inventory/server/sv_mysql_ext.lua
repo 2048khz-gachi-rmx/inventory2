@@ -385,7 +385,7 @@ function ms.SetInventory(it, inv, slot, dat)
 
 	local prep = change_invs_query
 	prep:setString(1, inv.SQLName)
-	prep:setString(2, owuid)
+	prep:setString(2, owuid or "0")
 	prep:setNumber(3, slot)
 	prep:setNumber(4, it:GetUID())
 
