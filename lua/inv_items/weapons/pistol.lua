@@ -7,9 +7,9 @@ temp	:SetName("Competitor")
 		:SetWeaponClass("arccw_contender")
 		:SetEquipSlot("primary")
 
-		:SetCamPos( Vector(3.5, -34, 6.7) )
-		:SetLookAng( Angle(5.9, 90.4, 20) )
-		:SetFOV( 19 )
+		:SetCamPos( Vector(-9, 82.0, 5.6) )
+		:SetLookAng( Angle(1.0, -84.7, -30.0) )
+		:SetFOV( 12.4 )
 
 		:SetShouldSpin(false)
 		:SetTiers(1, 2)
