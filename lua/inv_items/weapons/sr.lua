@@ -1,16 +1,4 @@
 local temp
-temp = Inventory.BaseItemObjects.Weapon:new("arccw_contender")
-temp	:SetName("Competitor")
-		:SetModel("models/weapons/arccw/w_contender.mdl")
-		:SetWeaponClass("arccw_contender")
-		:SetEquipSlot("primary")
-
-		:SetCamPos( Vector(3.5, -34, 6.7) )
-		:SetLookAng( Angle(5.9, 90.4, 20) )
-		:SetFOV( 19 )
-
-		:SetShouldSpin(false)
-		:SetTiers(1, 2)
 
 temp = Inventory.BaseItemObjects.Weapon:new("arccw_go_awp")
 temp    :SetName("AWSM")
@@ -18,9 +6,10 @@ temp    :SetName("AWSM")
 		:SetWeaponClass("arccw_go_awp")
 		:SetEquipSlot("primary")
 
-		:SetCamPos( Vector(3.5, -34, 6.7) )
-		:SetLookAng( Angle(5.9, 90.4, 20) )
-		:SetFOV( 19 )
+		:SetCamPos( Vector(19.6, 77.7, -1.8) )
+		:SetLookAng( Angle(1.6, -88.1, 0.0) )
+		:SetFOV( 37.3 )
+
 
 		:SetShouldSpin(false)
 		:SetTiers(3, 5)

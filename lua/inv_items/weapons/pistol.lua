@@ -1,4 +1,19 @@
 local temp
+
+-- contender is a fucking pistol wtf
+temp = Inventory.BaseItemObjects.Weapon:new("arccw_contender")
+temp	:SetName("Competitor")
+		:SetModel("models/weapons/arccw/w_contender.mdl")
+		:SetWeaponClass("arccw_contender")
+		:SetEquipSlot("primary")
+
+		:SetCamPos( Vector(3.5, -34, 6.7) )
+		:SetLookAng( Angle(5.9, 90.4, 20) )
+		:SetFOV( 19 )
+
+		:SetShouldSpin(false)
+		:SetTiers(1, 2)
+
 temp = Inventory.BaseItemObjects.Weapon:new("arccw_mifl_fas2_m1911")
 temp	:SetName("11GI")
 		:SetModel("models/weapons/arccw/mifl/fas2/c_m1911.mdl")
