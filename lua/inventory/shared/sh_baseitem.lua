@@ -147,11 +147,10 @@ function DataAccessor(it, varname, getname, setcallback, force_type)
 			return
 		end
 
-		self.Data[varname] = v
-		local inv = self:GetInventory()
-
-		if inv then
-			inv:AddChange(self, INV_ITEM_DATACHANGED)
+		if SERVER then
+			self:SetData(varname, v)
+		else
+			self.Data[varname] = v
 		end
 
 		if setcallback then

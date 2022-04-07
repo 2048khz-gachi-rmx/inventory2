@@ -110,12 +110,43 @@ end
 
 -- or a key-value pair
 
-function it:SetData(k, v)
+function it:RequiresRenetwork(inv)
+	--[[for k,v in pairs(self.Changes[v]) do
+		if Inventory.RequiresNetwork[k] then
+			req = true
+			break
+		end
+	end]]
+	if not self:GetKnown() then return true end
+
+
+	self.Changes = self.Changes or {}
+	for k,v in pairs(self.Changes) do
+		if Inventory.RequiresNetwork[k] then
+			return true
+		end
+	end
+
+	return false
+end
+
+function it:ResetChanges()
+	self.Changes = {}
+end
+
+function it:AddChange(typ)
+	self.Changes = self.Changes or {}
+	self.Changes[typ] = true
+
 	local inv = self:GetInventory()
 
 	if inv then
-		inv:AddChange(self, INV_ITEM_DATACHANGED)
+		inv:AddChange(self, typ)
 	end
+end
+
+function it:SetData(k, v)
+	self:AddChange(INV_ITEM_DATACHANGED)
 
 	if istable(k) then
 		for k2,v2 in pairs(k) do

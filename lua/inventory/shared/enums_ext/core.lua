@@ -34,6 +34,10 @@ INV_ITEM_CROSSMOVED = 4
 Inventory.RequiresNetwork = {
 	[INV_ITEM_ADDED] = true,
 	[INV_ITEM_DATACHANGED] = true,
+	[INV_ITEM_CROSSMOVED] = true,
+
+	-- INV_ITEM_MOVED: handled by inventory metadata
+	-- INV_ITEM_DELETED: handled by inventory metadata
 }
 
 

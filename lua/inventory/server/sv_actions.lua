@@ -115,8 +115,8 @@ local function load()
 		it:SetAmount(it:GetAmount() + amt)
 		it2:SetAmount(it2:GetAmount() - amt)
 
-		inv:AddChange(it, INV_ITEM_DATACHANGED)
-		inv:AddChange(it2, INV_ITEM_DATACHANGED)
+		it:AddChange(INV_ITEM_DATACHANGED)
+		it2:AddChange(INV_ITEM_DATACHANGED)
 
 		return true, inv
 	end
@@ -165,8 +165,8 @@ local function load()
 		it:SetAmount(it:GetAmount() - amt)
 		it2:SetAmount(it2:GetAmount() + amt)
 
-		inv:AddChange(it, INV_ITEM_DATACHANGED)
-		inv:AddChange(it2, INV_ITEM_DATACHANGED)
+		it:AddChange(INV_ITEM_DATACHANGED) -- ?
+		it2:AddChange(INV_ITEM_DATACHANGED)
 		--if ok ~= false then it:SetSlot(where) end
 		return true
 	end

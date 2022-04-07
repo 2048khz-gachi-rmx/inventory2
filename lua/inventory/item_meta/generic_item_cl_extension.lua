@@ -38,6 +38,11 @@ function it:_CallTextGenerators(cloud)
 	cloud:SetColor(Colors.Gray:Copy())
 end
 
+function it:AddChange(k)
+	-- of whatever use clientside change tracking might be...
+	self.Changes = self.Changes or {}
+	self.Changes[k] = true
+end
 
 function it:SetData(k, v)
 	if istable(k) then

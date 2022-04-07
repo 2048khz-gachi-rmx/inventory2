@@ -35,7 +35,7 @@ function bp:NewItem(iid, slot, dat, nostack)
 					self:AddItem(v, true)
 
 					v:On("AssignUID", "InsertIntoInv", function(v, uid)
-						self:AddChange(v, INV_ITEM_ADDED)
+						v:AddChange(INV_ITEM_ADDED)
 						newPr:Resolve(v)
 					end)
 				else
@@ -226,7 +226,7 @@ function bp:InsertItem(it, slot)
 
 		insSlot = self:AddItem(it)
 		if insSlot then
-			self:AddChange(it, INV_ITEM_ADDED)
+			it:AddChange(INV_ITEM_ADDED)
 			pr:Resolve(it, insSlot)
 		else
 			pr:Reject(it, insSlot)
@@ -236,7 +236,7 @@ function bp:InsertItem(it, slot)
 			it:SetSlot(slot)
 			insSlot = self:AddItem(it)
 			if insSlot then
-				self:AddChange(it, INV_ITEM_ADDED)
+				it:AddChange(INV_ITEM_ADDED)
 				pr:Resolve(it, insSlot)
 			else
 				pr:Reject(it, insSlot)
@@ -382,6 +382,7 @@ function bp:SerializeItems(typ, key)
 			changed = changed + 1
 			v:Serialize(ns, typ)
 			v:SetKnown(true)
+			v:ResetChanges()
 
 			self.Changes[v] = nil
 		end
