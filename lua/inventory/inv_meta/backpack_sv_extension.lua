@@ -123,24 +123,23 @@ function bp:CanCrossInventoryMove(it, inv2, slot, ply)
 	return true
 end
 
--- inv1: from, inv2: to
-local function ActuallyMove(inv1, inv2, it, slot)
-	--local em = Inventory.MySQL.SetInventory(it, inv2, slot)
+local function ActuallyMove(from, to, it, slot)
+	--local em = Inventory.MySQL.SetInventory(it, to, slot)
 
 	if not slot then
 		print("!!! ActualalyMove: slot is missing !!!")
-		print(inv1, inv2)
+		print(from, to)
 		print(it, slot)
 		print(debug.traceback())
 	end
 
-	inv1:RemoveItem(it, true, true) -- don't write the change 'cause we have crossmoves as a separate change
+	from:RemoveItem(it, true, true) -- don't write the change 'cause we have crossmoves as a separate change
 	it:SetSlot(slot)
-	inv2:AddItem(it, true, true) -- same shit
+	to:AddItem(it, true, true) -- same shit
 
-	assert(it:GetInventory() == inv2)
+	assert(it:GetInventory() == to)
 
-	inv2:AddChange(it, INV_ITEM_CROSSMOVED)
+	to:AddChange(it, INV_ITEM_CROSSMOVED)
 
 end
 
@@ -171,11 +170,13 @@ function bp:CrossInventoryMove(it, inv2, slot, ply)
 
 	local em
 
+	local mySlot = it:GetSlot()
+
 	if other_item then
 		em = Inventory.MySQL.SwapInventories(it, other_item)
 			:Then(function()
 				if other_item then
-					ActuallyMove(inv2, self, other_item, it:GetSlot())
+					ActuallyMove(inv2, self, other_item, mySlot)
 				end
 				ActuallyMove(self, inv2, it, slot)
 
@@ -183,6 +184,8 @@ function bp:CrossInventoryMove(it, inv2, slot, ply)
 				inv2:Emit("CrossInventoryMovedTo", it, self, slot)
 				return true
 			end)
+
+		self:RemoveItem(it)
 	else
 		em = Inventory.MySQL.SetInventory(it, inv2, slot)
 			:Then(function()
@@ -191,9 +194,9 @@ function bp:CrossInventoryMove(it, inv2, slot, ply)
 				inv2:Emit("CrossInventoryMovedTo", it, self, slot)
 				return true
 			end)
-	end
 
-	self:RemoveItem(it)
+		self:RemoveItem(it)
+	end
 
 	return em
 end
