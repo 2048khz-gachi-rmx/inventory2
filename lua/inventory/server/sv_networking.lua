@@ -252,9 +252,13 @@ end
 
 nw.DebugNetworking = (nw.DebugNetworking ~= nil and false) or nw.DebugNetworking
 
+function nw.IsDebug()
+	return nw.DebugNetworking or nw.Verbose
+end
+
 function nw.SendNetStack(ns, ply)
 	net.Start("Inventory")
-		if nw.DebugNetworking then print(ns) end
+		if nw.IsDebug() then print(ns) end
 		net.WriteNetStack(ns)
 	net.Send(ply)
 end
@@ -264,7 +268,7 @@ function nw.SendNetStacks(nses, ply)
 	net.Start("Inventory")
 		for k,v in ipairs(nses) do
 			net.WriteNetStack(v)
-			if nw.DebugNetworking then print(v) end
+			if nw.IsDebug() then print(v) end
 		end
 	net.Send(ply)
 end
@@ -284,7 +288,7 @@ function nw.WriteHeader(typ, invs, invOw, ply)
 	elseif istable(ply) then
 		for k,v in ipairs(ply) do
 			if v.InventoryNetworkToken then
-				tk = v.InventoryNetworkToken
+				tk = v.InventoryNetworkToken -- TODO: this totally sucks
 			end
 
 			--v.InventoryNetworkToken = nil
