@@ -28,7 +28,7 @@ function nw.ReadItem(uid_sz, iid_sz)
         return
     end
 
-    item = Inventory.ReconstructItem(uid, iid)
+    local item = Inventory.ReconstructItem(uid, iid)
     item:ReadNetworkedVars()
     Inventory.ItemPool[uid] = item
     return item
@@ -153,7 +153,7 @@ function nw.ReadInventoryContents(invtbl, typ, tok)
         log("finished with deletions")
 
         -- read items that were moved into this inventory
-        if net.ReadBool() then
+        --[[if net.ReadBool() then
             local moves = net.ReadUInt(16)
 
             log("CL-NW: reading %d cross-inv moves", moves)
@@ -179,7 +179,7 @@ function nw.ReadInventoryContents(invtbl, typ, tok)
                 end
             end
         end
-        log("finished with moves")
+        log("finished with moves")]]
 
         -- Read slot moves
         if net.ReadBool() then

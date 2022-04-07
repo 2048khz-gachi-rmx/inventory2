@@ -139,8 +139,7 @@ local function ActuallyMove(from, to, it, slot)
 
 	assert(it:GetInventory() == to)
 
-	to:AddChange(it, INV_ITEM_CROSSMOVED)
-
+	it:AddChange(INV_ITEM_CROSSMOVED)
 end
 
 -- move from bp to inv2
@@ -347,14 +346,7 @@ function bp:SerializeItems(typ, key)
 	elseif typ == INV_NETWORK_UPDATE then
 
 		for k,v in pairs(self:GetItems()) do
-			local req = false
-
-			if self.Changes[v] then
-				for k,v in pairs(self.Changes[v]) do
-					if Inventory.RequiresNetwork[k] then req = true break end
-				end
-			end
-
+			local req = v:RequiresRenetwork(self)
 			if not req then continue end
 
 			max_uid = math.max(max_uid, v:GetUID())
@@ -372,7 +364,8 @@ function bp:SerializeItems(typ, key)
 		ns:WriteUInt(key, 16)
 	end
 
-	ns:WriteUInt(amt, 16).ItemsAmount = true
+	local dat = ns:WriteUInt(amt, 16)
+	dat.ItemsAmount = true
 
 	if typ == INV_NETWORK_FULLUPDATE then
 		for k,v in pairs(self:GetItems()) do
@@ -381,28 +374,20 @@ function bp:SerializeItems(typ, key)
 		end
 
 	elseif typ == INV_NETWORK_UPDATE then
+		local changed = 0
 		for k,v in pairs(self:GetItems()) do
-			local req = false
-
-			if self.Changes[v] then
-				for k,v in pairs(self.Changes[v]) do
-					if Inventory.RequiresNetwork[k] then
-						req = true
-						break
-					end
-				end
-			end
-
+			local req = v:RequiresRenetwork(self)
 			if not req then continue end
 
+			changed = changed + 1
 			v:Serialize(ns, typ)
 			v:SetKnown(true)
 
 			self.Changes[v] = nil
 		end
 
+		dat.args[1] = changed
 	end
-
 
 	return ns
 end
@@ -448,7 +433,7 @@ function bp:WriteChanges(ns)
 		end
 	end
 
-	local hascrossmoves = #crossmove > 0
+	--[[local hascrossmoves = #crossmove > 0
 
 	ns:WriteBool(hascrossmoves).HasCrossMoved = true
 
@@ -459,7 +444,7 @@ function bp:WriteChanges(ns)
 			ns:WriteSlot(v, true)
 			--ns:WriteInventory(v:GetInventory())
 		end
-	end
+	end]]
 
 	local hasmoves = #moves > 0
 
