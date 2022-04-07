@@ -47,3 +47,13 @@ end)
 vt:On("CrossInventoryMovedTo", "Vault", function(self, itm, inv2, slot)
 	itm.AllowedVaultTransfer = false
 end)
+
+local allow = {
+	Split = true,
+	Move = true,
+}
+
+function vt:ActionCanInteract(ply, act)
+	if self:GetOwner() ~= ply then return false end
+	if allow[act] then return true end
+end
