@@ -31,6 +31,11 @@ INV_ITEM_ADDED = 2
 INV_ITEM_DATACHANGED = 3
 INV_ITEM_CROSSMOVED = 4
 
+-- for notif purposes
+INV_NOTIF_NEW = 1 -- new item added (for unique items: guns, etc.)
+INV_NOTIF_PICKEDUP = 2 -- new item picked up (for stackable items: materials, etc.)
+INV_NOTIF_TAKEN = 3 -- items taken away (ie used blank bp's)
+
 Inventory.RequiresNetwork = {
 	[INV_ITEM_ADDED] = true,
 	[INV_ITEM_DATACHANGED] = true,
