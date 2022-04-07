@@ -1,7 +1,8 @@
 local it = Inventory.ItemObjects.Generic
 
 function it:_CallTextGenerators(cloud)
-	cloud:SetFont("BSSB28")
+	cloud:SetFont("EXM28")
+	cloud.FontShit = 0.125
 	cloud:SetText(self:GetName())
 	cloud:SetMaxW(300)
 	--cloud.MinW = 250
@@ -31,7 +32,7 @@ function it:_CallTextGenerators(cloud)
 	local len = #cloud.DoneText
 
 	if len > 0 then --some texts were added
-		cloud:AddSeparator(nil, lwid / 8, 4, 0)
+		cloud:AddSeparator(nil, lwid / 8, 4, self.AutoSepNum or 0)
 	end
 
 	cloud:SetColor(Colors.Gray:Copy())
@@ -59,3 +60,4 @@ end
 function it:MoveToInventory(inv, slot)
 	self._Commited.CrossInv[self:IncrementToken()] = ("%p:%s"):format(inv, slot)
 end
+

@@ -2,8 +2,17 @@ local bp = Inventory.Inventories.Backpack or Emitter:extend()
 Inventory.Inventories.Backpack = bp
 
 bp.IsInventory = true
+bp.IsPlayerInventory = true
+
+ChainAccessor(bp, "Name", "Name")
+ChainAccessor(bp, "Description", "Description")
+ChainAccessor(bp, "Items", "Items")
+ChainAccessor(bp, "Slots", "Slots")
+ChainAccessor(bp, "OwnerUID", "OwnerID")
+ChainAccessor(bp, "OwnerUID", "OwnerUID")
 
 bp.Name = "Backpack"
+bp:SetDescription("Contents dropped on death")
 bp.SQLName = "ply_temp"
 bp.NetworkID = 1
 bp.MaxItems = 20
@@ -12,13 +21,17 @@ bp.UseSlots = true
 bp.UseSQL = true
 
 bp.IsBackpack = true
-bp.AutoFetchItems = true
+bp.AutoFetchItems = false -- true
 bp.SupportsSplit = true
 
 bp.Icon = {
 	URL = "https://i.imgur.com/KBYX2uQ.png",
 	Name = "bag.png"
 }
+
+function bp:ActionCanInteract(ply, act, ...)
+	return self.IsBackpack and self:GetOwner() == ply
+end
 
 function bp:__tostring()
 	return ("%s [%p](owner: %s)"):format(
@@ -32,6 +45,7 @@ function bp:OnExtend(new_inv)
 	new_inv.SQLName = false 	--set these yourself!!
 	new_inv.NetworkID = false
 	new_inv.Name = "unnamed inventory!?"
+	new_inv:SetDescription(nil)
 	new_inv.IsBackpack = false
 
 	new_inv.Icon = false
@@ -46,13 +60,12 @@ function bp:Initialize(ply)
 		self:SetOwner(ply)
 
 		if SERVER and self.AutoFetchItems then
-			Inventory.MySQL.FetchPlayerItems(self, ply)
+			self.FetchPr = Inventory.MySQL.FetchPlayerItems(self, ply)
+			self.FetchPr:Then(function()
+				self.FetchPr = nil
+			end)
 		end
 	end
-end
-
-function bp:LoadItems()
-	if SERVER then Inventory.MySQL.FetchPlayerItems(self, self:GetOwner()) else error("This function isn't meant to be run clientside...") end
 end
 
 function bp:SetOwner(ply)
@@ -63,6 +76,10 @@ end
 
 function bp:GetOwner()
 	return self.Owner, self.OwnerUID
+end
+
+function bp:IsOwner(w)
+	return w == self.Owner or w == self.OwnerUID
 end
 
 function bp:_SetSlot(it, slot)
@@ -119,18 +136,17 @@ function bp:RemoveItem(it, noChange, suppresserror)
 	if slot and slots[slot] == foundit then
 		slots[slot] = nil
 	else
-
 		for i=1, self.MaxItems do
 			if self.Slots[i] == foundit then
 				self.Slots[i] = nil
 				slot = i
 			end
 		end
-
 	end
 
 	foundit:SetInventory(nil)
 	foundit:SetSlot(nil)
+	its[foundit:GetUID()] = nil
 
 	--if the player doesn't know about the item, don't even tell him about the deletion
 	if foundit:GetKnown() and not noChange then
@@ -178,18 +194,52 @@ function bp:GetItemInSlot(slot)
 	return self.Slots[slot]
 end
 
-function bp:AddItem(it, ignore_emitter, nochange)
-	if not it:GetSlot() then errorf("Can't add an item without a slot set! Set a slot first!\nItem: %s", it) return end
+function bp:_CanAddItem(it, ignore_emitter, ignore_slot, ignore_inv)
+	if not it:GetSlot() and not ignore_slot then
+		return false, "Can't add an item without a slot set! Set a slot first!\nItem: %s", {it}
+	end
 
-	if it:GetInventory() and it:GetInventory() ~= self then
-		errorf("Can't add an item that already has an inventory, remove it from the old inventory first!\nItem: %s\nItem's inv: %s\nAttempted inv: %s\n----\n", it, it:GetInventory(), self)
+	if not ignore_inv and it:GetInventory() and it:GetInventory() ~= self then
+		return false, "Can't add an item that already has an inventory," ..
+			"remove it from the old inventory first!\n" ..
+			"Item: %s\n" ..
+			"Item's inv: %s\n" ..
+			"Attempted inv: %s\n----\n", {it, it:GetInventory(), self}
+	end
+
+	if not ignore_emitter then
+		local can = self:Emit("CanAddItem", it, it:GetUID())
+		if can == false then return false end
+	end
+
+	if self.Slots[it:GetSlot()] == it then
+		return it:GetSlot()
+	--[[
+	-- bad idea: some mechanics (ie equip) use this to override an item in a slot easily
+	-- this should be fine
+	elseif self.Slots[it:GetSlot()] then
+		return false --, "Already had an item in slot %s (%s)", {it:GetSlot(), self.Slots[it:GetSlot()]}
+		]]
+	end
+
+	return true
+end
+
+function bp:AddItem(it, ignore_emitter, nochange)
+	local can, why, fmts = self:_CanAddItem(it, ignore_emitter)
+
+	if not can then
+		if why then
+			errorf(why, unpack(fmts or {}))
+		end
+
 		return
 	end
 
+	it:SetInventory(self)
+
 	if it:GetUID() then
 		self.Items[it:GetUID()] = it
-	--[[else
-		errorf("Can't add an item to an inventory without a UID! %s", it)]]
 	else
 		it:On("AssignUID", "WriteWithUID", function()
 			if it:GetInventory() == self then
@@ -198,21 +248,14 @@ function bp:AddItem(it, ignore_emitter, nochange)
 		end)
 	end
 
-	if self.Slots[it:GetSlot()] == it then return it:GetSlot() end
-
-	if not ignore_emitter then
-		local can = self:Emit("CanAddItem", it, it:GetUID())
-		if can == false then print("disallowed adding item, lol") return false end
-	end
-
 	self.Slots[it:GetSlot()] = it
+
 	if not nochange then
 		self:AddChange(it, INV_ITEM_ADDED)
 	end
 
-	it:SetInventory(self)
-
 	self:Emit("AddItem", it, it:GetUID())
+
 	if not self.ReadingNetwork then
 		self:Emit("Change")
 	end
@@ -220,10 +263,11 @@ function bp:AddItem(it, ignore_emitter, nochange)
 	return it:GetSlot()
 end
 
-function bp:GetFreeSlot()
+function bp:GetFreeSlot(ignore_slots)
+	local slots = self.Slots
 
 	for i=1, self.MaxItems do
-		if not self.Slots[i] then
+		if not slots[i] and (not ignore_slots or not ignore_slots[i]) then
 			return i
 		end
 	end
@@ -247,21 +291,46 @@ function bp:Reset()
 	table.Empty(self.Slots)
 end
 
-function bp:HasAccess(ply, action)
-	local allow = self:Emit("Can" .. action, ply)
-	if allow ~= nil then return allow end
+function bp:vprint(...)
+	if not self.VerbosePermissions then return end
+	print(...)
+end
+
+function bp:HasAccess(ply, action, ...)
+	if self.DisallowAllActions then return false end
+
+	-- step 1. can they interact at all?
+	local allow = self:Emit("AllowInteract", ply, action, ...)
+	if allow == false then self:vprint("caninteract gave no") return false end
+
+	-- step 2.1. can they do this particular action? check via emitter
+	allow = self:Emit("Can" .. action, ply, ...)
+	if allow ~= nil then self:vprint("Can" .. action, "gave no") return allow end
+
+	-- step 2.2. same but check via ActionCan["action"] function or bool
 
 	if self["ActionCan" .. action] ~= nil then
 		local allow
 
 		if isfunction(self["ActionCan" .. action]) then
-			allow = self["ActionCan" .. action] (self, ply)
+			allow = self["ActionCan" .. action] (self, ply, ...)
 		else
 			allow = self["ActionCan" .. action]
 		end
 		return allow
 	end
 
+
+	-- step 3. earlier checks didnt tell us anything; do default behavior
+	allow = self:Emit("CanInteract", ply, action, ...)
+	self:vprint("HasAccess every check failed -- default emitter said", allow)
+
+	if allow == nil and self.ActionCanInteract then
+		allow = eval(self.ActionCanInteract, self, ply, action, ...)
+		self:vprint("HasAccess every check failed -- ActionCanInteract said", allow)
+	end
+
+	if allow ~= nil then return allow end
 	return ply == self:GetOwner()
 end
 
@@ -283,11 +352,13 @@ function bp:Register(addstack)
 	Inventory.RegisterClass(self.Name, self, Inventory.Inventories, (addstack or 0) + 1)
 end
 
-ChainAccessor(bp, "Name", "Name")
-ChainAccessor(bp, "Items", "Items")
-ChainAccessor(bp, "Slots", "Slots")
-ChainAccessor(bp, "OwnerUID", "OwnerID")
-ChainAccessor(bp, "OwnerUID", "OwnerUID")
+function bp:GetSlotBits()
+	return bit.GetLen(self.MaxItems)
+end
+
+function bp:ValidateSlot(sl)
+	return sl > 0 and sl <= self.MaxItems and sl
+end
 
 if SERVER then
 	include("inventory/inv_meta/backpack_sv_extension.lua")

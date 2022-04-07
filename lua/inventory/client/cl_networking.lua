@@ -2,7 +2,7 @@
 setfenv(0, _G)
 local nw = Inventory.Networking or {InventoryIDs = {}}
 Inventory.Networking = nw
-nw.Verbose = true
+nw.Verbose = nw.Verbose or false
 
 local realLog = Inventory.Log
 
@@ -16,9 +16,30 @@ function nw.ReadHeader()
     return max_uid, max_id
 end
 
-function nw.ReadItem(uid_sz, iid_sz, slot_sz, inventory)
+function nw.ReadItem(uid_sz, iid_sz)
+    if not uid_sz or not iid_sz then
+        uid_sz, iid_sz = nw.ReadHeader()
+    end
+
     local uid, iid = net.ReadUInt(uid_sz), net.ReadUInt(iid_sz)
-    local slot = slot_sz and net.ReadUInt(slot_sz)
+    local has_slot = net.ReadBool()
+    if has_slot then
+        errorf("NW-Read item (uid: %s, iid: %s) has a slot, meaning it's not inventory-less!", uid, iid)
+        return
+    end
+
+    item = Inventory.ReconstructItem(uid, iid)
+    item:ReadNetworkedVars()
+    Inventory.ItemPool[uid] = item
+    return item
+end
+
+function nw.ReadInventoryItem(uid_sz, iid_sz, slot_sz, inventory)
+    local uid, iid = net.ReadUInt(uid_sz), net.ReadUInt(iid_sz)
+    local has_slot = net.ReadBool()
+
+    slot_sz = slot_sz or (inventory and inventory.MaxItems and bit.GetLen(inventory.MaxItems))
+    local slot = has_slot and slot_sz and net.ReadUInt(slot_sz)
 
     local item
 
@@ -107,7 +128,7 @@ function nw.ReadInventoryContents(invtbl, typ, tok)
 
     for i=1, its do
         log("   reading item #%d", i)
-        local it = nw.ReadItem(max_uid, max_id, slot_size, inv)
+        local it = nw.ReadInventoryItem(max_uid, max_id, slot_size, inv)
         --inv:AddItem(it)
         log("   successfully added item")
         Inventory:Emit("ItemAdded", inv, it)
@@ -146,8 +167,10 @@ function nw.ReadInventoryContents(invtbl, typ, tok)
 
                 if item and nw.ShouldAction(item, "CrossInv", tok, newinv, slot) then
                     --if there was no item that means we already predicted the removal somewhere
-                    log("removing item from", item:GetInventory())
-                    item:GetInventory():RemoveItem(item, nil, true)
+                    log("removing item from %s", item:GetInventory())
+                    if item:GetInventory() then
+                    	item:GetInventory():RemoveItem(item, nil, true)
+                    end
 
                     item:SetSlot(slot)
                     newinv:AddItem(item, true)
@@ -203,6 +226,12 @@ function nw.ReadUpdate(len, type)
     local tok
     if has_tok then
         tok = net.ReadUInt(16)
+    end
+
+    if not IsValid(ent) then
+    	realLog("CL-NW: Update: Received %d inventories for AN INVALID ENTITY!!!", invs)
+    	realLog("       Packet length is %d bytes, ignoring...", len / 8)
+    	return
     end
 
     realLog("CL-NW: Update: Received %d inventories for %s; packet length is %d bytes", invs, ent, len / 8)

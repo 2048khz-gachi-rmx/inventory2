@@ -9,6 +9,7 @@ function PANEL:Init()
 	scr.GradBorder = true
 	scr:GetCanvas():AddDockPadding(0, 8, 0, 8)
 
+	self.GradColor = scr.BorderColor
 	self.Scroll = scr
 
 	self.DisappearAnims = {}
@@ -24,6 +25,7 @@ function PANEL:Think()
 	end
 	self:Emit("Think")
 end
+
 
 function PANEL:SetFull(b)
 	self.FullInventory = (b==nil and true) or b
@@ -286,20 +288,31 @@ function PANEL:StackItem(rec, drop, item, amt)
 end
 
 function PANEL:ItemDrop(rec, drop, item, ...)
-
 	if item:GetInventory().IsCharacterInventory then
-		drop:GetInventoryFrame():Emit("UnequipRequest", rec, drop, item)
+		drop:GetInventoryPanel():Emit("UnequipRequest", rec, drop, item)
 		return
 	end
 
-	local action = Inventory.GUICanAction(rec, self:GetInventory(), item)
+	local dp = drop:GetInventoryPanel()
+	local df = dp and dp:GetMainFrame()
+
+	local sf = self:GetMainFrame()
+
+	if df and df:Emit("ItemDropFrom", rec, self, item) == false then
+		return
+	end
+
+	if sf:Emit("ItemDropOn", rec, drop, item) == false then
+		return
+	end
+
+	local action = Inventory.GUICanAction(rec, self:GetInventory(), item, self, drop:GetInventoryPanel())
 
 	if action == "Move" then
 		self:MoveItem(rec, drop, item)
 	elseif action == "Split" then
 		self:SplitItem(rec, drop, item)
 	elseif action == "Merge" then
-		print("stacking item:", rec, drop, item)
 		self:StackItem(rec, drop, item)
 	end
 
@@ -307,7 +320,11 @@ end
 
 function PANEL.CheckCanDrop(slotTo, invpnl, slotFrom, itm)
 	-- HoverGradientColor
-	local can = Inventory.GUICanAction(slotTo, invpnl:GetInventory(), itm)
+
+	local can = Inventory.GUICanAction(
+		slotTo, invpnl:GetInventory(), itm,
+		slotFrom:GetInventoryPanel(), slotTo:GetInventoryPanel()
+	)
 
 	if not can and not slotTo.HoverGradientColor then
 		slotTo.HoverGradientColor = Colors.DarkerRed
@@ -317,6 +334,10 @@ function PANEL.CheckCanDrop(slotTo, invpnl, slotFrom, itm)
 		slotTo._BecauseCant = false
 	end
 
+end
+
+function PANEL.OnItemClick(itmpnl, invpnl, slot, itm)
+	invpnl:Emit("Click", itmpnl, slot, itm)
 end
 
 function PANEL:AddItemSlot()
@@ -333,21 +354,24 @@ function PANEL:AddItemSlot()
 				8 + y * (main.SlotSize + main.SlotPadding))
 
 	self.Slots[i + 1] = it
-	it:SetInventoryFrame(self)
+	it:SetInventoryPanel(self)
 	it:SetSlot(i + 1)
 	it:SetMainFrame(self:GetMainFrame())
 	it:On("ItemInserted", self, self.OnItemAddedIntoSlot, self)
 	it:On("ItemHover", self, self.CheckCanDrop, self)
+	it:On("Click", self, self.OnItemClick, self)
 
-	self:On("Change", it, function(self, inv, ...)
+	it:BindInventory(self:GetInventory(), it:GetSlot())
+
+	--[[self:On("Change", it, function(self, inv, ...)
 		if inv:GetItemInSlot(it:GetSlot()) ~= it:GetItem(true) then
 			it:SetItem(inv:GetItemInSlot(it:GetSlot()))
 		end
 
 		it:OnInventoryUpdated()
-	end)
+	end)]]
 
-	it:On("Drop", "FrameItemDrop", function(...) print("item drop", ...) self:ItemDrop(...) end)
+	it:On("Drop", "FrameItemDrop", function(...) self:ItemDrop(...) end)
 	return it
 end
 
@@ -359,12 +383,16 @@ function PANEL:GetSlots()
 	return self.Slots
 end
 
+function PANEL:GetSlot(i)
+	return self.Slots[i]
+end
+
 function PANEL:Draw(w, h)
 	if not self.Inventory then return end
 	if self.NoPaint then return end
 
 	local inv = self.Inventory
-	draw.SimpleText(inv.Name, "OS28", w/2, 16, color_white, 1, 1)
+	draw.SimpleText(inv:GetName(), "OS28", w/2, 16, color_white, 1, 1)
 end
 
 function PANEL:Paint(w, h)

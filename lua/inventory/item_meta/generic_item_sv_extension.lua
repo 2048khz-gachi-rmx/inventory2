@@ -12,7 +12,7 @@ function it:WriteNetworkedVars(ns, typ)
 		if isfunction(v.what) then
 			local ret = v.what(self, true) --true means write, false means read
 			if not IsNetStack(ret) then
-				ns:WriteBool(false).PacketName = "Lack of NWVar - " .. v.id
+				ns:WriteBool(false).PacketName = "Lack of function ret NWVar - " .. v.id
 				errorNHf("NWVar %d (%s) didnt return netstack!", k, v.id)
 				continue
 			end
@@ -20,15 +20,19 @@ function it:WriteNetworkedVars(ns, typ)
 			ns:WriteBool(true).PacketName = "Has NetworkedVar - function: " .. tostring(self)
 			ret:MergeInto(ns)
 		else
-			if not self.Data[v.what] or (typ ~= INV_NETWORK_FULLUPDATE and self.LastNetworkedVars[v.what] == self.Data[v.what]) then
-				ns:WriteBool(false).PacketName = "Lack of NWVar - " .. v.what
+			if not self.Data[v.what] or
+				(typ ~= INV_NETWORK_FULLUPDATE and self.LastNetworkedVars[v.what] == self.Data[v.what]) then
+				local why = not self.Data[v.what] and "(not set)"
+					or "(already networked before: " .. self.LastNetworkedVars[v.what] .. ")"
+
+				ns:WriteBool(false).PacketName = "Lack of predefined NWVar - " .. v.what .. " " .. why
 				continue
 			end
 
 			ns:WriteBool(true).PacketName = "Has NWVar - predefined"
 
 			ns["Write" .. v.type] (ns, self.Data[v.what], unpack(v.args)).PacketName = "NWVar - " .. v.what
-			self.LastNetworkedVars[v.what] = self.Data[v.what]
+			--self.LastNetworkedVars[v.what] = self.Data[v.what]
 		end
 	end
 end
@@ -43,10 +47,35 @@ function it:Serialize(ns, typ)
 	return ns
 end
 
+function it:AssignInventory(inv, slot)
+	if not inv then
+		inv = self:GetInventory() or errorf("No inventory for the item to use for assigning! %s", self)
+	end
+
+	if not slot then
+		slot = self:GetSlot()
+		if not slot then
+			errorf("No slot provided to insert the item into! %s", self)
+			return
+		end
+	end
+
+	local sid = invobj and invobj:GetOwnerID()
+
+	local em = Inventory.MySQL.SetInventory(self, inv, slot)
+
+	em:Then(print, print)
+	self:SetInventory(inv)
+	self:SetSlot(slot)
+
+	return em
+end
+
 -- Stick the item into inventory SQL automatically
 function it:Insert(invobj, cb)
 	if not invobj then
-		invobj = self.Inventory or errorf("No inventory for the item to use for inserting!")
+		invobj = self.Inventory or errorf("No inventory for the item to use for inserting! %s", self)
+		return
 	end
 
 	--local isql = invobj and invobj.SQLName

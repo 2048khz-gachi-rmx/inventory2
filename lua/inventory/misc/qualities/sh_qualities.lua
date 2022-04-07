@@ -20,6 +20,8 @@ ChainAccessor(ql, "ID", "ID")
 ChainAccessor(ql, "Type", "Type")
 ChainAccessor(ql, "MinStats", "MinStats")
 ChainAccessor(ql, "MaxStats", "MaxStats")
+ChainAccessor(ql, "Rarity", "Rarity")
+ChainAccessor(ql, "Color", "Color")
 
 function ql:SetType(new)
 	if self:GetType() ~= new and self:GetType() then
@@ -63,11 +65,10 @@ function ql:_Remove()
 	end
 end
 
-
-
 function ql:Initialize(name, id)
 	assert(isnumber(id))
 	assert(id < (bit.lshift(1, 16) - 1))
+
 	local old = Inventory.Qualities.Get(id)
 	if old and old:GetName() ~= name then
 		errorNHf("ID collision: old [%s] -> new [%s]! ID: %s.", old:GetName(), name, id)
@@ -87,6 +88,9 @@ function ql:Initialize(name, id)
 
 	self:SetName(name)
 		:SetID(id)
+		:SetRarity(Inventory.Rarities.Default)
+
+	self:SetColor(color_white:Copy())
 
 	self.Stats = {}
 	self.StatsGuarantee = {}
@@ -95,10 +99,21 @@ function ql:Initialize(name, id)
 	self.ModsBlacklist = {}
 end
 
+function ql:Alias(nm)
+	Inventory.Qualities.ByName[nm] = self
+end
+
 function ql:AddStat(name, min, max, guarantee)
 	local nm = Inventory.Enums.WeaponIDToStat(name)
 	assertNHf(nm, "%s is not a stat!", name)
 	min, max = math.Sort(min or 0, max or 0)
+
+	if Inventory.Stats.IsGood(name) then
+		local t = min
+		min = max
+		max = t
+	end
+
 	self.Stats[nm] = {min, max}
 
 	if guarantee then
@@ -132,4 +147,8 @@ function Inventory.Qualities.Get(nm)
 	if IsQuality(nm) then return nm end
 	if isstring(nm) then return Inventory.Qualities.ByName[nm] end
 	return Inventory.Qualities.All[nm]
+end
+
+function Inventory.Qualities.GetErrored()
+	return Inventory.Qualities.ByName["MissingQuality"]
 end

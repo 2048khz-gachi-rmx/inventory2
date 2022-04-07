@@ -15,7 +15,3 @@ function Inventory.CanEquipInSlot(it, slotid)
 
 	return true
 end
-
-function Inventory.GetEquippableInventory(ply)
-	return ply.Inventory.Character
-end

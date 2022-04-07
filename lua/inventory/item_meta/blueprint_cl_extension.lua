@@ -1,6 +1,43 @@
 --
 local bp = Inventory.ItemObjects.Blueprint
 
+function bp:GetRarityColor()
+	return self:GetQuality():GetColor()
+end
+
+function bp:GetRarityText()
+	local wep = self:GetResult()
+	local base = wep and Inventory.Util.GetBase(wep)
+	if not base then return "!? 404 base " .. wep end
+
+	local slot = base:GetEquipSlot()
+
+	return ("%s %s BP")
+	:format(self:GetQuality():GetName(),
+		Inventory.EquippableName(base:GetEquipSlot())
+	)
+end
+
+local function addItm(pc, iid, amt, space)
+	local base = Inventory.Util.GetBase(iid)
+	if not base then
+		pc:AddText("NO_ITEM: " .. iid .. " x" .. amt .. "  ")
+		return
+	end
+
+	local nmTxt = pc:AddText(base:GetName())
+	local amtTxt = pc:AddText(" x" .. amt .. (space and "  " or ""))
+
+	local haveAmt = Inventory.Util.GetItemCount(Inventory.GetTemporaryInventory(LocalPlayer()), iid)
+	amtTxt.color = haveAmt >= amt and color_white or Colors.Red
+
+	local baseCol = (base:GetColor() or Colors.Red):Copy()
+
+	nmTxt.color = baseCol
+
+	return amtTxt
+end
+
 function bp:GenerateRecipeText(cloud, markup)
 	if #cloud:GetPieces() > 0 then
 		cloud:AddSeparator(nil, cloud.LabelWidth / 8, 4)
@@ -10,15 +47,25 @@ function bp:GenerateRecipeText(cloud, markup)
 	recipeMup:SetWide(cloud:GetCurWidth() - 16)
 	recipeMup.naem = "Markup - Recipe"
 
-	for id, amt in pairs(self:GetRecipe()) do
+	local skip = false
+	local rec = self:GetRecipe()
+
+	for id, amt in pairs(rec) do
+		if skip then skip = false continue end
+
+		skip = true
 		local pc = recipeMup:AddPiece()
 		pc:SetAlignment(1)
-		local base = Inventory.Util.GetBase(id)
-		local col = pc:AddTag(MarkupTag("color", base:GetColor() or Colors.Red))
-		pc:AddText(base:GetName())
-		pc:EndTag(col)
+		pc:SetFont("BS18")
 
-		pc:AddText(" x" .. amt)
+		local id2, amt2 = next(rec, id)
+		addItm(pc, id, amt, id2)
+
+		if not id2 then
+			break
+		end
+
+		addItm(pc, id2, amt2, false)
 	end
 
 	cloud:AddPanel(recipeMup)

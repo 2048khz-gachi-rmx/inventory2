@@ -14,10 +14,16 @@ basebp 	:SetName("Empty Blueprint")
 			render.PopFilterMin()
 		end)
 
+		:On("PaintSprite", "PaintBlueprint", function(base, item, sz)
+			surface.SetDrawColor(color_white)
+			local nw, nh = Icons.BlankBlueprint:RatioSize(sz, sz)
+			Icons.BlankBlueprint:Paint(sz / 2 - nw / 2, sz / 2 - nh / 2, nw, nh)
+		end)
+
 		:SetCountable(true)
 		:SetMaxStack(100)
-
-
+		:SetBaseTransferCost(2500)
+		:SetRarity("common")
 
 local blueprint = Inventory.BaseItemObjects.Blueprint("blueprint")
 blueprint
@@ -32,6 +38,7 @@ blueprint
 		local x, y = padx, h*0.2
 		item:PaintBlueprint(x, y, iw, ih, fake)
 	end)
+
 		--[[:On("Paint", "PaintBlueprint", function(base, item, slot, w, h)
 			local w, h = slot:GetSize()
 			surface.SetDrawColor(Colors.Red)

@@ -3,6 +3,7 @@ local numCol, notNumCol, textCol = unpack(Inventory.Modifiers.DescColors)
 local el; el = Inventory.BaseModifier:new("Elastic")
 	:SetMaxTier(3)
 	:SetMinBPTier(3)
+	:SetPowerTier(2)
 	:Hook("SetupMove", function(self, ply, mv, cmd)
 		if not bit.Has( mv:GetButtons(), IN_JUMP, IN_SPEED ) or
 			bit.Has( mv:GetOldButtons(), IN_JUMP ) or
@@ -39,15 +40,25 @@ local el; el = Inventory.BaseModifier:new("Elastic")
 		return 10 * tier
 	end)
 
+local recipes = {
+	{"thruster_t1", 2},
+	{"thruster_t2", 2},
+	{"thruster_t2", 4},
+}
+el  :On("AlterRecipe", "a", function(self, itm, rec, tier)
+		local itName = recipes[tier][1]
+		rec[itName] = (rec[itName] or 0) + recipes[tier][2]
+	end)
+
 el.SpeedDiv = 0.1
 
 function el:GenerateMarkup(it, mup, tier)
 	local mod = mup:AddPiece()
 	mod:SetAlignment(1)
-	mod.Font = "BSB28"
+	mod.Font = "BSB20"
 
-	local tx = mod:AddText("Elastic")
-	mod:SetColor(Color(220, 220, 220))
+	local tx = mod:AddText("Propulsion "  .. string.ToRoman(tier))
+	mod:SetColor(Color(110, 160, 240))
 
 	local desc = mup:AddPiece()
 	desc.Font = "OS16"
@@ -57,7 +68,7 @@ function el:GenerateMarkup(it, mup, tier)
 	local tx = desc:AddText("Jumping while sprinting will propel you ")
 
 	for i=1, self:GetMaxTier() do
-		local tx2 = desc:AddText(tostring(self:GetTierStrength(i)))
+		local tx2 = desc:AddText(tostring(self:GetTierStrength(i)) .. "m")
 		tx2.color = i == tier and numCol or notNumCol
 
 		if i ~= self:GetMaxTier() then
@@ -66,5 +77,5 @@ function el:GenerateMarkup(it, mup, tier)
 		end
 	end
 
-	desc:AddText(" meters forward.")
+	desc:AddText(" forward.")
 end

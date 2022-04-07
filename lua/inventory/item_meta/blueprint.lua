@@ -24,11 +24,15 @@ function bp:GetName()
 	local wep = weapons.GetStored(self:GetResult())
 	local qName = self:GetQuality() and self:GetQuality():GetName() or "Mundane"
 	if not wep then
-		return ("T%d %s %s [%s] Blueprint"):format(self:GetTier(), qName, "Invalid weapon", self:GetResult())
+		return ("T%d %s [%s] Blueprint"):format(self:GetTier(), "Invalid weapon", self:GetResult())
 	end
 
 
-	return ("T%d %s %s Blueprint"):format(self:GetTier(), qName, wep.PrintName)
+	return ("T%d %s Blueprint"):format(self:GetTier(), wep.PrintName)
+end
+
+function bp:GetTransferCost()
+	return self:GetBaseTransferCost() * (2 ^ (self:GetTier() - 1))
 end
 
 bp:Register()

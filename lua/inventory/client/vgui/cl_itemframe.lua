@@ -91,17 +91,29 @@ function ITEM:DetourStuff() --eh
 end
 
 function ITEM:TrackChanges(inv, slot)
-	self:GetInventory():On("Change", self, function()
+	inv:On("Change", self, function(...)
 		if inv:GetItemInSlot(slot) ~= self:GetItem(true) then
 			self:SetItem(inv:GetItemInSlot(slot))
 		end
 	end)
 end
 
+function ITEM:BindInventory(inv, slot)
+	self:SetSlot(slot)
+	self:SetInventory(inv)
+
+	self:TrackChanges(inv, slot)
+
+	if inv.Slots[slot] then
+		self:SetItem(inv.Slots[slot])
+	end
+end
+
 function ITEM:Init()
 	self:SetSize(iPan.SlotSize, iPan.SlotSize)
 	self:SetText("")
 	self:SetEnabled(false)
+	self:SetDoubleClickingEnabled(false)
 
 	self:Droppable("Item")
 	self:SetCursor("arrow") --"none" causes flicker wtf
@@ -109,6 +121,7 @@ function ITEM:Init()
 	self.Highlighted = true
 
 	self:Receiver("Item", function(self, tbl, drop)
+		if self.DropDisabled then return end
 
 		if not drop then
 			self.DropHovered = true
@@ -144,11 +157,31 @@ ChainAccessor(ITEM, "Slot", "Slot")
 
 function ITEM:OnInventoryUpdated()
 	if self:GetItem() then
-		self:GetItem():GetBaseItem():Emit("UpdateProperties", self:GetItem(), self, self.ModelPanel)
+		self:GetItem():GetBaseItem():Emit("UpdatePanel", self:GetItem(), self, self.ModelPanel)
 	end
 end
 
+function ITEM:OnMousePressed(c)
+	vgui.GetControlTable("DButton").OnMousePressed(self, c)
+	if c == MOUSE_MIDDLE then
+		self.IsWheelHeld = true
+	end
+end
+
+function ITEM:OnMouseReleased(c)
+	vgui.GetControlTable("DButton").OnMouseReleased(self, c)
+
+	timer.Simple(0, function()
+		if not IsValid(self) then return end -- wtf lol
+	
+		-- let dragndrop run first
+		self.IsWheelHeld = false
+	end)
+end
+
 function ITEM:OnDragStart()
+	if self:Emit("CanDrag") == false then dragndrop.Clear() return end
+
 	self:Emit("DragStart")
 	hook.Run("InventoryItemDragStart", self, self:GetItem(true))
 end
@@ -156,9 +189,10 @@ end
 function ITEM:OnDragStop()
 	local rec = dragndrop.m_Receiver
 
-	self:Emit("DragStop", rec)
+	local itm = self:GetItem(true)
 
-	hook.Run("InventoryItemDragStop", self, self:GetItem(true), rec)
+	self:Emit("DragStop", rec)
+	hook.Run("InventoryItemDragStop", self, itm, rec)
 end
 
 function ITEM:OnItemDrop(slot, it)
@@ -175,6 +209,8 @@ function ITEM:OnCursorEntered()
 
 	local it = self:GetItem(true)
 	if not it then return end
+
+	hook.Run("InventoryItemHovered", self, it)
 
 	local cl = (IsValid(self.Cloud) and self.Cloud) or vgui.Create("ItemCloud", self)
 	cl:Popup()
@@ -195,6 +231,8 @@ end
 function ITEM:OnCursorExited()
 	self:Emit("Unhover")
 
+	hook.Run("InventoryItemUnhovered", self, self:GetItem(true))
+
 	local cl = IsValid(self.Cloud) and self.Cloud
 	if not cl then return end
 
@@ -203,10 +241,10 @@ end
 
 function ITEM:OpenOptions()
 	local it = self:GetItem(true)
-	if not it then return end --e?
+	if not it then  return end --e?
 
 	local mn = vgui.Create("FMenu")
-	mn:PopIn()
+	mn:PopIn(0.05)
 
 	mn.WOverride = 150
 
@@ -214,13 +252,18 @@ function ITEM:OpenOptions()
 	it:Emit("GenerateOptions", mn)
 	it:GetBase():Emit("GenerateOptions", mn)
 
+	local meta = Inventory.Util.GetMeta(it:GetItemID())
+	if meta and meta.GenerateOptions then
+		meta.GenerateOptions(it, mn)
+	end
+
 	mn:Open()
 	mn:InvalidateLayout(true)
 
 	local toX, toY = self:LocalToScreen(self:GetWide() + 4, self:GetTall() / 2 - mn:GetTall() / 2)
 
-	mn:SetPos(toX - 8, toY)
-	mn:MoveTo(toX, toY, 0.2, 0, 0.3)
+	mn:SetPos(toX - 16, toY)
+	mn:MoveTo(toX, toY, 0.1, 0, 0.3)
 end
 
 function ITEM:CreateModelPanel(it)
@@ -281,8 +324,8 @@ function ITEM:CreateModelPanel(it)
 	end
 end
 
-function ITEM:SetInventoryFrame(it)
-	self.InventoryFrame = it
+function ITEM:SetInventoryPanel(it)
+	self.InventoryPanel = it
 	self.Inventory = it:GetInventory()
 
 	local mf = it:GetMainFrame()
@@ -290,21 +333,14 @@ function ITEM:SetInventoryFrame(it)
 	if mf then self:SetSize(mf.SlotSize, mf.SlotSize) end
 end
 
-function ITEM:GetInventory()
-	return self.Inventory
-end
-
-function ITEM:GetInventoryFrame()
-	return self.InventoryFrame
-end
+ChainAccessor(ITEM, "Inventory", "Inventory", true)
+ChainAccessor(ITEM, "InventoryPanel", "InventoryPanel", true)
 
 function ITEM:SetItem(it)
-
 	self:SetEnabled(Either(it, true, false))
 	if self.FakeItem then self:SetFakeItem(nil) end
 
 	if it then
-
 		self.BorderColor = it.BorderColor and it.BorderColor:Copy() or Colors.LightGray
 		self.FakeBorderColor = nil
 
@@ -317,10 +353,14 @@ function ITEM:SetItem(it)
 
 		self:CreateModelPanel(it)
 
-		self.Item:GetBaseItem():Emit("UpdateProperties", self.Item, self, self.ModelPanel)
+		if self.ModelPanel and IsValid(self.ModelPanel:GetEntity()) then
+			self.Item:GetBaseItem():Emit("UpdateModel", self.Item, self.ModelPanel:GetEntity(), true)
+		end
+
+		self.Item:GetBaseItem():Emit("UpdatePanel", self.Item, self, self.ModelPanel)
 
 		--self:Emit("Item", it, true)
-
+		self:OnInventoryUpdated()
 	elseif self.Item then --nilling the existing item
 		self:Emit("ItemTakenOut", self.Item)
 		self:SetCursor("arrow")
@@ -387,7 +427,9 @@ function ITEM:DrawBorder(w, h, col)
 	self:Emit("PostDrawBorder", w, h, col)
 end
 
-local emptyCol = Color(30, 30, 30)
+local emptyCol = Color(26, 26, 26)
+local emptyGradCol = Color(30, 30, 30)
+--local emptyInCol = Color(26, 26, 26)
 
 function Inventory.Panels.ItemDraw(self, w, h)
 	local rnd = self.Rounding
@@ -420,7 +462,8 @@ function Inventory.Panels.ItemDraw(self, w, h)
 
 
 		self:DrawBorder(w, h, bordcol)
-		draw.RoundedBox(rnd, 2, 2, w-4, h-4, drawcol)
+		local bSz = 2
+		draw.RoundedBox(rnd, bSz, bSz, w - bSz * 2, h - bSz * 2, drawcol)
 
 		local preMult = surface.GetAlphaMultiplier()
 
@@ -436,12 +479,22 @@ function Inventory.Panels.ItemDraw(self, w, h)
 			w, h = w - x*2, h - y*2
 		end
 
+		local bSz = 2
+
 		draw.RoundedBox(rnd, x, y, w, h, self.EmptyColor or emptyCol)
+
+		--draw.RoundedBox(rnd, x, y, w, h, self.EmptyColor or emptyCol)
+		--draw.RoundedBox(rnd, x + bSz, y + bSz, w - bSz * 2, h - bSz * 2, self.EmptyColor or emptyInCol)
+
+		surface.SetMaterial(MoarPanelsMats.gd)
+		surface.SetDrawColor(emptyGradCol)
+		local gH = math.ceil(h)
+		surface.DrawTexturedRectUV(bSz, y + h - bSz - gH, w - bSz * 2, gH, 0, 0, 1, 1)
 	end
 
 	if self.DropFrac > 0 then
 		local f = self.DropFrac
-		local sz = math.Round(f*3)
+		local sz = math.Round(f * 3)
 		--self.MaskHoverGrad(self, w, h)
 		draw.Masked(self.MaskHoverGrad, self.DrawGradientBorder, nil, nil, self, w, h, sz, sz)
 	end

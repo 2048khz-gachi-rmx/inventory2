@@ -6,13 +6,13 @@ function bp:CanCrossInventoryMove(it, inv2, slot)
 		return false
 	end
 
-	if not inv2:HasAccess(LocalPlayer(), "CrossInventoryTo") then return false end
-	if not self:HasAccess(LocalPlayer(), "CrossInventoryFrom") then return false end
-
 	if self == inv2 then
 		errorf("Can't cross-inv between the same inventory! %s vs. %s", self, inv2)
 		return false
 	end
+
+	if not inv2:HasAccess(LocalPlayer(), "CrossInventoryTo", it, self) then return false end
+	if not self:HasAccess(LocalPlayer(), "CrossInventoryFrom", it, inv2) then return false end
 
 	slot = slot or inv2:GetFreeSlot()
 	if not slot then
@@ -26,11 +26,11 @@ function bp:CanCrossInventoryMove(it, inv2, slot)
 	-- todo: is this necessary?
 
 	--check if inv2 can accept cross-inventory item
-	local can = inv2:Emit("CanCrossMoveTo", it, self)
-	if can == false then return false end
+	local can = inv2:Emit("CanMoveTo", it, self)
+	if can == false then print("cant 1") return false end
 
 	--check if inv1 can give out the item
-	can = self:Emit("CanCrossMoveFrom", it, inv2)
+	can = self:Emit("CanMoveFrom", it, inv2)
 	if can == false then return false end
 
 	--check if inv2 can add an item to itself
@@ -59,11 +59,9 @@ function bp:CrossInventoryMove(it, inv2, slot)
 	if not self:CanCrossInventoryMove(it, inv2, slot) then return false end
 
 	if other_item then
-		--print("other item:", other_item)
 		ActuallyMove(inv2, self, other_item, it:GetSlot())
 	end
 
-	--print("this item:", it, inv2, slot)
 	ActuallyMove(self, inv2, it, slot)
 
 	self:Emit("CrossInventoryMovedFrom", it, inv2, slot)
@@ -71,6 +69,79 @@ function bp:CrossInventoryMove(it, inv2, slot)
 
 	it:MoveToInventory(inv2, slot)
 	return true
+end
+
+function bp:PickupInfo(it, ignore_emitter)
+	CheckArg(1, it, IsItem, "Item")
+
+	local prs = {}
+
+	--[[if not it:GetSlot() then
+		it:SetSlot(self:GetFreeSlot())
+	end]]
+
+	local can, why, fmts = self:_CanAddItem(it, ignore_emitter, true)
+
+	if not can then
+		if why then
+			errorf(why, unpack(fmts or {}))
+		end
+
+		return false
+	end
+
+	local left, itStk, newStk = Inventory.GetInventoryStackInfo(self, it)
+
+	if not left and not itStk then
+		local slot = self:GetFreeSlot()
+		if not slot then
+			return false, false
+		end
+
+		if it:GetInventory() then
+			it:GetInventory():RemoveItem(it)
+		end
+
+		it:SetSlot(slot)
+		self:AddItem(it, ignore_emitter)
+
+		return false, {}, {it} -- no left/ no stacked/ new item
+	end
+
+	for _, dat in ipairs(itStk) do
+		local v, amt = unpack(dat)
+		v:Stack(it)
+	end
+
+	local newIts = Inventory.CreateStackedItems(self, it, newStk)
+
+	for k,v in ipairs(newIts) do
+		prs[#prs + 1] = self:AddItem(v, ignore_emitter)
+	end
+
+	if not self.ReadingNetwork then
+		self:Emit("Change")
+	end
+
+	if left then
+		it:SetAmount(left)
+	else
+		it:Delete()
+	end
+
+	return left, itStk, newIts
+end
+
+function bp:RequestPickup(it, thenDo)
+	local ns = Inventory.Networking.Netstack()
+		ns:WriteInventory(it:GetInventory())
+		ns:WriteItem(it, true)
+		ns:WriteInventory(self)
+	Inventory.Networking.PerformAction(INV_ACTION_PICKUP, ns)
+
+	if thenDo then -- lole
+		self:PickupInfo(it)
+	end
 end
 
 function bp:RequestCrossInventoryMove(it, inv2, slot)

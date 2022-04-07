@@ -1,4 +1,24 @@
 --
+Inventory.BaseItemObjects.Generic("wire")
+	:SetName("Copper Wire")
+	:SetModel("models/z-o-m-b-i-e/st/big_object/st_katushka_03.mdl")
+	:SetColor(Color(190, 110, 125))
+
+	:SetCamPos( Vector(71.5, -131.3, 80.1) )
+	:SetLookAng( Angle(20.9, 121.0, 90.0) )
+	:SetFOV( 50.4 )
+
+	:SetCountable(true)
+	:SetMaxStack(25)
+	:SetBaseTransferCost(7500)
+
+	:SetRarity("common")
+
+	:On("UpdateModel", "ResourceSkin", function(base, item, ent, inPnl)
+		if not inPnl then
+			ent:SetModelScale(0.2)
+		end
+	end)
 
 Inventory.BaseItemObjects.Generic("circuit_board")
 	:SetName("Circuit Board")
@@ -12,10 +32,11 @@ Inventory.BaseItemObjects.Generic("circuit_board")
 	:SetCountable(true)
 	:SetMaxStack(10)
 
-	:On("UpdateProperties", "ResourceSkin", function(base, item, ipnl, imdl)
-		local ent = imdl:GetEntity()
+	:On("UpdateModel", "ResourceSkin", function(base, item, ent)
 		ent:SetMaterial("phoenix_storms/wire/pcb_green")
 	end)
+
+	:SetRarity("uncommon")
 
 Inventory.BaseItemObjects.Generic("capacitor")
 	:SetName("Capacitor")
@@ -28,39 +49,9 @@ Inventory.BaseItemObjects.Generic("capacitor")
 
 	:SetCountable(true)
 	:SetMaxStack(25)
+	:SetBaseTransferCost(1000)
 
-Inventory.BaseItemObjects.Generic("cpu")
-	:SetName("Processor")
-	:SetModel("models/cheeze/wires/cpu.mdl")
-
-	:SetCamPos( Vector(58.7, -37.7, 51.2) )
-	:SetLookAng( Angle(36.1, -212.7, 0.0) )
-	:SetFOV( 4.7 )
-
-	:SetCountable(true)
-	:SetMaxStack(10)
-
-Inventory.BaseItemObjects.Generic("tgt_finder")
-	:SetName("Locator")
-	:SetModel("models/beer/wiremod/targetfinder.mdl")
-
-	:SetCamPos( Vector(-39.5, -67.7, 36.7) )
-	:SetLookAng( Angle(24.7, 59.8, 0.0) )
-	:SetFOV( 9.5 )
-
-	:SetCountable(true)
-	:SetMaxStack(5)
-
-Inventory.BaseItemObjects.Generic("emitter")
-	:SetName("Emitter")
-	:SetModel("models/cheeze/wires/wireless_card.mdl")
-
-	:SetCamPos( Vector(-38.3, -65.7, 42.2) )
-	:SetLookAng( Angle(28.5, 59.3, 0.0) )
-	:SetFOV( 8.9 )
-
-	:SetCountable(true)
-	:SetMaxStack(5)
+	:SetRarity("uncommon")
 
 -- its supposed to be small, aight?
 Inventory.BaseItemObjects.Generic("radiator")
@@ -75,25 +66,139 @@ Inventory.BaseItemObjects.Generic("radiator")
 
 	:SetCountable(true)
 	:SetMaxStack(5)
-	:On("UpdateProperties", "ResourceSkin", function(base, item, ipnl, imdl)
-		local ent = imdl:GetEntity()
+	:On("UpdateModel", "ResourceSkin", function(base, item, ent)
 		ent:SetSkin(1)
 	end)
 
-Inventory.BaseItemObjects.Generic("nutsbolts")
-	:SetName("Nuts & Bolts")
-	:SetModel("models/items/sniper_round_box.mdl")
+	:SetRarity("uncommon")
 
-	:SetCamPos( Vector(-48.8, 65.2, 35.2) )
-	:SetLookAng( Angle(21.5, -53.5, 0.0) )
-	:SetFOV( 5.0 )
+Inventory.BaseItemObjects.Generic("cpu")
+	:SetName("Processor")
+	:SetModel("models/cheeze/wires/cpu.mdl")
+	:SetColor(Color(220, 220, 220))
+
+	:SetCamPos( Vector(58.7, -37.7, 51.2) )
+	:SetLookAng( Angle(36.1, -212.7, 0.0) )
+	:SetFOV( 4.7 )
 
 	:SetCountable(true)
 	:SetMaxStack(10)
-	:On("UpdateProperties", "ResourceSkin", function(base, item, ipnl, imdl)
-		local ent = imdl:GetEntity()
+
+	:SetRarity("rare")
+
+Inventory.BaseItemObjects.Generic("tgt_finder")
+	:SetName("Locator")
+	:SetModel("models/beer/wiremod/targetfinder.mdl")
+	:SetColor(Color(60, 180, 250))
+
+	:SetCamPos( Vector(-39.5, -67.7, 36.7) )
+	:SetLookAng( Angle(24.7, 59.8, 0.0) )
+	:SetFOV( 9.5 )
+
+	:SetCountable(true)
+	:SetMaxStack(5)
+	:SetBaseTransferCost(25000)
+
+	:SetRarity("rare")
+
+Inventory.BaseItemObjects.Generic("emitter")
+	:SetName("Emitter")
+	:SetModel("models/cheeze/wires/wireless_card.mdl")
+	:SetColor(Color(80, 220, 80))
+
+	:SetCamPos( Vector(-38.3, -65.7, 42.2) )
+	:SetLookAng( Angle(28.5, 59.3, 0.0) )
+	:SetFOV( 8.9 )
+
+	:SetCountable(true)
+	:SetMaxStack(5)
+
+	:SetRarity("rare")
+
+
+Inventory.BaseItemObjects.Generic("weaponparts")
+	:SetName("Weapon Parts")
+	:SetModel("models/z-o-m-b-i-e/st/equipment_cache/st_equipment_instrument_01.mdl")
+	:SetColor(Color(120, 140, 160))
+
+	:SetCamPos( Vector(44.7, 70.3, 31.5) )
+	:SetLookAng( Angle(18.9, -122.4, 0.0) )
+	:SetFOV( 13.3 )
+
+	:SetCountable(true)
+	:SetMaxStack(5)
+	:SetBaseTransferCost(25000)
+	:On("UpdateModel", "ResourceSkin", function(base, item, ent, inPnl)
 		ent:SetSubMaterial(1, "Models/effects/vol_light001") -- ugly hack but oldschool, lol
+		if not inPnl then
+			ent:SetModelScale(0.8)
+		end
 	end)
+
+	:SetRarity("uncommon")
+
+-- models/z-o-m-b-i-e/st/box/st_box_metall_01.mdl
+
+Inventory.BaseItemObjects.Generic("laserdiode")
+	:SetName("Laser Diode")
+	:SetModel("models/jaanus/wiretool/wiretool_beamcaster.mdl")
+	:SetColor(Color(250, 80, 80))
+	:SetCamPos( Vector(-70.3, 3.2, 33.6) )
+	:SetLookAng( Angle(22.6, -2.6, -30.0) )
+	:SetFOV( 11.1 )
+
+	:SetCountable(true)
+	:SetMaxStack(20)
+	:SetBaseTransferCost(15000)
+	:On("UpdateModel", "ResourceSkin", function(base, item, ent, inPnl)
+		--ent:SetMaterial("models/props_combine/health_charger_glass")
+	end)
+
+	:SetRarity("uncommon")
+
+Inventory.BaseItemObjects.Generic("wepkit")
+	:SetName("Gunsmith Kit")
+	:SetModel("models/maver1k_xvii/stalker/props/devices/dev_merger.mdl")
+	:SetColor(Color(230, 230, 230))
+
+	:SetCamPos( Vector(59, -48.7, 46.5) )
+	:SetLookAng( Angle(29.2, -219.4, 0.0) )
+	:SetFOV( 12.5 )
+
+	:SetCountable(true)
+	:SetMaxStack(3)
+	:SetBaseTransferCost(75000)
+	:SetRarity("rare")
+
+Inventory.BaseItemObjects.Generic("lube")
+	:SetName("Lubricant")
+	:SetModel("models/props_junk/garbage_plasticbottle002a.mdl")
+	:SetModelColor(Color(45, 100, 60))
+	:SetColor(Color(45, 100, 60):MulHSV(1, 1.2, 1.6))
+
+	:SetCamPos( Vector(64.2, 53.3, 23.3) )
+	:SetLookAng( Angle(15.6, -140.3, 0.0) )
+	:SetFOV( 14.1 )
+
+	:SetCountable(true)
+	:SetMaxStack(10)
+	:SetBaseTransferCost(10000)
+	:SetRarity("uncommon")
+
+--[[
+Inventory.BaseItemObjects.Generic("adhesive")
+	:SetName("Adhesive")
+	:SetModel("models/props_junk/plasticbucket001a.mdl")
+	:SetModelColor(Color(90, 75, 45))
+	:SetColor(Color(90, 75, 45):MulHSV(1, 1.2, 1.6))
+
+	:SetCamPos( Vector(47.6, -60.8, 38.0) )
+	:SetLookAng( Angle(23.7, -231.8, 0.0) )
+	:SetFOV( 22.2 )
+
+	:SetCountable(true)
+	:SetMaxStack(10)
+]]
 
 Inventory.BaseItemObjects.Generic("rdx")
 	:SetName("RDX")

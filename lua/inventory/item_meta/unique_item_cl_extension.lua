@@ -25,6 +25,11 @@ function uq:GenerateModifiersText(cloud, markup, needSep)
 end
 
 function uq:GenerateStatsText(cloud, markup)
+	local pnl = cloud:AddPanel(vgui.Create("ItemStats"))
+	pnl:SetItem(self)
+
+	return not table.IsEmpty(self:GetStats())
+	--[[
 	local good = {}
 	local bad = {}
 
@@ -54,12 +59,58 @@ function uq:GenerateStatsText(cloud, markup)
 	end
 
 	return #good > 0 or #bad > 0
+	]]
 end
+
+function uq:GetRarityColor()
+	return self:GetRarity():GetColor()
+end
+
+function uq:GetRarityText()
+	return self:GetRarity():GetName()
+end
+
+function uq:GenerateRarityText(cloud, markup)
+	local pnl = cloud:AddPanel(vgui.Create("DPanel"))
+	pnl:SetTall(18)
+
+	local itm = self
+	local col = self:GetRarityColor()
+	local txCol = (col or color_white):Copy()
+
+	txCol:MulHSV(1, 0.7, 1)
+		:ModHSV(0, 0, 0.4)
+
+	function pnl:Paint(w, h)
+		if not IsValid(cloud) then print("!?") return end
+		local col = col
+		if not col then col = ColorRand() end -- bad; no color found
+
+		surface.SetDrawColor(col.r, col.g, col.b, col.a * 0.7)
+
+		surface.SetMaterial(MoarPanelsMats.gr)
+		surface.DrawTexturedRect(0, 0, w / 2, h)
+
+		surface.SetMaterial(MoarPanelsMats.gl)
+		surface.DrawTexturedRect(w / 2, 0, w / 2, h)
+
+		local tx = itm:GetRarityText()
+		local font, sz = Fonts.PickFont("BSB", tx, w - 16, h + 1, h + 1)
+		local bfn = Fonts.GenerateBlur(font, 4)
+
+		self:SetTall(sz)
+		draw.SimpleText(tx, bfn, w / 2, h / 2, color_black, 1, 1)
+		draw.SimpleText(tx, font, w / 2, h / 2, txCol, 1, 1)
+	end
+end
+
+uq.AutoSepNum = 1 -- after the rarity panel
 
 function uq:PostGenerateText(cloud, markup) end
 
 function uq:GenerateText(cloud, markup)
 	cloud:SetMaxW( math.max(cloud:GetItemFrame():GetWide() * 2.5, cloud:GetMaxW()) )
+	self:GenerateRarityText(cloud, markup)
 	local needSep = self:GenerateStatsText(cloud, markup)
 	needSep = self:GenerateModifiersText(cloud, markup, needSep)
 end

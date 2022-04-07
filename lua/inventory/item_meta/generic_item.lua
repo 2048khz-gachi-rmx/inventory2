@@ -77,6 +77,8 @@ function it:GetCommitedActions(typ)
 end
 
 -- first arg can also be a table of data
+-- can stack it2 into self?
+
 function it:CanStack(it2, amt)
 	
 
@@ -93,16 +95,31 @@ function it:CanStack(it2, amt)
 		amt or math.huge)
 end
 
+function it:Stack(it)
+	local amt = isnumber(it) or it:GetAmount()
+	local toStk = math.min(self:GetMaxStack() - self:GetAmount(), amt)
+	self:SetAmount(self:GetAmount() + toStk)
+
+	return amt - toStk
+end
+
 function it:Delete()
 	if self:GetInventory() then
 		self:GetInventory():RemoveItem(self)
 	end
 	self:SetValid(false)
-	if SERVER then Inventory.MySQL.DeleteItem(self) end
+	if SERVER then
+		Inventory.MySQL.DeleteItem(self)
+	end
 
 	self._Commited.Delete[self:IncrementToken()] = true
 end
 
+function it:TakeOut()
+	if self:GetInventory() then
+		self:GetInventory():RemoveItem(self)
+	end
+end
 
 
 function it:SetOwner(ply)
@@ -121,6 +138,8 @@ ChainAccessor(it, "ItemID", "IID")
 ChainAccessor(it, "ItemName", "ItemName")
 ChainAccessor(it, "ItemName", "IName")
 
+
+
 ChainAccessor(it, "Known", "Known")
 ChainAccessor(it, "_Valid", "Valid")
 it.IsValid = it.GetValid
@@ -133,6 +152,7 @@ it.GetPermaData = it.GetData
 
 DataAccessor(it, "Amount", "Amount", function(it, amt)
 	if amt == 0 then
+		print("item ran out of amount (amt = ", amt, ", ", it, "), deleting...")
 		it:Delete()
 	end
 end)
@@ -149,13 +169,30 @@ BaseItemAccessor(it, "ShouldSpin", "ShouldSpin")
 
 BaseItemAccessor(it, "Countable", "Countable")
 BaseItemAccessor(it, "MaxStack", "MaxStack")
+BaseItemAccessor(it, "Rarity", "Rarity")
+BaseItemAccessor(it, "BaseTransferCost", "BaseTransferCost")
 
+function it:GetTransferCost()
+	return self:GetBase():GetBaseTransferCost()
+end
+
+function it:GetTotalTransferCost(amt)
+	return self:GetTransferCost() * (amt or self:GetAmount() or 1)
+end
 
 function it:GetBaseItem()
 	return Inventory.Util.GetBase(self.ItemID)
 end
 it.GetBase = it.GetBaseItem
 
+
+--[[function it:SetInventory(inv)
+	if inv == nil then
+		errorNHf("attempt to set to nil inventory!!!")
+	end
+
+	self.Inventory = inv
+end]]
 
 ChainAccessor(it, "Inventory", "Inventory")
 
@@ -171,6 +208,10 @@ function it:SetSlot(slot, sql)
 	if inv and SERVER and self:GetSQLExists() and sql ~= false then
 		Inventory.MySQL.SetSlot(self, inv)
 	end
+end
+
+function it:SetSlotRaw(slot)
+	self.Slot = slot
 end
 
 function it:GetSlot()

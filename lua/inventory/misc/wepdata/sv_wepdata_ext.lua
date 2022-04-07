@@ -3,7 +3,7 @@ local wdt = Inventory.WeaponData
 
 function wd:RealmInit(id)
 	self.NW:On("WriteChangeValue", "WeaponDataProxy", function(...)
-		self:WriteData(...)
+		return self:WriteData(...)
 	end)
 end
 
@@ -16,7 +16,7 @@ function wd:WriteData(nw, k, v, plys)
 		return false
 	end
 
-	print("no serialize function found for", k)
+	errorNHf("!! No serialize function found for %s !!", k)
 end
 
 function wd:SerializeQuality(qname, ns)

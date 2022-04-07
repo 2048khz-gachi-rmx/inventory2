@@ -161,7 +161,16 @@ function invnet:WriteUID(it)
 	return t
 end
 
-function invnet:WriteSlot(it)
+function invnet:WriteSlot(it, knownInv)
+	if not knownInv then
+		if not it:GetInventory() then
+			self:WriteBool(false)
+			return
+		end
+
+		self:WriteBool(true)
+	end
+
 	local len = it:GetInventory().MaxItems
 	if len then
 		len = bit.GetLen(len)
@@ -314,12 +323,21 @@ function nw.NetworkInventory(ply, inv, typ, just_return, key) --mark 'just_retur
 	hook.Run("InventoryNetwork", ply, inv)
 
 	if IsInventory(inv) then
-		inv:SetLastResync(CurTime()) -- track when we last resynced the inventory
+		inv:SetLastResync(CurTime()) 	-- track when we last resynced the inventory
+										-- seems to not be used anymore?
 
 		if inv.MultipleInstances and not key then 	-- if there can exist multiple instances of the same type of inventory
 													-- then you need a key with which to differentiate which one it is
 													-- if we weren't given one, we try to find it
-			for k,v in pairs(inv:GetOwner().Inventory) do
+
+			local ow = inv:GetOwner()
+			if not ow or not ow.Inventory then
+				errorf("Inventory owner has no `.Inventory` table (owner: %s, inventory: %s)",
+					ow, inv)
+				return
+			end
+
+			for k,v in pairs(ow.Inventory) do
 				if v == inv then
 					key = k
 					break
@@ -423,6 +441,7 @@ function nw.RequestResync(ply, ...)
 	resyncCDs[ply] = resyncCDs[ply] or CurTime() - (resyncCD + 1)
 
 	nw.ResyncQueue[ply] = nw.ResyncQueue[ply] or {}
+	ply.InventoryEverSynced = true
 
 	local invs = {...}
 	if #invs == 0 then
@@ -485,6 +504,7 @@ function nw.RequestUpdate(ply, ...)
 	if #nw.UpdateQueue[ply] > 0 then
 		for k,v in ipairs(nw.UpdateQueue[ply]) do
 			ply:UpdateInventory(v)
+			nw.UpdateQueue[ply][k] = nil
 		end
 	end
 end
@@ -492,7 +512,7 @@ end
 PLAYER.RequestUpdateInventory = nw.RequestUpdate
 PLAYER.RequestUI = nw.RequestUpdate
 
-function nw.ReadInventory()
+function nw.ReadInventory(owCheck)
 	local ent = net.ReadEntity()
 	local id = net.ReadUInt(16)
 
@@ -504,12 +524,35 @@ function nw.ReadInventory()
 	if base.MultipleInstances then
 		local key = net.ReadUInt(16)
 
-		if not ent.Inventory[key] then errorf("didn't find inventory in the entity with NWID/key: %s/%s", id, key) return end
-		return ent.Inventory[key]
+		if not ent.Inventory[key] then
+			errorf("didn't find inventory in the entity with NWID/key: %s/%s", id, key)
+			return
+		end
+
+		local inv = ent.Inventory[key]
+
+		if owCheck and not inv:IsOwner(owCheck) then
+			return false, ("failed owner check (%s tried to use %s's '%s' inventory)"):format(
+				owCheck, ent, k
+			)
+		end
+
+		return inv
 	end
 
 	for k,v in pairs(ent.Inventory) do
 		if v.NetworkID == id then
+
+			if v.IsPlayerInventory and owCheck == nil then
+				errorNHf("Missing owner check on reading inventory; exploitable!!!")
+			end
+
+			if owCheck and not v:IsOwner(owCheck) then
+				return false, ("failed owner check (%s tried to use %s's '%s' inventory)"):format(
+					owCheck, ent, k
+				)
+			end
+
 			return v
 		end
 	end
@@ -519,6 +562,7 @@ end
 
 function nw.ReadItem(inv)
 	local uid = net.ReadUInt(32)
+	if not inv then return false, ("no inventory given") end
 
 	local it = inv:GetItem(uid)
 	if not it then return false, ("[%d] didn't find item UID %d in %s"):format(
@@ -528,17 +572,19 @@ function nw.ReadItem(inv)
 	return it
 end
 
-function Inventory.WriteItem(itm, ns)
-	ns = ns or Inventory.Networking.NetStack()
+function Inventory.WriteItem(itm, ns, noResize)
+	ns = ns or Inventory.Networking.NetStack(itm:GetUID(), itm:GetIID())
+	if not noResize then ns:Resize(itm) end
 	itm:Serialize(ns, INV_NETWORK_FULLUPDATE)
-	print(ns)
 	return ns
 end
 
 function Inventory.WriteItems(itm, ns)
 	ns = ns or Inventory.Networking.Netstack()
+	ns:Resize(itm)
+
 	for k,v in pairs(itm) do
-		Inventory.WriteItem(v, ns)
+		Inventory.WriteItem(v, ns, true)
 	end
 end
 

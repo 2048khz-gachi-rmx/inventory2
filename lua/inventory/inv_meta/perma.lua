@@ -3,6 +3,7 @@ local bp = Inventory.GetClass("inv_meta", "backpack")
 if not bp then error("Something went wrong while loading Permanent inventory: backpack is missing.") return end
 
 local prm = Inventory.Inventories.Permanent or bp:extend()
+prm:SetDescription("Equipment and such")
 
 prm.SQLName = "ply_perma"
 prm.NetworkID = 3
@@ -59,3 +60,7 @@ prm:On("CanCreateItem", "EquippableOnly", function(self, iid, dat, slot)
 end)
 
 prm:Register()
+
+function prm:ActionCanInteract(ply, act)
+	return self:GetOwner() == ply
+end

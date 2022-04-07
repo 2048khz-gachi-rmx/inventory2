@@ -12,7 +12,6 @@ local wd = Inventory.WeaponData.Object
 
 wdt.EIDToWD = wdt.EIDToWD or Networkable("eidToWD")
 
-
 local function nwAccessor(t, key, func)
 	t["Get" .. func] = function(self)
 		return self[key]
@@ -21,6 +20,7 @@ local function nwAccessor(t, key, func)
 	t["Set" .. func] = function(self, val)
 		self[key] = val
 		self.NW:Set(func, val)
+		self:ResetCache()
 		return self
 	end
 end
@@ -30,6 +30,21 @@ nwAccessor(wd, "Mods", "Mods")
 nwAccessor(wd, "Mods", "Modifiers")
 nwAccessor(wd, "Stats", "Stats")
 ChainAccessor(wd, "ID", "ID")
+
+function wd:GetActiveMod()
+	if self._cachedActive ~= nil then return self._cachedActive end
+
+	local ac = false
+	for k,v in pairs(self:GetMods()) do
+		if v:GetBase() and v:GetBase():IsActiveModifier() then
+			ac = v
+			break
+		end
+	end
+
+	self._cachedActive = ac
+	return ac
+end
 
 function wd:SetMods(tbl)
 	for name, tier in pairs(tbl) do
@@ -45,11 +60,18 @@ function wd:SetMods(tbl)
 		self.Mods[name] = mod
 	end
 
+	self:ResetCache()
 	self.NW:Set("Mods", tbl)
 end
 wd.SetModifiers = wd.SetMods
 
 function wd:Initialize(id)
+	id = id or uniq.Seq("wdata", 24)
+
+	if wdt.Get(id) then
+		wdt.Get(id):Remove()
+	end
+
 	self.NW = Networkable("WD:" .. id)
 	self.Networkable = self.NW
 	self.Networkable.WeaponData = self
@@ -72,9 +94,14 @@ function wd:Initialize(id)
 end
 
 function wd:ResetWeaponBuffs(wep)
+	self:ResetCache()
 	if IsWeapon(wep) and wep.RecalcAllBuffs then
 		wep:RecalcAllBuffs()
 	end
+end
+
+function wd:ResetCache()
+	self._cachedActive = nil
 end
 
 function wd:SetStats(t)
@@ -83,6 +110,7 @@ function wd:SetStats(t)
 	end
 
 	self.NW:Set("Stats", self.Stats)
+	self:ResetCache()
 end
 
 function wd:Remove()
@@ -145,6 +173,16 @@ function Inventory.DoBuffMult(wep, key, cur)
 	key = key:gsub("^Mult_", "")
 	key = conv[key] or key
 	local perc = 1 + (wd:GetStats()[key] or 0) / 100
+
+	for k,v in pairs(wd:GetMods() or {}) do
+		local st = v:GetModStats()
+		if not st or (not st[key] and not st.Any) then continue end
+
+		local str = eval(st[key] or st.Any, v, key)
+		if str then
+			perc = perc + str / 100
+		end
+	end
 
 	return perc
 end

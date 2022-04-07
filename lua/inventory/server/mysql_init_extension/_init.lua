@@ -144,7 +144,7 @@ function ms.WaitStates(cb, ...)
 				if not ms._States[v] then return end
 			end
 
-			cb()
+			xpcall(cb, GenerateErrorer("StateChangeError"))
 			Inventory.MySQL:RemoveListener("StatesChanged", num)
 		end)
 	end
@@ -153,7 +153,7 @@ end
 
 -- include DB initializers only if DB is connected
 local inc = function()
-	FInc.FromHere("*", _SV, nil, function(path)
+	FInc.FromHere("*", _SV, function(path)
 		if path:match("_init%.lua") then return false end
 	end)
 end

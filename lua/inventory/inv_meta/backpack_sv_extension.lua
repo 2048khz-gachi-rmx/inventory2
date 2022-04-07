@@ -8,13 +8,11 @@ ChainAccessor(bp, "LastResync", "LastResync")
 	the maybe number is the amount of items left which couldnt be stacked in anywhere
 ]]
 
-function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
+function bp:NewItem(iid, slot, dat, nostack)
 	if not isstring(iid) and not isnumber(iid) then
 		errorf("Attempted to create item with IID: %s (%s)", iid, type(iid))
 		return
 	end
-
-	cb = cb or BlankFunc
 
 	local pr = Promise()
 
@@ -23,7 +21,7 @@ function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
 
 
 	if not nostack then
-		local its, left = Inventory.CheckStackability(self, iid, cb, dat)
+		local its, left = Inventory.CheckStackability(self, iid, dat)
 
 		-- table of new items given; now to insert them in SQL
 		if istable(its) then
@@ -38,12 +36,10 @@ function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
 
 					v:On("AssignUID", "InsertIntoInv", function(v, uid)
 						self:AddChange(v, INV_ITEM_ADDED)
-						cb(v, slot)
 						newPr:Resolve(v)
 					end)
 				else
 					newPr:Resolve(v)
-					cb(v, slot)
 				end
 			end
 
@@ -52,7 +48,6 @@ function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
 		end
 
 		if its == true then
-			if cbanyway then cb() end
 			pr:Resolve(false, left)
 			return pr, 0
 		end
@@ -72,65 +67,46 @@ function bp:NewItem(iid, cb, slot, dat, nostack, cbanyway)
 		self:AddItem(it, true)
 
 		it:Once("AssignUID", function()
-			cb(it, slot)
 			pr:Resolve({it})
 		end)
 	else
-		cb(it, slot)
 		pr:Resolve({it})
 	end
 
 	return pr, 0
-	--[[else
-		self:AddItem(it, true)
-		cb(it, slot)
-	end]]
-
-
 end
 
-function bp:NewItemNetwork(who, iid, cb, slot, dat, nostack, cbanyway)
+function bp:NewItemNetwork(who, iid, slot, dat, nostack)
 
 	if isnumber(who) or isstring(who) then
 		-- shift args 1 up
-		cbanyway = nostack
 		nostack = dat
 		dat = slot
-		slot = cb
-		cb = iid
+		slot = iid
 		iid = who
 
 		who = self:GetOwner()
 	end
 
-	local real_cb = function(...)
-		if cb then cb(...) end
+	local pr, left = self:NewItem(iid, slot, dat, nostack)
 
+	pr:Then(function(...)
 		if IsValid(self:GetOwner()) then
-			Inventory.Networking.NetworkInventory(who, self, INV_NETWORK_UPDATE)
-		end
-	end
-
-	local pr = self:NewItem(iid, real_cb, slot, dat, nostack, cbanyway)
-
-	-- true is the only case where we need to call cb and network manually
-
-	pr:Then(function()
-		if cbanyway then
-			real_cb() --already takes care of networking
-		elseif IsValid(self:GetOwner()) then
 			Inventory.Networking.NetworkInventory(who, self, INV_NETWORK_UPDATE)
 		end
 	end)
 
-	return pr
+	return pr, left
 end
 
 -- can you move FROM this inv?
-function bp:CanCrossInventoryMove(it, inv2, slot)
+function bp:CanCrossInventoryMove(it, inv2, slot, ply)
 	-- check if they have that slot available
 
 	if slot and inv2:IsSlotLegal(slot) == false then return false end
+
+	if ply and not inv2:HasAccess(ply, "CrossInventoryTo", it, self) then return false end
+	if ply and not self:HasAccess(ply, "CrossInventoryFrom", it, inv2) then return false end
 
 	-- check if inv2 can accept cross-inventory item
 	if inv2:Emit("CanMoveTo", it, self, slot) == false then print("CanMoveTo no", inv2) return false end
@@ -149,20 +125,37 @@ end
 
 -- inv1: from, inv2: to
 local function ActuallyMove(inv1, inv2, it, slot)
-	local em = Inventory.MySQL.SetInventory(it, inv2, slot)
+	--local em = Inventory.MySQL.SetInventory(it, inv2, slot)
+
+	if not slot then
+		print("!!! ActualalyMove: slot is missing !!!")
+		print(inv1, inv2)
+		print(it, slot)
+		print(debug.traceback())
+	end
 
 	inv1:RemoveItem(it, true, true) -- don't write the change 'cause we have crossmoves as a separate change
 	it:SetSlot(slot)
 	inv2:AddItem(it, true, true) -- same shit
 
+	assert(it:GetInventory() == inv2)
+
 	inv2:AddChange(it, INV_ITEM_CROSSMOVED)
 
-	return em
 end
 
 -- move from bp to inv2
-function bp:CrossInventoryMove(it, inv2, slot)
-	if it:GetInventory() ~= self then errorf("Can't move an item from an inventory which it doesn't belong to! (item) %q vs %q (self)", it:GetInventory(), self) return end
+function bp:CrossInventoryMove(it, inv2, slot, ply)
+	if not IsInventory(inv2) then
+		errorf("CrossInventoryMove between what invs")
+		return
+	end
+
+	if it:GetInventory() ~= self then
+		errorf("Can't move an item from an inventory which it doesn't belong to!" ..
+			"(item) %s vs %s (self)", it:GetInventory(), self)
+		return
+	end
 
 	slot = slot or inv2:GetFreeSlot()
 	if not slot then print("Can't cross-inventory-move cuz no slot", slot) return false end
@@ -171,28 +164,48 @@ function bp:CrossInventoryMove(it, inv2, slot)
 	local other_item = inv2:GetItemInSlot(slot)
 
 	if other_item then
-		if not inv2:CanCrossInventoryMove(other_item, self, it:GetSlot()) then print(inv2, "#1 doesn't allow CIM") return false end
+		if not inv2:CanCrossInventoryMove(other_item, self, it:GetSlot(), ply) then print(inv2, "#1 doesn't allow CIM") return false end
 	end
 
-	if not self:CanCrossInventoryMove(it, inv2) then print(self, "#2 doesn't allow CIM") return false end
+	if not self:CanCrossInventoryMove(it, inv2, nil, ply) then print(self, "#2 doesn't allow CIM") return false end
+
+	local em
 
 	if other_item then
-		ActuallyMove(inv2, self, other_item, it:GetSlot())
-	end
-	local em = ActuallyMove(self, inv2, it, slot)
+		em = Inventory.MySQL.SwapInventories(it, other_item)
+			:Then(function()
+				if other_item then
+					ActuallyMove(inv2, self, other_item, it:GetSlot())
+				end
+				ActuallyMove(self, inv2, it, slot)
 
-	self:Emit("CrossInventoryMovedFrom", it, inv2, slot)
-	inv2:Emit("CrossInventoryMovedTo", it, self, slot)
+				self:Emit("CrossInventoryMovedFrom", it, inv2, slot)
+				inv2:Emit("CrossInventoryMovedTo", it, self, slot)
+				return true
+			end)
+	else
+		em = Inventory.MySQL.SetInventory(it, inv2, slot)
+			:Then(function()
+				ActuallyMove(self, inv2, it, slot)
+				self:Emit("CrossInventoryMovedFrom", it, inv2, slot)
+				inv2:Emit("CrossInventoryMovedTo", it, self, slot)
+				return true
+			end)
+	end
+
+	self:RemoveItem(it)
 
 	return em
+end
+
+function bp:LoadItems()
+	return Inventory.MySQL.FetchPlayerItems(self, self:GetOwner())
 end
 
 --for adding an existing both in-game and in-sql item, use bp:AddItem(item)
 --takes an existing item object and inserts it into the inventory as well as mysql
 
-function bp:InsertItem(it, slot, cb)
-	cb = cb or BlankFunc
-
+function bp:InsertItem(it, slot)
 	slot = slot or it:GetSlot()
 
 	if not slot then
@@ -211,7 +224,6 @@ function bp:InsertItem(it, slot, cb)
 
 		insSlot = self:AddItem(it)
 		if insSlot then
-			cb(it, insSlot)
 			self:AddChange(it, INV_ITEM_ADDED)
 			pr:Resolve(it, insSlot)
 		else
@@ -222,7 +234,6 @@ function bp:InsertItem(it, slot, cb)
 			it:SetSlot(slot)
 			insSlot = self:AddItem(it)
 			if insSlot then
-				cb(it, insSlot)
 				self:AddChange(it, INV_ITEM_ADDED)
 				pr:Resolve(it, insSlot)
 			else
@@ -232,6 +243,84 @@ function bp:InsertItem(it, slot, cb)
 	end
 
 	return pr
+end
+
+local function canAdd(self, it, em, skipInv)
+	local can, why, fmts = self:_CanAddItem(it, em, true, skipInv)
+
+	if not can then
+		if why then
+			errorNHf(why, unpack(fmts or {}))
+		end
+
+		return false
+	end
+
+	return true
+end
+
+function bp:PickupItem(it, ignore_emitter, nochange)
+	CheckArg(1, it, IsItem, "Item")
+
+	local prs = {}
+
+	--[[if not it:GetSlot() then
+		it:SetSlot(self:GetFreeSlot())
+	end]]
+
+	if not canAdd(self, it, ignore_emitter, true) then
+		return false, false
+	end
+
+	local left, itStk, newStk = Inventory.GetInventoryStackInfo(self, it)
+
+	if not left and not itStk then
+		-- item unstackable, just add it
+		local slot = self:GetFreeSlot()
+		if not slot then
+			return false, false
+		end
+
+		it:TakeOut()
+		it:SetSlot(slot)
+
+		self:AddItem(it, ignore_emitter, nochange)
+		it:AssignInventory()
+
+		local pr = Promise()
+		pr:Resolve() -- instant resolve, nice
+
+		if not self.ReadingNetwork then
+			self:Emit("Change")
+		end
+
+		return false, pr, {it}
+	end
+
+	for _, dat in ipairs(itStk) do
+		local v, amt = unpack(dat)
+		v:Stack(it)
+	end
+
+	local newIts = Inventory.CreateStackedItems(self, it, newStk)
+
+	for k,v in ipairs(newIts) do
+		prs[#prs + 1] = self:InsertItem(v)
+	end
+
+	if left then
+		it:SetAmount(left)
+	else
+		it:Delete()
+	end
+
+	if not self.ReadingNetwork then
+		self:Emit("Change")
+	end
+
+	local pr = Promise.OnAll(prs)
+
+	return left, pr, newIts
 end
 
 --[[------------------------------]]
@@ -364,7 +453,7 @@ function bp:WriteChanges(ns)
 		ns:WriteUInt(#crossmove, 16).CrossMovedAmt = true
 		for k,v in ipairs(crossmove) do
 			ns:WriteUID(v)
-			ns:WriteSlot(v)
+			ns:WriteSlot(v, true)
 			--ns:WriteInventory(v:GetInventory())
 		end
 	end
@@ -377,7 +466,7 @@ function bp:WriteChanges(ns)
 		ns:WriteUInt(#moves, 16).MovedAmt = true
 		for k,v in ipairs(moves) do
 			ns:WriteUID(v)
-			ns:WriteSlot(v)
+			ns:WriteSlot(v, true)
 		end
 	end
 

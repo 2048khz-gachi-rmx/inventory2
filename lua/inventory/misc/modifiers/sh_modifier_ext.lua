@@ -4,6 +4,8 @@ local mod = Inventory.Modifier
 local mods = Inventory.Modifiers
 local hooks = mods.Hooks
 
+mod.IsInventoryModifier = true
+
 -- [name] = {inst, inst, ...}
 mods.InstancePool = mods.InstancePool or muldim:new()
 
@@ -16,8 +18,10 @@ local function BaseAccessor(tbl, varname, getname)
 	end
 end
 
+function IsInvModifier(what)
+	return istable(what) and what.IsInventoryModifier
+end
 
-ChainAccessor(mod, "_Base", "Base")
 ChainAccessor(mod, "_Tier", "Tier")
 
 ChainAccessor(mod, "_WD", "WD")
@@ -25,9 +29,16 @@ ChainAccessor(mod, "_WD", "WeaponData")
 
 BaseAccessor(mod, "_Name", "Name")
 BaseAccessor(mod, "_BaseTier", "BaseTier")
+BaseAccessor(mod, "_ModStats", "ModStats")
+
+ChainAccessor(mod, "_Cooldown", "Cooldown")
 
 function mod:GetTierStrength(...)
 	return self:GetBase():GetTierStrength(...)
+end
+
+function mod:GetBase()
+	return mods.Pool[self._BaseName]
 end
 
 function mod:Initialize(base)
@@ -42,7 +53,7 @@ function mod:Initialize(base)
 		return
 	end
 
-	self:SetBase(base)
+	self._BaseName = base:GetName()
 	mods.InstancePool:Insert(self, base:GetName())
 end
 

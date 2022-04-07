@@ -64,6 +64,10 @@ local goodNeg = table.KeysToValues({
 	"Spread"
 })
 
+function Inventory.Stats.IsGood(stat)
+	return goodNeg[stat]
+end
+
 function Inventory.Stats.NegPos(stat, amt)
 
 	local good = amt > 0
@@ -86,4 +90,14 @@ end
 
 function Inventory.Stats.ToName(stat)
 	return Language("Inv_Stat" .. stat)
+end
+
+function Inventory.Stats.ToRoll(qual, stat, num)
+	local q = Inventory.Qualities.Get(qual)
+	if not q then errorNHf("no quality: %s", qual) return 0 end
+
+	local stats = q.Stats[stat]
+	if not q then errorNHf("no stat in %s: %s", qual, stat) return 0 end
+
+	return math.Remap(num, stats[1], stats[2], 0, 1), stats[1], stats[2]
 end

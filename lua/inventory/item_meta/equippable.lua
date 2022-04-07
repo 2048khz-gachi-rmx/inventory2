@@ -22,9 +22,11 @@ function eq:Unequip(ply, slot, intoInv)
 
 	local mem = char:Unequip(self, slot, intoInv)
 
-	mem:Then(function()
-		self:SetEquipped(false)
-	end)
+	if mem then
+		mem:Then(function()
+			self:SetEquipped(false)
+		end)
+	end
 
 	return mem
 end
@@ -34,10 +36,13 @@ function eq:Equip(ply, slot)
 	if not char then errorf("What the fuck can't equip on %s cuz no character inventory", ply) end
 
 	local mem = char:Equip(self, slot)
-	mem:Then(function()
-		self:SetSlot(slot)
-		self:SetEquipped(true)
-	end)
+
+	if mem then
+		mem:Then(function()
+			self:SetSlot(slot)
+			self:SetEquipped(true)
+		end)
+	end
 
 	return mem
 end

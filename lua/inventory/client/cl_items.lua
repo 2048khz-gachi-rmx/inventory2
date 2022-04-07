@@ -1,4 +1,4 @@
-function Inventory.NewItem(iid, invobj, data)
+function Inventory.NewItem(iid, invobj, dat)
 	local it = Inventory.Util.GetMeta(iid)
 	if not it then errorf("No item meta for IID %s", iid) return end
 

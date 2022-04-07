@@ -7,3 +7,7 @@ ChainAccessor(mod, "Compatibles", "Compatibles")
 ChainAccessor(mod, "Compatibles", "Compatible")
 
 mod:Register()
+
+function Inventory.IsModule(w)
+	return istable(w) and w.IsModule
+end

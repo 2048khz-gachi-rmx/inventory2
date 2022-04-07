@@ -16,7 +16,7 @@ local function fromWepOw(ply)
 	return wd:GetModifiers()
 end
 
-function cases.PostEntityTakeDamage(ev, tgt, dmg)
+local function modsFromAtkr(dmg)
 	local atk = dmg:GetAttacker()
 	if not IsPlayer(atk) then return end
 
@@ -29,6 +29,12 @@ function cases.PostEntityTakeDamage(ev, tgt, dmg)
 
 	return wd:GetModifiers()
 end
+
+function cases.PostEntityTakeDamage(ev, tgt, dmg)
+	return modsFromAtkr(dmg)
+end
+
+cases.EntityTakeDamage = cases.PostEntityTakeDamage
 
 function cases.Move(ev, ply, mv)
 	return fromWepOw(ply)

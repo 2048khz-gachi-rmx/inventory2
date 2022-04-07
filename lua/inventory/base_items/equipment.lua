@@ -20,13 +20,13 @@ function eq:SetEquipSlot(sl)
 
 			--success:
 			self.EquipSlot = sl
-			return
+			return self
 		end
 	end
 
 	--failure: didn't find this slot
 	errorf("Didn't find Equipment slot: %q", sl)
-
+	return self
 end
 
 eq:Register()

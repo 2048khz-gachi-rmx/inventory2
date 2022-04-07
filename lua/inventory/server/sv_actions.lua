@@ -2,7 +2,7 @@ local function load()
 	local nw = Inventory.Networking
 
 	local function readInv(ply, act, ignoreaccess)
-		local inv, err = nw.ReadInventory()
+		local inv, err = nw.ReadInventory(false)
 
 		if not inv then
 			nw.RequestResync(ply)
@@ -62,28 +62,40 @@ local function load()
 		local where = net.ReadUInt(16)
 		local amt = net.ReadUInt(32)
 
-		if it:Emit("CanSplit", amt) == false then print("cannot split") return end
-		if inv:Emit("CanAddItem", it, it:GetUID()) == false then print("cannot add item") return end
+		if it:Emit("CanSplit", amt) == false then
+			print("cannot split")
+			return
+		end
 
-		if where > inv.MaxItems or inv:GetItemInSlot(where) then print("where > maxitems or", inv:GetItemInSlot(where)) return end
-		if not it:GetCountable() or amt > it:GetAmount() or amt == 0 then return end
+		if where > inv.MaxItems or inv:GetItemInSlot(where) then
+			print("where > maxitems or item already in slot:", inv:GetItemInSlot(where), where, inv.MaxItems)
+			return
+		end
 
-		it:SetAmount(it:GetAmount() - amt)
+		if not it:GetCountable() or amt > it:GetAmount() or amt == 0 then
+			return
+		end
 
 		local dat = table.Copy(it:GetData())
 		dat.Amount = amt
 
 		local new = Inventory.NewItem(it:GetItemID())
+		new:SetData(dat)
 		new:SetOwner(ply)
 		new:SetInventory(inv)
+		new:SetSlotRaw(where)
+
+		if inv:Emit("CanAddItem", new) == false then
+			print("cannot add item")
+			return
+		end
+
+		it:SetAmount(it:GetAmount() - amt)
 		new:SetSlot(where)
-		new:SetData(dat)
 
 		inv:InsertItem(new):Then(function(...)
 			if IsValid(ply) then Inventory.Networking.RequestUpdate(ply, inv) end
 		end, GenerateErrorer("SplitActionInsert"))
-
-		return false, inv
 	end
 
 	nw.Actions[INV_ACTION_MERGE] = function(ply)
@@ -110,11 +122,23 @@ local function load()
 	end
 
 	nw.Actions[INV_ACTION_CROSSINV_MOVE] = function(ply, inv, it, invto)
-		inv = inv or readInv(ply, "CrossInventoryFrom")
+		inv = inv or readInv(ply)
 		it = it or readItem(ply, inv, "CrossInventory")
-		invto = invto or readInv(ply, "CrossInventoryTo")
+		invto = invto or readInv(ply)
 
 		local where = net.ReadUInt(16)
+
+		if not invto:ValidateSlot(where) then
+			return false, "bad slot"
+		end
+
+		if not inv:HasAccess(ply, "CrossInventoryFrom", it, invto, where) then
+			return false, "no access - from"
+		end
+
+		if not invto:HasAccess(ply, "CrossInventoryTo", it, inv, where) then
+			return false, "no access - to"
+		end
 
 		local ok = inv:CrossInventoryMove(it, invto, where)
 
@@ -123,17 +147,16 @@ local function load()
 	end
 
 	nw.Actions[INV_ACTION_CROSSINV_MERGE] = function(ply)
-		local inv = readInv(ply, "CrossInventoryFrom")
-		local it = readItem(ply, inv) -- stack from
+		local inv = readInv(ply)
+		local it = readItem(ply, inv, "CrossInventory") -- stack from
 
-		local invto = readInv(ply, "CrossInventoryTo")
-		local it2 = readItem(ply, invto)  -- stack to
+		local invto = readInv(ply)
+		local it2 = readItem(ply, invto, "CrossInventory")  -- stack to
 
 		local amt = math.max(net.ReadUInt(32), 1)
 		amt = math.min(amt, it:GetAmount())
 
-			-- can inv give out the item to invto?
-		if not inv:CanCrossInventoryMove(it, invto, it2:GetSlot()) then print("cant crossinv") return false end
+		if not inv:CanCrossInventoryMove(it, invto, it2:GetSlot(), ply) then print("cant crossinv") return false end
 
 		local amt = it2:CanStack(it, amt)
 
@@ -149,31 +172,57 @@ local function load()
 	end
 
 	nw.Actions[INV_ACTION_CROSSINV_SPLIT] = function(ply)
-		local inv = readInv(ply, "CrossInventoryFrom")
-		local it = readItem(ply, inv) -- stack from
+		local inv = readInv(ply)
+		local it = readItem(ply, inv, "CrossInventory") -- stack from
 
-		local invto = readInv(ply, "CrossInventoryTo")
+		local invto = readInv(ply)
 		local slot = net.ReadUInt(16)
+
+		if not invto:ValidateSlot(slot) then
+			return false, "invalid split slot"
+		end
 
 		local amt = math.max(net.ReadUInt(32), 1)
 		amt = math.min(amt, it:GetAmount())
 
-		if it:Emit("CanSplit", amt) == false then print("cant split") return end
-		if not inv:CanCrossInventoryMove(it, invto, slot) then print("cant crossinv") return false end
-
-		if slot > invto.MaxItems or invto:GetItemInSlot(slot) then
-			print("slot > max or item", slot, invto.MaxItems, invto:GetItemInSlot(slot))
+		if it:Emit("CanSplit", amt) == false then
+			it.AttemptSplit = nil
 			return
 		end
-		if not it:GetCountable() or amt > it:GetAmount() or amt == 0 then print("amt invalid") return end
 
-		it:SetAmount(it:GetAmount() - amt)
+		if slot > invto.MaxItems or invto:GetItemInSlot(slot) then
+			return false, "slot > max or item"
+		end
 
+		if not it:GetCountable() or amt > it:GetAmount() or amt == 0 then
+			return false, "invalid amt"
+		end
+
+		-- create new item
 		local dat = table.Copy(it:GetData())
 		dat.Amount = amt
 
+		if not inv:CanCrossInventoryMove(it, invto, slot, ply) then
+			return false, "CanCrossInvMove gave false"
+		end
+
 		local new = Inventory.NewItem(it:GetItemID())
+		new:SetData(dat)
 		new:SetOwner(ply)
+		new:SetInventory(inv)
+		new:SetSlotRaw(slot)
+
+		-- try moving cross
+		if not inv:HasAccess(ply, "CrossInventoryFrom", new, invto, slot) then
+			return false, "no access - split from"
+		end
+
+		if not invto:HasAccess(ply, "CrossInventoryTo", new, inv, slot) then
+			return false, "no access - split to"
+		end
+
+		-- all good; now actually do it
+		it:SetAmount(it:GetAmount() - amt)
 		new:SetInventory(invto)
 		new:SetSlot(slot)
 
@@ -191,9 +240,62 @@ local function load()
 		return true
 	end
 
+	nw.Actions[INV_ACTION_PICKUP] = function(ply)
+		local inv = inv or readInv(ply)
+		local it = readItem(ply, inv, "CrossInventory")
+		local invto = invto or readInv(ply)
+
+		if not inv:HasAccess(ply, "CrossInventoryFrom", it, invto, where) then
+			return false, "no access - from"
+		end
+
+		if not invto:HasAccess(ply, "CrossInventoryTo", it, inv, where) then
+			return false, "no access - to"
+		end
+
+		local ok, prs, new = invto:PickupItem(it)
+
+		if prs then
+			prs:Then(function(...)
+				ply:UpdateInventory(inv)
+				ply:UpdateInventory(invto)
+			end, function(...)
+				print("bad pickup request from", ply, ...)
+			end)
+		end
+	end
+
+	nw.Actions[INV_ACTION_USE] = function(ply)
+		local inv = inv or readInv(ply)
+		local it = readItem(ply, inv, "Use")
+		if not it then return end
+
+		if not inv:HasAccess(ply, "Use", it) then
+			return false, "no access from inventory"
+		end
+
+		local meta = Inventory.Util.GetMeta(it:GetIID())
+		if not meta.PlayerUse then
+			print(ply, "tried to use item without a .Use method", it:GetIID(), it:GetUID())
+			return
+		end
+
+		local needUpdate, needFull = meta.PlayerUse(it, ply)
+
+		if needUpdate then
+			if needFull then
+				ply:NetworkInventory(isbool(needUpdate) and inv or needUpdate)
+			else
+				ply:UpdateInventory(isbool(needUpdate) and inv or needUpdate)
+			end
+		end
+	end
+
 	nw.Actions[INV_ACTION_RESYNC] = function(ply)
 		nw.RequestResync(ply)
 	end
+
+	
 
 	net.Receive("Inventory", function(len, ply)
 		local act = net.ReadUInt(16)
@@ -201,9 +303,12 @@ local function load()
 		if not nw.Actions[act] then errorf("Failed to find action for enum %d from player %s", act, ply) return end
 
 		ply:SetInventoryNWToken(token)
-		local ok, needs_nw, inv = xpcall(nw.Actions[act], GenerateErrorer("InventoryActions"), ply)
+		local ok, succ, inv = xpcall(nw.Actions[act], GenerateErrorer("InventoryActions"), ply)
 
-		if needs_nw then
+		if succ == false then
+			print("action failed - ", inv or "no error")
+			nw.RequestResync(ply)
+		elseif succ then
 			ply:NetworkInventory(inv, INV_NETWORK_UPDATE)
 		end
 

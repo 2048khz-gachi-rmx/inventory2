@@ -1,12 +1,12 @@
-
 local bp = Inventory.GetClass("inv_meta", "backpack")
 if not bp then error("Something went wrong while loading Character inventory: backpack is missing.") return end
 
 local char = Inventory.Inventories.Character or bp:extend()
 
+char.Name = "Character"
+
 char.SQLName = "ply_char"
 char.NetworkID = 4
-char.Name = "Character"
 char.MaxItems = 50
 char.IsCharacterInventory = true
 
@@ -44,7 +44,7 @@ function char:Initialize()
 end
 
 function char:Unequip(it, slot, inv)
-	if not inv then error("Unequip where dude") return end
+	if not IsInventory(inv) then error("Unequip where dude") return end
 
 	--local it = self.Slots[slot]
 	if not IsItem(it) then error("What are you unequipping dude") return end
@@ -57,8 +57,12 @@ end
 
 function char:Equip(it, slot)
 	if IsItem(self.Slots[slot]) then
-		local ok = self:Unequip(self.Slots[slot], it:GetSlot(), it:GetInventory()) --switch items places
-		if ok == false then return end
+		-- item there already; unequip and it'll make us crossinv move
+		self.Allowed[it:GetUID()] = true
+		local mem = self:Unequip(self.Slots[slot], it:GetSlot(), it:GetInventory()) --switch items places
+		self.Slots[slot] = it
+
+		return mem
 	end
 
 	self.Allowed[it:GetUID()] = true

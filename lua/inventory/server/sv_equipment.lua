@@ -27,7 +27,11 @@ local function load(act)
 			if not Inventory.CanEquipInSlot(it, slot) then return false end
 
 			local em = it:Equip(ply, slot)
-			upd(ply, inv, Inventory.GetEquippableInventory(ply), tok)
+			if not em then return false end
+
+			em:Then(function()
+				upd(ply, inv, Inventory.GetEquippableInventory(ply), tok)
+			end)
 
 		else
 			local invto = ply.Inventory.Permanent --act.readInv(ply)
@@ -36,12 +40,14 @@ local function load(act)
 			if not ok then return end -- brugh
 
 			local em = it:Unequip(ply, slot, invto)
-			upd(ply, inv, Inventory.GetEquippableInventory(ply), tok)
+			if not em then return false end
+
+			em:Then(function()
+				upd(ply, inv, Inventory.GetEquippableInventory(ply), tok)
+			end)
 		end
 
-		print(tok, ":", it:GetInventory():GetName())
-
-		return false
+		--return false
 	end
 end
 

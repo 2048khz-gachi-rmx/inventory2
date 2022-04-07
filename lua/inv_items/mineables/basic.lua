@@ -14,25 +14,29 @@ local function makeOre(name, skin, bigamt)
 		:SetCamPos( Vector(26.9, 76.9, 28.3) )
 	    :SetLookAng( Angle(19.8, 250.7, 0.0) )
 	    :SetFOV( 8 )
-		:On("UpdateProperties", "ResourceSkin", function(base, item, ipnl, imdl)
-			local ent = imdl:GetEntity()
-
-			if not skin or isnumber(skin) then
+	    :On("UpdateModel", "ResourceSkin", function(base, item, ent)
+	    	if not skin or isnumber(skin) then
 				ent:SetSkin(skin or 1)
 			else
 				ent:SetMaterial(skin)
 			end
 
-			if (item.Data.Amount or 0) > (bigamt or self:GetMaxStack() * 0.7) then
+			if (item:GetAmount() or 0) > (bigamt or base:GetMaxStack() * 0.7) then
 				ent:SetBodygroup(0, 1)
-				imdl:SetFOV(10)
 			else
 				ent:SetBodygroup(0, 0)
+			end
+	    end)
+	    :On("UpdatePanel", "ResourceSkin", function(base, item, ipnl, imdl)
+	    	if (item:GetAmount() or 0) > (bigamt or base:GetMaxStack() * 0.7) then
+				imdl:SetFOV(10)
+			else
 				imdl:SetFOV(8)
 			end
+	    end)
 
-		end)
 		:SetCountable(true)
+		:SetBaseTransferCost(15000)
 
 	return ore
 end
@@ -61,7 +65,7 @@ end
 
 makeOre("copper_ore", 1, 35)
 	:SetName("Copper Ore")
-	:SetMaxStack(50)
+	:SetMaxStack(30)
 	:SetMinRarity(35)
 	:SetMaxRarity(50)
 	:SetWeight(3)
@@ -73,7 +77,7 @@ makeOre("copper_ore", 1, 35)
 
 makeOre("iron_ore", 0, 40)
 	:SetName("Iron Ore")
-	:SetMaxStack(60)
+	:SetMaxStack(40)
 	:SetMinRarity(25)
 	:SetMaxRarity(55)
 	:SetWeight(5)
@@ -110,7 +114,7 @@ makeOre("coal_ore", "!inv_coalore", 40)
 ]]
 makeOre("gold_ore", 3, 20)
 	:SetName("Gold Ore")
-	:SetMaxStack(30)
+	:SetMaxStack(20)
 	:SetMinRarity(50)
 	:SetMaxRarity(70)
 	:SetSpawnChance(30)
@@ -119,7 +123,7 @@ makeOre("gold_ore", 3, 20)
 	:SetOreColor(Color(230, 220, 75))
 	:SetSmeltsTo("gold_bar")
 	:SetSmeltTime(45)
-
+	:SetBaseTransferCost(25000)
 
 
 
@@ -134,8 +138,10 @@ Inventory.BaseItemObjects.Generic("ejectdick")
 	:SetCamPos( Vector(-86.0, -8.9, -8.1) )
 	:SetLookAng( Angle(-7.3, 5.5, 0.0) )
 	:SetFOV( 12.6 )
+	:SetRarity(Inventory.Rarities.All.legendary)
 
 	:SetName("ejectdick but with less dick and more cock and rob")
+
 	:On("Paint", "PaintBlueprint", function(base, item, slot, w, h)
 		local w, h = slot:GetSize()
 		surface.SetDrawColor(color_white)

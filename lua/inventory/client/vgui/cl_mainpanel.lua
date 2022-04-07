@@ -132,7 +132,7 @@ function f:SetInventory(inv, pnl, noanim)
 			slot:On("ItemTakenOut", "UntrackUIDs", unTrackFunc)
 
 			local item = inv:GetItemInSlot(i)
-			if item then
+			if item and item:GetUID() then
 				slot:SetItem(item)
 				uids[item:GetUID()] = slot
 			end
@@ -294,5 +294,35 @@ function f:AddInventoryPanel(p, inv, posfunc)
 	return p
 end
 
+function f:Disappear(hide)
+	hide = hide == nil or hide
+
+	local fn = hide and self.PopOutHide or self.PopOut
+
+	self:SetInput(false)
+	fn(self)
+	CloseDermaMenus()
+
+	for k, d in ipairs(self.Attached) do
+		local pnl = d[1]
+		if not pnl:HasParent(self) then
+			-- unparented but attached; disappear separately
+			fn(pnl)
+		end
+	end
+end
+
+function f:Appear()
+	self:SetInput(true)
+	self:PopInShow()
+
+	for k, d in ipairs(self.Attached) do
+		local pnl = d[1]
+
+		if not pnl:HasParent(self) and not pnl.Disappearing then
+			pnl:PopInShow()
+		end
+	end
+end
 
 vgui.Register("InventoryFrame", f, "NavFrame")

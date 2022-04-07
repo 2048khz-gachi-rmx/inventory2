@@ -1,4 +1,3 @@
---?
 
 local Base = Inventory.BaseItemObjects.Generic or Emitter:callable()
 Base.BaseName = "Generic"
@@ -11,7 +10,7 @@ Base.IsBaseItem = true
 Base.NetworkedVars = {}
 
 -- Extend = a new class is being extended from base (e.g. 'Equipment' from 'Generic')
--- `name` is just the name of your base class
+-- `name` is just the name of the new base class
 
 -- `class` is what item meta instances of this base class should use (the ones players hold)
 
@@ -72,10 +71,23 @@ function Base:Initialize(name)
 	self.ItemClass = self.ItemClass
 
 	self:PullItemID()
+	self:SetRarity(Inventory.Rarities.Default)
 
 	Inventory.BaseItems[self.ItemName] = self
 
 	Inventory:Emit("BaseItemInit", self)
+end
+
+function Base:SetRarity(rar)
+	if IsRarity(rar) then self.Rarity = rar return self end
+	local r = Inventory.Rarities.Get(rar)
+	if not r then
+		errorf("unknown rarity: %s", r)
+	end
+
+	self.Rarity = r
+
+	return self
 end
 
 function Base:SetID(id)
@@ -173,6 +185,10 @@ ChainAccessor(Base, "ItemName", "ItemName")
 ChainAccessor(Base, "Model", "Model")
 ChainAccessor(Base, "ModelColor", "ModelColor")
 ChainAccessor(Base, "Color", "Color")
+ChainAccessor(Base, "Rarity", "Rarity", true)
+
+Base.BaseTransferCost = 10000
+ChainAccessor(Base, "BaseTransferCost", "BaseTransferCost")
 
 ChainAccessor(Base, "CamPos", "CamPos")
 ChainAccessor(Base, "FOV", "FOV")
@@ -184,7 +200,8 @@ function Base:SetCountable(b)
 	if not self.Countable and b == true then
 		if self.NetworkedVars[1] and self.NetworkedVars[1].what == "Amount" then return self end --already countable or somethin'?
 
-		local len = self:GetMaxStack() and bit.GetLen(self:GetMaxStack())
+		local mx = self:GetMaxPossibleStack() or self:GetMaxStack()
+		local len = mx and math.max(8, bit.GetLen(mx))
 
 		table.insert(self.NetworkedVars, 1, {
 			type = "UInt",
@@ -225,7 +242,7 @@ function Base:SetMaxStack(st)
 	if self.Countable then
 		for k,v in ipairs(self.NetworkedVars) do
 			if v.what == "Amount" then
-				v.args[1] = bit.GetLen(st)
+				v.args[1] = math.max(8, bit.GetLen(st))
 			end
 		end
 	end
@@ -233,6 +250,8 @@ function Base:SetMaxStack(st)
 	self.MaxStack = st
 	return self
 end
+
+ChainAccessor(Base, "MaxPossibleStack", "MaxPossibleStack") -- for NW
 
 function Base:On(...) --convert :On() into a chainable function
 	Emitter.On(self, ...)
@@ -282,3 +301,7 @@ Inventory:On("BaseItemInit", "EmitRegister", function(self, bi)
 		its[tick] = nil --clean up the garbage
 	end)
 end)
+
+if CLIENT then
+	include("generic_item_cl_ext.lua")
+end
