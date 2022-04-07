@@ -168,6 +168,8 @@ end
 function ENT:PlayerPickup(ply)
 	local tempInv = Inventory.GetTemporaryInventory(ply)
 	local left, pr, newIts = tempInv:PickupItem(self:GetItem())
+	local iid = self:GetItem():GetItemID()
+	local amt = self:GetItem():GetAmount() or 1
 
 	if not pr then
 		return
@@ -181,6 +183,7 @@ function ENT:PlayerPickup(ply)
 	pr:Then(function()
 		if not IsValid(ply) then return end
 		ply:NetworkInventory(tempInv, INV_NETWORK_UPDATE)
+		Inventory.Networking.NotifyItemChange(ply, INV_NOTIF_PICKEDUP, iid, amt)
 	end)
 end
 
