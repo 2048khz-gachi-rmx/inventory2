@@ -10,6 +10,8 @@ local mod = Inventory.BaseModifier
 mods.Pool = mods.Pool or {}
 
 ChainAccessor(mod, "MaxTier", "MaxTier")
+ChainAccessor(mod, "PowerTier", "PowerTier")
+mod:SetPowerTier(1) -- default
 
 ChainAccessor(mod, "MinBlueprintTier", "MinBlueprintTier")
 ChainAccessor(mod, "MaxBlueprintTier", "MaxBlueprintTier")
@@ -19,7 +21,10 @@ ChainAccessor(mod, "MaxBlueprintTier", "MaxBPTier")
 ChainAccessor(mod, "Name", "Name")
 ChainAccessor(mod, "Retired", "Retired")
 
-mod.IsModifier = true
+
+ChainAccessor(mod, "_ModStats", "ModStats")
+
+mod.IsBaseModifier = true
 
 function IsBaseModifier(what)
 	return istable(what) and what.IsBaseModifier
@@ -59,7 +64,10 @@ end
 
 ChainAccessor(mod, "_TierCalc", "TierCalc")
 function mod:GetTierStrength(...)
-	return self:GetTierCalc() and self:GetTierCalc()(self, ...) or -1
+	local fn = self:GetTierCalc()
+	if not fn then return -1 end
+
+	return self:GetTierCalc()(self, ...)
 end
 
 function mod:_Runner(ev, ...)
@@ -175,3 +183,4 @@ mods.DescColors = {
 }
 
 include("sh_modifier_ext.lua")
+include("sh_active_ext.lua")
