@@ -324,7 +324,7 @@ function bp:HasAccess(ply, action, ...)
 
 	-- step 3. earlier checks didnt tell us anything; do default behavior
 	allow = self:Emit("CanInteract", ply, action, ...)
-	self:vprint("HasAccess every check failed -- default emitter said", allow)
+	self:vprint("HasAccess every check for ", action, "failed -- default emitter said", allow)
 
 	if allow == nil and self.ActionCanInteract then
 		allow = eval(self.ActionCanInteract, self, ply, action, ...)
