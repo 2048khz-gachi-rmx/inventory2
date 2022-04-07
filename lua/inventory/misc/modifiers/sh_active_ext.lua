@@ -85,19 +85,7 @@ local function getActiveMod(ply)
 	return wdt:GetActiveMod()
 end
 
-Offhand.Register("inv_active_mod", {
-	Paint = function(...)
-		local ac = getActiveMod(CachedLocalPlayer())
-		if not ac then return end
-
-		ac:GetBase():Paint(...)
-	end,
-
-	ShouldPaint = function()
-		local ac = getActiveMod(CachedLocalPlayer())
-		if not ac then return false end
-	end,
-
+local ACTION = {
 	Use = function(ply)
 		local mod = getActiveMod(ply)
 		if not mod then return end -- !?
@@ -130,7 +118,89 @@ Offhand.Register("inv_active_mod", {
 
 		return ns
 	end,
-})
+}
+
+if CLIENT then
+	function ACTION.Paint(...)
+		local ac = getActiveMod(CachedLocalPlayer())
+		if not ac then return end
+
+		ac:GetBase():Paint(...)
+	end
+
+	function ACTION.ShouldPaint()
+		local ac = getActiveMod(CachedLocalPlayer())
+		if not ac then return false end
+	end
+
+	local icon = {
+		"https://i.imgur.com/6se0gFC.png", "none64_gray.png",
+		"https://i.imgur.com/4Fz3Le9.png", "bp_icons/smg_big.png"
+	}
+
+	local handle = BSHADOWS.GenerateCache("DarkHUD_OffhandNoActive", 128, 128)
+
+	local mx = Matrix()
+
+	handle:SetGenerator(function(self, w, h)
+		surface.SetDrawColor(255, 255, 255, 150)
+
+		local ratio = 176 / 74
+		local iw, ih = w, h / ratio
+
+		iw, ih = math.AARectSize(iw, ih, 40)
+
+		-- the p90 can afford to lose the corners in favor of scale
+		iw = iw * 1.2
+		ih = ih * 1.2
+
+		--[[surface.DrawOutlinedRect(0, 0, w, h)
+
+		mx:Reset()
+		mx:TranslateNumber(w / 2, h / 2)
+		mx:RotateNumber(0, 40)
+		mx:TranslateNumber(-w / 2, -h / 2)
+
+		cam.PushModelMatrix(mx, true)
+			surface.DrawOutlinedRect(w / 2 - iw / 2, h / 2 - ih / 2, iw, ih)
+		cam.PopModelMatrix()]]
+
+		local a = surface.DrawMaterial(icon[3], icon[4],
+			w / 2, h / 2, iw, ih, -40)
+
+		surface.SetDrawColor(255, 255, 255)
+
+		local noSc = 0.7
+		local b = surface.DrawMaterial(icon[1], icon[2],
+			w * (1 - noSc) / 2, h * (1 - noSc) / 2, w * noSc, h * noSc)
+
+		return a and b
+	end)
+
+
+	local function paintNothing(pnl, x, y, w)
+		handle:CacheRet(2, 4, 4)
+
+		local sz = w * 0.65
+		local diff = w - sz
+
+		local nx, ny = math.floor(x + diff / 2),
+			math.floor(y + diff / 2)
+
+		surface.SetDrawColor(255, 255, 255)
+		handle:Paint(x, y, w, w)
+
+		surface.SetDrawColor(Colors.LighterGray:Unpack())
+		surface.DrawMaterial(icon[1], icon[2],
+			nx, ny, sz, sz)
+	end
+
+	function ACTION.PaintNothing(pnl, x, y, w)
+		paintNothing(pnl, x, y, w)
+	end
+end
+
+Offhand.Register("inv_active_mod", ACTION)
 
 local function createEmptyAction(wheel)
 	local wep = CachedLocalPlayer():GetActiveWeapon()
