@@ -1,6 +1,8 @@
 local function load()
 	local nw = Inventory.Networking
 
+	local cur_invs = {}
+
 	local function readInv(ply, act, ignoreaccess)
 		local inv, err = nw.ReadInventory(false)
 
@@ -11,17 +13,22 @@ local function load()
 		end
 
 		if not ignoreaccess and act and not inv:HasAccess(ply, act) then
-			nw.RequestResync(ply, ply.Inventory, inv)
+			-- todo: security issue? networking inventories player has no access to...
+			nw.RequestResync(ply, ply.Inventory) --, inv)
 			errorf("Failed permission check %s from %s on inventory '%s'", act, ply, inv)
 			return
 		end
 
+		cur_invs[#cur_invs + 1] = inv
 		return inv
 	end
 
 	local function readItem(ply, inv)
 		local it, err = nw.ReadItem(inv)
-		if not it then errorf("Failed to read item from %s: %q", ply, err) return end
+		if not it then
+			errorf("Failed to read item from %s: %q", ply, err)
+			return
+		end
 
 		return it
 	end
@@ -295,8 +302,6 @@ local function load()
 		nw.RequestResync(ply)
 	end
 
-	
-
 	net.Receive("Inventory", function(len, ply)
 		local act = net.ReadUInt(16)
 		local token = net.ReadUInt(16)
@@ -305,13 +310,16 @@ local function load()
 		ply:SetInventoryNWToken(token)
 		local ok, succ, inv = xpcall(nw.Actions[act], GenerateErrorer("InventoryActions"), ply)
 
+
 		if succ == false then
 			print("action failed - ", inv or "no error")
-			nw.RequestResync(ply)
+			-- resync all inventories the player wrote that they have access to
+			nw.RequestResync(ply, unpack(cur_invs))
 		elseif succ then
 			ply:NetworkInventory(inv, INV_NETWORK_UPDATE)
 		end
 
+		table.Empty(cur_invs)
 		ply:SetInventoryNWToken(nil)
 	end)
 
