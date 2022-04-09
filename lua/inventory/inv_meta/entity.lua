@@ -56,7 +56,7 @@ ent:On("OwnerAssigned", "StoreEntity", function(self, ow)
 
 		-- changed owner = remove hook
 		self.HasHook = false
-		self:SetOwner(ent)
+		self:SetPlayerOwner(ply)
 		return false -- we put a new hook from SetOwner; dont remove this one cuz it has the same ID
 	end)
 end)

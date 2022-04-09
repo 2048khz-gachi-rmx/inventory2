@@ -12,7 +12,6 @@ el:Hook("EntityTakeDamage", function(self, ent, dmg)
 		if not str then return end
 
 		local bonus = math.Clamp(str * (self._marksmanHits - 1), 0, cap) / 100 + 1
-		print("bonus", bonus)
 		dmg:ScaleDamage(bonus)
 	end)
 
