@@ -85,21 +85,26 @@ function ENT:UpdateTransmitState()
 end
 
 local updateIntervalTicks = 8
+local plyToUID = {}
 
 local function writeTrack(where, who)
 	where[who] = who:UserID()
 end
+
+
 
 local function doTrack(ply, forply, uid)
 	-- ply:AddEFlags(EFL_IN_SKYBOX)
 	AddOriginToPVS(ply:GetPos())
 	local priv = forply:GetPInfo():GetPrivateNW()
 	priv:Set("Trk_" .. uid, true)
+	plyToUID[ply] = uid
 end
 
 local function doUntrack(ply, forply, force)
+	local uid = ply:IsValid() and ply:UserID() or plyToUID[ply]
 	local priv = forply:GetPInfo():GetPrivateNW()
-	local key = "Trk_" .. (active_track[ply] or ply:UserID())
+	local key = "Trk_" .. (active_track[ply] or uid)
 
 	if priv:Get(key) then
 		priv:Set(key, nil)
