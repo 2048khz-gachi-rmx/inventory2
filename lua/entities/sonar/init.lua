@@ -95,7 +95,7 @@ end
 
 local function doTrack(ply, forply, uid)
 	-- ply:AddEFlags(EFL_IN_SKYBOX)
-	AddOriginToPVS(ply:GetPos())
+	AddOriginToPVS(ply:EyePos())
 	local priv = forply:GetPInfo():GetPrivateNW()
 	priv:Set("Trk_" .. uid, true)
 	plyToUID[ply] = uid
