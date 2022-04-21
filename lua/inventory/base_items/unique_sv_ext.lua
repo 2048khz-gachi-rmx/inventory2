@@ -12,10 +12,14 @@ uq:NetworkVar("NetStack", function(it)
 	end
 
 	-- encode stats
-	ns:WriteUInt(table.Count(it:GetStatRolls()), 8)
+	if it:GetStatRolls() then
+		ns:WriteUInt(table.Count(it:GetStatRolls()), 8)
 
-	for k,v in pairs(it:GetStatRolls()) do
-		Inventory.Stats.Write(k, v, ns)
+		for k,v in pairs(it:GetStatRolls()) do
+			Inventory.Stats.Write(k, v, ns)
+		end
+	else
+		ns:WriteUInt(0, 8)
 	end
 
 	return ns

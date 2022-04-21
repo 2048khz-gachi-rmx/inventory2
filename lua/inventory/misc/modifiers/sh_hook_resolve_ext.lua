@@ -52,9 +52,7 @@ function mods.TryResolveRunner(bases, ev, ...)
 	if cases[ev] then
 		local wdMods = cases[ev] (ev, ...)
 		if not wdMods then return false end
-		if CLIENT then
-			--print("mods", table.Count(wdMods))
-		end
+
 		for name, fn in pairs(bases) do
 			if wdMods[name] then
 				fn(wdMods[name], ...)

@@ -56,8 +56,8 @@ function Inv.GUICanAction(slot, inv, itm, ipnlFrom, ipnlTo)
 		if not inv2:CanCrossInventoryMove(itm, inv, slot:GetSlot()) then return false end
 		--if not inv:CanCrossInventoryMove(itm, inv2, slot:GetSlot()) then return false end
 	else
-		if not inv:HasAccess(LocalPlayer(), action, itm) then print("no access 1", inv) return false end
-		if not inv2:HasAccess(LocalPlayer(), action, itm) then print("no access 2", inv2) return false end
+		if not inv:HasAccess(LocalPlayer(), action, itm) then return false end
+		if not inv2:HasAccess(LocalPlayer(), action, itm) then return false end
 	end
 
 	if action == "Merge" then

@@ -100,7 +100,7 @@ function bp:_SetSlot(it, slot)
 		self.Items[it:GetUID()] = it
 	end
 
-	if it:GetKnown() then self:AddChange(it, INV_ITEM_MOVED) end --if the player doesn't know about the item, don't replace the change
+	if it:GetKnown() then it:AddChange(INV_ITEM_MOVED) end --if the player doesn't know about the item, don't replace the change
 	return slot
 end
 
@@ -151,6 +151,7 @@ function bp:RemoveItem(it, noChange, suppresserror)
 	--if the player doesn't know about the item, don't even tell him about the deletion
 	if foundit:GetKnown() and not noChange then
 		self:AddChange(foundit, INV_ITEM_DELETED)
+		foundit:AddChange(INV_ITEM_DELETED)
 	else
 		self.Changes[foundit] = nil
 	end
@@ -251,7 +252,7 @@ function bp:AddItem(it, ignore_emitter, nochange)
 	self.Slots[it:GetSlot()] = it
 
 	if not nochange then
-		self:AddChange(it, INV_ITEM_ADDED)
+		it:AddChange(INV_ITEM_ADDED)
 	end
 
 	self:Emit("AddItem", it, it:GetUID())

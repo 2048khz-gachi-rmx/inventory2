@@ -140,7 +140,7 @@ if CLIENT then
 
 	local handle = BSHADOWS.GenerateCache("DarkHUD_OffhandNoActive", 128, 128)
 
-	local mx = Matrix()
+	
 
 	handle:SetGenerator(function(self, w, h)
 		surface.SetDrawColor(255, 255, 255, 150)
@@ -156,7 +156,7 @@ if CLIENT then
 
 		--[[surface.DrawOutlinedRect(0, 0, w, h)
 
-		mx:Reset()
+		local mx = Matrix()
 		mx:TranslateNumber(w / 2, h / 2)
 		mx:RotateNumber(0, 40)
 		mx:TranslateNumber(-w / 2, -h / 2)
