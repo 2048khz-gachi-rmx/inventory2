@@ -144,6 +144,8 @@ function PANEL:GetInventory()
 end
 
 function PANEL:DehighlightFit(btn, itemfr, item)
+	if not item then return end
+
 	btn.HoverGradientColor = nil
 	btn:AlphaTo(255, 0.1, 0)
 end

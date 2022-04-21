@@ -181,6 +181,7 @@ end
 
 function ITEM:OnDragStart()
 	if self:Emit("CanDrag") == false then dragndrop.Clear() return end
+	if not self:GetItem(true) then return end
 
 	self:Emit("DragStart")
 	hook.Run("InventoryItemDragStart", self, self:GetItem(true))
