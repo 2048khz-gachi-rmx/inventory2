@@ -545,7 +545,7 @@ local function swapSlots(tname, uid, uid2, sid, slot1, slot2)
 
 	local em = MySQLEmitter:new(t, true)
 		:Catch(trerr)
-		:Then(function() print("ay god") end)
+		:Then(function() end)
 	return em
 end
 
