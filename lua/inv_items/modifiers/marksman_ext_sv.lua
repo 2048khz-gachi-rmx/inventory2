@@ -74,7 +74,7 @@ local function doDecay()
 		if not wep:IsValid() then mxTrack[wep] = nil continue end
 
 		local msh = mod._marksmanHits
-		local when = mod._lastMarksman
+		local when = mod._lastMarksman or 0
 		local passed = CurTime() - when
 
 		if passed > decayTime then
