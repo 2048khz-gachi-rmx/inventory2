@@ -4,14 +4,20 @@ AddCSLuaFile("cl_init.lua")
 
 function ENT:PhysicsCollide(dat, collider)
 	if dat.HitEntity ~= game.GetWorld() then return end
+	if self.Stuck then return end
 
-	local nang = dat.HitNormal:Angle()
-	nang:RotateAroundAxis(nang:Right(), 90)
-	self:SetAngles(nang)
-	dat.PhysObject:EnableMotion(false)
-	self:SetLandTime(CurTime())
-	self:SetOwner(NULL)
-	self:SetCollisionGroup(COLLISION_GROUP_DEBRIS)
+	self.Stuck = true
+
+	timer.Simple(0, function() -- ack
+		local nang = dat.HitNormal:Angle()
+		nang:RotateAroundAxis(nang:Right(), 90)
+		self:SetAngles(nang)
+		dat.PhysObject:EnableMotion(false)
+		self:SetLandTime(CurTime())
+		self:SetOwner(NULL)
+		self:SetCollisionGroup(COLLISION_GROUP_DEBRIS)
+	end)
+	
 	--self:SetPos()
 end
 
