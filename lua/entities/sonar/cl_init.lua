@@ -1,3 +1,4 @@
+setfenv(1, _G)
 include("shared.lua")
 
 local mat = Material("effects/tvscreen_noise003a")
@@ -48,19 +49,6 @@ local function setupRt()
 
 end
 
-local mins, maxs = Vector(), Vector()
-
-function ENT:Initialize()
-	setupRt()
-
-	mat:SetVector("$color", sphereCol)
-
-	local r = self:GetScanRadius()
-	self:SetRenderBounds(
-		Vector(-r, -r, -r),
-		Vector(r, r, r), Vector(4, 4, 4))
-end
-
 if LibItUp then -- autorefresh?
 	setupRt()
 end
@@ -100,6 +88,17 @@ local function drawScan(w, h, rt, fr)
 
 	surface.SetMaterial(MoarPanelsMats.gd)
 	surface.DrawTexturedRect(0, -8 + (h + 12) * fr, w, scanSz)
+end
+
+function ENT:Initialize()
+	setupRt()
+
+	mat:SetVector("$color", sphereCol)
+
+	local r = self:GetScanRadius()
+	self:SetRenderBounds(
+		Vector(-r, -r, -r),
+		Vector(r, r, r), Vector(4, 4, 4))
 end
 
 function ENT:Draw()
@@ -172,7 +171,6 @@ end
 SonarTrack = SonarTrack or {}
 
 local t = {}
-local shitrt, shitmat
 
 local dickfuck = CreateMaterial("sugma_bale", "VertexLitGeneric", {
 	["$basetexture"] = "models/debug/debugwhite",
@@ -186,11 +184,11 @@ local function renderTracked(ply)
 		if not ply:Alive() then
 			local rag = ply:GetRagdollEntity()
 			if rag:IsValid() then
-				t[1] = rag
+				t[#t + 1] = rag
 				halo.Add(t, Colors.Red, 1, 1, 2, true, true)
 			end
 		else
-			t[1] = ply
+			t[#t + 1] = ply
 			halo.Add(t, Colors.Yellowish, 1, 1, 3, true, true)
 		end
 
@@ -224,6 +222,9 @@ local end_me = 0
 hook.Add("PostDrawTranslucentRenderables", "Sonar", function(f, k, u)
 	if f or k or u then return end
 	if end_me == FrameNumber() then return end -- FUCK YOU
+	if table.IsEmpty(SonarTrack) then return end
+
+	t = {}
 
 	end_me = FrameNumber()
 
