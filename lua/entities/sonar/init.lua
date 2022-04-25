@@ -71,7 +71,7 @@ function ENT:SetReleaser(ply) -- ?? nice name
 	local pin = ply:GetPInfo()
 	local fac = pin and pin:GetFaction()
 
-	self._rel = ply
+	self._owner = ply
 	self._fac = fac
 
 	if fac then
@@ -95,13 +95,15 @@ end
 
 local function doTrack(ply, forply, uid)
 	-- ply:AddEFlags(EFL_IN_SKYBOX)
+	if not IsValid(ply) then return end
+
 	AddOriginToPVS(ply:EyePos())
 	local priv = forply:GetPInfo():GetPrivateNW()
 	priv:Set("Trk_" .. uid, true)
 	plyToUID[ply] = uid
 end
 
-local function doUntrack(ply, forply, force)
+local function doUntrack(ply, forply)
 	local uid = ply:IsValid() and ply:UserID() or plyToUID[ply]
 	local priv = forply:GetPInfo():GetPrivateNW()
 	local key = "Trk_" .. (active_track[ply] or uid)
@@ -109,8 +111,6 @@ local function doUntrack(ply, forply, force)
 	if priv:Get(key) then
 		priv:Set(key, nil)
 	end
-
-	forply._track[ply] = nil
 end
 
 local function isTracked(ply)
@@ -118,15 +118,18 @@ local function isTracked(ply)
 end
 
 function ENT:OnRemove()
-	table.RemoveByValue(sonarOwners[self._rel], self)
+	local ow = ChainValid(self._owner)
+	table.RemoveByValue(sonarOwners[self._owner], self)
+
 	if self._fac then
 		table.RemoveByValue(self._fac._sonars, self)
 	end
 
+	if not ow then return end
+
 	for k,v in ipairs(self._tracked) do
-		print("have tracked", v)
 		if v:IsValid() then
-			doUntrack(v, self._rel, true)
+			doUntrack(v, ow)
 		end
 	end
 end
@@ -172,6 +175,7 @@ end
 local function untrackAll(ply, trkTbl)
 	for k,v in pairs(trkTbl) do
 		doUntrack(k, ply)
+		trkTbl[k] = nil
 	end
 end
 
