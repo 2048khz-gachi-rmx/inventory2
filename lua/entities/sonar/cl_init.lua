@@ -1,4 +1,3 @@
-setfenv(1, _G)
 include("shared.lua")
 
 local mat = Material("effects/tvscreen_noise003a")
