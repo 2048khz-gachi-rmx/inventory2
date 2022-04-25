@@ -73,7 +73,7 @@ local function doDecay()
 	for wep, mod in pairs(mxTrack) do
 		if not wep:IsValid() then mxTrack[wep] = nil continue end
 
-		local msh = mod._marksmanHits
+		local msh = mod._marksmanHits or 0
 		local when = mod._lastMarksman or 0
 		local passed = CurTime() - when
 
@@ -81,7 +81,7 @@ local function doDecay()
 			local decPassed = passed - decayTime
 			mod._lastMarksman = when + decPassed
 
-			msh = math.max(0, math.min(mod._maxHits, msh) - decPassed)
+			msh = math.max(0, math.min(mod._maxHits or 0, msh) - decPassed)
 			mod._marksmanHits = msh
 			wep:SetNW2Float("MarksmanHits", mod._marksmanHits)
 
