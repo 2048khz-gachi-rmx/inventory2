@@ -131,13 +131,13 @@ function ENT:OnRemove()
 		table.RemoveByValue(self._fac._sonars, self)
 	end
 
-	if not ow then return end
+	--[[if not ow then return end
 
 	for k,v in ipairs(self._tracked) do
 		if v:IsValid() then
 			doUntrack(v, ow)
 		end
-	end
+	end]]
 end
 
 function ENT:CalculatePVS(trkTbl)
