@@ -97,26 +97,33 @@ local function writeTrack(where, who)
 	where[who] = who:UserID()
 end
 
-
-
 local function doTrack(ply, forply, uid)
 	-- ply:AddEFlags(EFL_IN_SKYBOX)
 	if not IsValid(ply) then return end
 
 	AddOriginToPVS(ply:EyePos())
-	local priv = forply:GetPInfo():GetPrivateNW()
+	local pin = forply:GetPInfo()
+	local priv = pin:GetPrivateNW()
 	priv:Set("Trk_" .. uid, true)
 	plyToUID[ply] = uid
+
+	pin._trk = pin._trk or {}
+	pin._trk[uid] = true
 end
 
 local function doUntrack(ply, forply)
 	local uid = ply:IsValid() and ply:UserID() or plyToUID[ply]
-	local priv = forply:GetPInfo():GetPrivateNW()
+	local pin = forply:GetPInfo()
+	local priv = pin:GetPrivateNW()
+
 	local key = "Trk_" .. (active_track[ply] or uid)
 
 	if priv:Get(key) then
 		priv:Set(key, nil)
 	end
+
+	pin._trk = pin._trk or {}
+	pin._trk[uid] = nil
 end
 
 local function isTracked(ply)
@@ -179,9 +186,23 @@ function ENT:CalculatePVS(trkTbl)
 end
 
 local function untrackAll(ply, trkTbl)
+	local nw = ply:GetPrivateNW()
+
 	for k,v in pairs(trkTbl) do
 		doUntrack(k, ply)
 		trkTbl[k] = nil
+	end
+
+	local pin = ply:GetPInfo()
+
+	if pin._trk then
+		for k,v in pairs(pin._trk) do
+			printf("! missed untrack (ow: %s, missed %s) !",
+				ply, ChainValid(Player(k)) or "[uid:" .. k .. "]")
+			ply:GetPrivateNW():Set("Trk_" .. k, nil)
+		end
+
+		pin._trk = nil
 	end
 end
 
@@ -212,7 +233,6 @@ hook.Add("SetupPlayerVisibility", "Sonar", function(ply)
 		for who, uid in pairs(fac._track) do
 			doTrack(who, ply, uid) -- then marked as tracked (and networked)
 		end
-
 	else
 		local srs = sonarOwners[ply]
 
