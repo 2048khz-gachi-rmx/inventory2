@@ -24,9 +24,6 @@ end
 SonarOwners = SonarOwners or {}
 local sonarOwners = SonarOwners
 
-ActiveSonarTrack = ActiveSonarTrack or {}
-local active_track = ActiveSonarTrack
-
 function ENT:Initialize()
 	self:SetModel(self.Model)
 
@@ -116,7 +113,7 @@ local function doUntrack(ply, forply)
 	local pin = forply:GetPInfo()
 	local priv = pin:GetPrivateNW()
 
-	local key = "Trk_" .. (active_track[ply] or uid)
+	local key = "Trk_" .. uid
 
 	if priv:Get(key) then
 		priv:Set(key, nil)
@@ -126,9 +123,6 @@ local function doUntrack(ply, forply)
 	pin._trk[uid] = nil
 end
 
-local function isTracked(ply)
-	return active_track[ply]
-end
 
 function ENT:OnRemove()
 	local ow = ChainValid(self._owner)
@@ -171,8 +165,6 @@ function ENT:CalculatePVS(trkTbl)
 	table.Empty(t)
 
 	for k,v in ipairs(player.GetConstAll()) do
-		if isTracked(v) then continue end
-
 		local pos = v:GetPos()
 
 		if mePos:DistToSqr(pos) > meRad then
@@ -199,7 +191,7 @@ local function untrackAll(ply, trkTbl)
 		for k,v in pairs(pin._trk) do
 			printf("! missed untrack (ow: %s, missed %s) !",
 				ply, ChainValid(Player(k)) or "[uid:" .. k .. "]")
-			ply:GetPrivateNW():Set("Trk_" .. k, nil)
+			nw:Set("Trk_" .. k, nil)
 		end
 
 		pin._trk = nil
