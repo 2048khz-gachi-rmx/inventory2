@@ -303,8 +303,9 @@ function ITEM:CreateModelPanel(it)
 				render.OverrideBlend(true, BLEND_SRC_COLOR, BLEND_SRC_ALPHA, BLENDFUNC_MIN, 0, 0, 5)
 			end]]
 
+			draw.EnableFilters()
 			pnt(me, w, h)
-
+			draw.DisableFilters()
 			--[[if self.PaintingDragging or self.TransparentModel then
 				render.OverrideBlend(false)
 				render.OverrideAlphaWriteEnable( false )
