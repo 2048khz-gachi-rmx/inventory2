@@ -30,7 +30,10 @@ function ent:SetOwner(ent)
 end
 
 function ent:SetPlayerOwner(ply)
-	if not GetPlayerInfo(ply) then error("A non-player can't be the player-owner of an Entity inventory!") return end
+	if not GetPlayerInfo(ply) then
+		errorf("A non-player can't be the player-owner of an Entity inventory! (given: %s)", ply)
+		return
+	end
 
 	local pin = GetPlayerInfo(ply)
 
@@ -50,13 +53,13 @@ ent:On("OwnerAssigned", "StoreEntity", function(self, ow)
 
 	local hookid = ("EntInv:%p"):format(self)
 
-	hook.OnceRet("EntityOwnershipChanged", hookid, function(ply, ent)
+	hook.OnceRet("EntityOwnershipChanged", hookid, function(ply, ent, sid)
 		if not ow:IsValid() then return end -- invalid entity = remove hook
 		if ent ~= ow then return false end
 
 		-- changed owner = remove hook
 		self.HasHook = false
-		self:SetPlayerOwner(ply)
+		self:SetPlayerOwner(ply or sid)
 		return false -- we put a new hook from SetOwner; dont remove this one cuz it has the same ID
 	end)
 end)

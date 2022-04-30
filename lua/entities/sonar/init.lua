@@ -24,9 +24,6 @@ end
 SonarOwners = SonarOwners or {}
 local sonarOwners = SonarOwners
 
-ActiveSonarTrack = ActiveSonarTrack or {}
-local active_track = ActiveSonarTrack
-
 function ENT:Initialize()
 	self:SetModel(self.Model)
 
@@ -116,7 +113,7 @@ local function doUntrack(ply, forply)
 	local pin = forply:GetPInfo()
 	local priv = pin:GetPrivateNW()
 
-	local key = "Trk_" .. (active_track[ply] or uid)
+	local key = "Trk_" .. uid
 
 	if priv:Get(key) then
 		priv:Set(key, nil)
@@ -126,9 +123,6 @@ local function doUntrack(ply, forply)
 	pin._trk[uid] = nil
 end
 
-local function isTracked(ply)
-	return active_track[ply]
-end
 
 function ENT:OnRemove()
 	local ow = ChainValid(self._owner)
@@ -171,8 +165,6 @@ function ENT:CalculatePVS(trkTbl)
 	table.Empty(t)
 
 	for k,v in ipairs(player.GetConstAll()) do
-		if isTracked(v) then continue end
-
 		local pos = v:GetPos()
 
 		if mePos:DistToSqr(pos) > meRad then
@@ -186,11 +178,13 @@ function ENT:CalculatePVS(trkTbl)
 end
 
 local function untrackAll(ply, trkTbl)
+	-- this function is called for every player;
+	-- do not modify trkTbl because it may be reused (caching)
 	local nw = ply:GetPrivateNW()
 
 	for k,v in pairs(trkTbl) do
 		doUntrack(k, ply)
-		trkTbl[k] = nil
+		--trkTbl[k] = nil
 	end
 
 	local pin = ply:GetPInfo()
@@ -199,7 +193,7 @@ local function untrackAll(ply, trkTbl)
 		for k,v in pairs(pin._trk) do
 			printf("! missed untrack (ow: %s, missed %s) !",
 				ply, ChainValid(Player(k)) or "[uid:" .. k .. "]")
-			ply:GetPrivateNW():Set("Trk_" .. k, nil)
+			nw:Set("Trk_" .. k, nil)
 		end
 
 		pin._trk = nil
@@ -210,37 +204,47 @@ hook.Add("SetupPlayerVisibility", "Sonar", function(ply)
 	local pin = ply:GetPInfo()
 	local fac = pin:GetFaction()
 
-	ply._track = ply._track or {}
-
 	if fac then
 		local srs = fac._sonars
-		fac._track = fac._track or {}
 
-		untrackAll(ply, fac._track) -- everyone the player was tracking gets reset
+		if fac._track then
+			untrackAll(ply, fac._track) -- make the player not track anyone but don't reset faction track cache
+		end
 
 		if not srs or #srs == 0 then
+			fac._track = nil
 			return
 		end
 
 		if fac._trackFilled ~= engine.TickCount() then
+			-- if needed, recalculate cache
+			fac._track = {}
 			for k,v in ipairs(srs) do
-				v:CalculatePVS(fac._track) -- then refilled
+				v:CalculatePVS(fac._track)
 			end
 
 			fac._trackFilled = engine.TickCount()
 		end
 
-		for who, uid in pairs(fac._track) do
-			doTrack(who, ply, uid) -- then marked as tracked (and networked)
+		if fac._track then
+			-- then use track cache to mark tracked people as such
+			for who, uid in pairs(fac._track) do
+				doTrack(who, ply, uid)
+			end
 		end
 	else
 		local srs = sonarOwners[ply]
 
-		untrackAll(ply, ply._track)
+		if ply._track then
+			untrackAll(ply, ply._track)
+		end
 
 		if not srs or #srs == 0 then
+			ply._track = nil
 			return
 		end
+
+		ply._track = {}
 
 		for k,v in ipairs(srs) do
 			v:CalculatePVS(ply._track)
