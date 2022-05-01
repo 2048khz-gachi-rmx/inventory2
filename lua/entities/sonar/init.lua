@@ -1,4 +1,3 @@
-setfenv(1, _G)
 include("shared.lua")
 AddCSLuaFile("shared.lua")
 AddCSLuaFile("cl_init.lua")
@@ -207,6 +206,12 @@ hook.Add("Think", "SonarRecalculate", function()
 		local srs = fac._sonars
 
 		if not srs or #srs == 0 then
+			if fac._trkActive then
+				for _, ply in pairs(fac:GetMembers()) do
+					untrackAll(ply, fac._track)
+				end
+			end
+
 			fac._trkActive = false
 			return
 		end
@@ -245,8 +250,10 @@ hook.Add("SetupPlayerVisibility", "Sonar", function(ply)
 		-- untrackAll(ply, fac._track)
 
 		-- use track cache to mark tracked people as such
-		for who, uid in pairs(fac._track) do
-			doTrack(who, ply, uid)
+		if fac._trkActive then
+			for who, uid in pairs(fac._track) do
+				doTrack(who, ply, uid)
+			end
 		end
 	else
 		local srs = sonarOwners[ply]
