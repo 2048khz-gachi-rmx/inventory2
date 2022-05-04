@@ -536,8 +536,8 @@ function nw.ReadInventory(owCheck)
 		local inv = ent.Inventory[key]
 
 		if owCheck and not inv:IsOwner(owCheck) then
-			return false, ("failed owner check (%s tried to use %s's '%s' inventory)"):format(
-				owCheck, ent, k
+			return false, ("failed owner check (%s tried to use one of %s's '%s' inventories (@ %d))"):format(
+				owCheck, ent, id, key
 			)
 		end
 
@@ -553,7 +553,7 @@ function nw.ReadInventory(owCheck)
 
 			if owCheck and not v:IsOwner(owCheck) then
 				return false, ("failed owner check (%s tried to use %s's '%s' inventory)"):format(
-					owCheck, ent, k
+					owCheck, ent, id
 				)
 			end
 

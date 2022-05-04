@@ -1,4 +1,4 @@
---
+setfenv(1, _G)
 
 local mxTrack = {}
 local el = Inventory.Modifiers.Pool.Marksman
@@ -6,14 +6,14 @@ local el = Inventory.Modifiers.Pool.Marksman
 local makeTimer
 
 el:Hook("EntityTakeDamage", function(self, ent, dmg)
-		if not ent:IsPlayer() then return end
+	if not ent:IsPlayer() then return end
 
-		local str, cap = self:GetTierStrength(self:GetTier())
-		if not str then return end
+	local str, cap = self:GetTierStrength(self:GetTier())
+	if not str then return end
 
-		local bonus = math.Clamp(str * (self._marksmanHits - 1), 0, cap) / 100 + 1
-		dmg:ScaleDamage(bonus)
-	end)
+	local bonus = math.Clamp(str * ((self._marksmanHits or 1) - 1), 0, cap) / 100 + 1
+	dmg:ScaleDamage(bonus)
+end)
 
 hook.Add("ArcCW_BulletLanded", "MarksmanMod", function(wep, pen)
 	local ow = wep:GetOwner()

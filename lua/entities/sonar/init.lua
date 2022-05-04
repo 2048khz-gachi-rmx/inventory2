@@ -109,7 +109,7 @@ local function doTrack(ply, forply, uid)
 end
 
 local function doUntrack(ply, forply)
-	local uid = ply:IsValid() and ply:UserID() or plyToUID[ply]
+	local uid = isnumber(ply) and ply or (ply:IsValid() and ply:UserID() or plyToUID[ply])
 	local pin = forply:GetPInfo()
 	local priv = pin:GetPrivateNW()
 
@@ -182,8 +182,8 @@ local function untrackAll(ply, trkTbl)
 	-- do not modify trkTbl because it may be reused (caching)
 	local nw = ply:GetPrivateNW()
 
-	for k,v in pairs(trkTbl) do
-		doUntrack(k, ply)
+	for trkedPly, uid in pairs(trkTbl) do
+		doUntrack(uid, ply)
 		--trkTbl[k] = nil
 	end
 
@@ -200,34 +200,57 @@ local function untrackAll(ply, trkTbl)
 	end
 end
 
-hook.Add("SetupPlayerVisibility", "Sonar", function(ply)
-	local pin = ply:GetPInfo()
-	local fac = pin:GetFaction()
+hook.Add("Think", "SonarRecalculate", function()
 
-	if fac then
+	for k, fac in pairs(Factions.Factions) do
 		local srs = fac._sonars
 
-		if fac._track then
-			untrackAll(ply, fac._track) -- make the player not track anyone but don't reset faction track cache
-		end
-
 		if not srs or #srs == 0 then
-			fac._track = nil
+			if fac._trkActive then
+				for _, ply in pairs(fac:GetMembers()) do
+					untrackAll(ply, fac._track)
+				end
+			end
+
+			fac._trkActive = false
 			return
 		end
 
 		if fac._trackFilled ~= engine.TickCount() then
 			-- if needed, recalculate cache
+			fac._trkActive = true
+
+			if fac._track then
+				for _, ply in pairs(fac:GetMembers()) do
+					untrackAll(ply, fac._track)
+				end
+			end
+
 			fac._track = {}
+
 			for k,v in ipairs(srs) do
 				v:CalculatePVS(fac._track)
 			end
 
 			fac._trackFilled = engine.TickCount()
 		end
+	end
 
-		if fac._track then
-			-- then use track cache to mark tracked people as such
+end)
+
+hook.Add("SetupPlayerVisibility", "Sonar", function(ply)
+	local pin = ply:GetPInfo()
+	local fac = pin:GetFaction()
+
+	if fac then
+		if not fac._track then return end
+		if table.IsEmpty(fac._track) then return end
+
+		-- everyone is untracked when the faction updates cache
+		-- untrackAll(ply, fac._track)
+
+		-- use track cache to mark tracked people as such
+		if fac._trkActive then
 			for who, uid in pairs(fac._track) do
 				doTrack(who, ply, uid)
 			end
