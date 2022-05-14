@@ -20,7 +20,7 @@ function f:PostPaint(w, h)
 
 end
 
-function f:AppearInventory(p)
+function f:AppearInventory(p, noanim)
 	for k,v in ipairs(p.DisappearAnims) do
 		v:Stop()
 		p.DisappearAnims[k] = nil
@@ -28,19 +28,27 @@ function f:AppearInventory(p)
 
 	p:SetZPos(0)
 	p:Show()
-	p:PopIn(0.2, 0)
+	
+	if not noanim then
+		p:PopIn(0.2, 0)
 
-	local fromabove = p:NewAnimation(0.35, 0, 0.4)
-	local pos = self:GetPositioned()
-	local x, y = pos[1], pos[2]
+		local fromabove = p:NewAnimation(0.35, 0, 0.4)
+		local pos = self:GetPositioned()
+		local x, y = pos[1], pos[2]
 
-	fromabove.Think = function(_, pnl, frac)
-		local off = 16
+		fromabove.Think = function(_, pnl, frac)
+			local off = 16
 
-		local x = x - off + off * frac
-		local y = y - 8 + 8 * frac
+			local x = x - off + off * frac
+			local y = y - 8 + 8 * frac
 
-		pnl:SetPos(x, y)
+			pnl:SetPos(x, y)
+		end
+	else
+		p:SetAlpha(255)
+		local pos = self:GetPositioned()
+		local x, y = pos[1], pos[2]
+		p:SetPos(x, y)
 	end
 
 
@@ -119,7 +127,9 @@ function f:SetInventory(inv, pnl, noanim)
 		if uids[it:GetUID()] == self then uids[it:GetUID()] = nil end
 	end
 
-	if not noanim then p:PopIn(0.1, 0.05) end
+	if not noanim then
+		p:PopIn(0.1, 0.05)
+	end
 
 
 	if inv.MaxItems then
@@ -162,7 +172,7 @@ function f:SetInventory(inv, pnl, noanim)
 	end)
 
 	self:Emit("SwitchInventory", inv, p)
-	self:AppearInventory(p)
+	self:AppearInventory(p, noanim)
 
 	return p, true, true
 end
