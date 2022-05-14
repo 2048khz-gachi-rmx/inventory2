@@ -5,7 +5,7 @@ iPan.SlotSize = 80
 iPan.SlotPadding = 4
 iPan.CloseTime = 0
 
-function iPan.CreateInventory(inv, multiple, set)
+function Inventory.Panels.CreateInventory(inv, multiple, set)
 	if not multiple and iPan.IFrame and iPan.IFrame:IsValid() then iPan.IFrame:Remove() end
 
 	local multi_invs = false
@@ -146,7 +146,6 @@ function Inventory.Panels.PickSettings(width)
 	if width then
 		fits = math.floor((width - 4) / sz)
 	else
-		
 		fits = ScrW() >= 1200 and 6 or 4
 	end
 
