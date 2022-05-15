@@ -105,6 +105,8 @@ function ms.StateSetQuery(q, ...)
 		Inventory.MySQL:Emit("StatesChanged", unpack(states))
 	end)
 
+	q:Catch(q.DefaultCatch)
+
 	return q
 end
 
