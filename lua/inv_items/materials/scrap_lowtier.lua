@@ -1,4 +1,3 @@
---
 Inventory.BaseItemObjects.Generic("wire")
 	:SetName("Copper Wire")
 	:SetModel("models/z-o-m-b-i-e/st/big_object/st_katushka_03.mdl")
@@ -72,49 +71,6 @@ Inventory.BaseItemObjects.Generic("radiator")
 
 	:SetRarity("uncommon")
 
-Inventory.BaseItemObjects.Generic("cpu")
-	:SetName("Processor")
-	:SetModel("models/cheeze/wires/cpu.mdl")
-	:SetColor(Color(220, 220, 220))
-
-	:SetCamPos( Vector(58.7, -37.7, 51.2) )
-	:SetLookAng( Angle(36.1, -212.7, 0.0) )
-	:SetFOV( 4.7 )
-
-	:SetCountable(true)
-	:SetMaxStack(10)
-
-	:SetRarity("rare")
-
-Inventory.BaseItemObjects.Generic("tgt_finder")
-	:SetName("Locator")
-	:SetModel("models/beer/wiremod/targetfinder.mdl")
-	:SetColor(Color(60, 180, 250))
-
-	:SetCamPos( Vector(-39.5, -67.7, 36.7) )
-	:SetLookAng( Angle(24.7, 59.8, 0.0) )
-	:SetFOV( 9.5 )
-
-	:SetCountable(true)
-	:SetMaxStack(5)
-	:SetBaseTransferCost(25000)
-
-	:SetRarity("rare")
-
-Inventory.BaseItemObjects.Generic("emitter")
-	:SetName("Emitter")
-	:SetModel("models/cheeze/wires/wireless_card.mdl")
-	:SetColor(Color(80, 220, 80))
-
-	:SetCamPos( Vector(-38.3, -65.7, 42.2) )
-	:SetLookAng( Angle(28.5, 59.3, 0.0) )
-	:SetFOV( 8.9 )
-
-	:SetCountable(true)
-	:SetMaxStack(5)
-
-	:SetRarity("rare")
-
 
 Inventory.BaseItemObjects.Generic("weaponparts")
 	:SetName("Weapon Parts")
@@ -156,20 +112,6 @@ Inventory.BaseItemObjects.Generic("laserdiode")
 
 	:SetRarity("uncommon")
 
-Inventory.BaseItemObjects.Generic("wepkit")
-	:SetName("Gunsmith Kit")
-	:SetModel("models/maver1k_xvii/stalker/props/devices/dev_merger.mdl")
-	:SetColor(Color(230, 230, 230))
-
-	:SetCamPos( Vector(59, -48.7, 46.5) )
-	:SetLookAng( Angle(29.2, -219.4, 0.0) )
-	:SetFOV( 12.5 )
-
-	:SetCountable(true)
-	:SetMaxStack(3)
-	:SetBaseTransferCost(75000)
-	:SetRarity("rare")
-
 Inventory.BaseItemObjects.Generic("lube")
 	:SetName("Lubricant")
 	:SetModel("models/props_junk/garbage_plasticbottle002a.mdl")
@@ -184,6 +126,33 @@ Inventory.BaseItemObjects.Generic("lube")
 	:SetMaxStack(10)
 	:SetBaseTransferCost(10000)
 	:SetRarity("uncommon")
+
+
+--[[
+-- big black tube, kinda like a graphite rod in mc
+
+:SetModel("models/hunter/tubes/tube1x1x6.mdl")
+	:SetModelColor(Color(250, 250, 250))
+	:SetColor(Color(75, 75, 75):MulHSV(1, 1.2, 1.6))
+
+	:SetCamPos( Vector(-250.3, -0.0, 142.4) )
+	:SetLookAng( Angle(0.0, 0.0, 45.0) )
+	:SetFOV( 50.3 )
+
+	:SetShouldSpin(false)
+
+	:SetCountable(true)
+	:SetMaxStack(50)
+	:SetBaseTransferCost(5000)
+	:SetRarity("uncommon")
+
+	:On("UpdateModel", "ResourceSkin", function(base, item, ent, inPnl)
+		local mx = Matrix()
+		mx:ScaleNumber(0.5, 0.5, 1)
+		ent:EnableMatrix("RenderMultiply", mx)
+		ent:SetMaterial("phoenix_storms/metalset_1-2")
+	end)
+]]
 
 --[[
 Inventory.BaseItemObjects.Generic("adhesive")
