@@ -7,13 +7,10 @@ ENT.BeamHeight = 96
 
 local scale, scaleW = Scaler(1600, 900)
 
-function ENT:FillInventory(ipnl)
-	for i=1, 16 do
-		local itm = ipnl:Add("ItemFrame")
-	end
-end
-
 function ENT:QMOnOpen(qm, pnl)
+	local canv = qm:GetCanvas()
+	printf("le canv %p %s", canv, qm.__Canvas)
+
 	local sets = Inventory.Panels.PickSettings()
 	sets.SlotSize = scaleW(72)
 
@@ -22,8 +19,7 @@ function ENT:QMOnOpen(qm, pnl)
 	local invW = (sets.SlotSize + inv.SlotPadding) * sets.FitsItems - inv.SlotPadding
 		+ inv:GetRetractedSize() + (8 + 4) * 2
 
-
-	inv:SetParent(pnl)
+	inv:SetParent(canv)
 	inv:SetFull(true)
 	inv:CenterVertical()
 	inv:SelectTab("Backpack", true)
@@ -33,7 +29,9 @@ function ENT:QMOnOpen(qm, pnl)
 
 	qm.IFrame = inv
 
-	local f = vgui.Create("FFrame", pnl)
+	local f = Inventory.Panels.CreateInventory(self.Storage, true, sets)
+	f:SetParent(canv)
+
 	qm.Frame = f
 
 	f:SetSize(inv:GetSize())
@@ -41,33 +39,39 @@ function ENT:QMOnOpen(qm, pnl)
 	f:PopIn()
 	f:SetDraggable(false)
 	f.MoveX = -24
+	--f:SetInventory(self.Storage)
+	f:InvalidateLayout(true)
+	f:ShrinkToFit()
+	f:CenterVertical()
+
+
 	f.WantX = ScrW() * 0.45 - f:GetWide()
+
 	f.X = f.WantX - f.MoveX
 	f:SetCloseable(false, true)
-
 	f:MoveBy(f.MoveX, 0, 0.2, 0, 0.3)
 
 	inv.WantX = ScrW() * 0.55
 	inv.X = inv.WantX + f.MoveX
 	inv:MoveBy(-f.MoveX, 0, 0.2, 0, 0.3)
 
-	local lInvName = vgui.Create("InvisPanel", f)
-	lInvName:Dock(TOP)
-	lInvName:SetTall(24)
+	f:GetInventoryPanel():On("FastAction", "loot", function(ip, itFr, why)
+		if why ~= "double" then return end
 
-	local lInv = vgui.Create("FIconLayout", f)
-	lInv:Dock(FILL)
+		LocalPlayer():GetBackpack()
+			:RequestPickup(itFr:GetItem(true))
+	end)
 
-	f:InvalidateLayout(true)
-	self:FillInventory(lInv)
-	lInv:UpdateSize(inv:GetSize())
-
-	f:SetTall(lInv.Y + lInv:GetTall() + 8)
-	f:CenterVertical()
+	f:On("Think", "loot", function()
+		if table.IsEmpty(self.Storage:GetItems()) then
+			qm:RequestClose()
+		end
+	end)
 end
 
 function ENT:QMOnBeginClose(qm, pnl)
 	local f, inv = qm.Frame, qm.IFrame
+
 	f:MoveTo(f.WantX - f.MoveX, f.Y, 0.2, 0, 0.3)
 	f:PopOutHide()
 	inv:MoveTo(inv.WantX + f.MoveX, inv.Y, 0.2, 0, 0.3)
@@ -82,6 +86,12 @@ function ENT:QMOnReopen(qm, pnl)
 	inv:PopInShow()
 end
 
+function ENT:RequestNetwork()
+	net.Start("lootable")
+		net.WriteEntity(self)
+	net.SendToServer()
+end
+
 function ENT:CLInit()
 	local qm = self:SetQuickInteractable()
 
@@ -90,6 +100,9 @@ function ENT:CLInit()
 	qm.OnClose = function(_, ent, pnl) self:QMOnBeginClose(qm, pnl) end
 	qm.OnReopen = function(_, ent, pnl) self:QMOnReopen(qm, pnl) end
 	qm.dist = 96
+
+	qm:On("BeginOpen", "req", Curry(self.RequestNetwork, self))
+	qm:On("BeginReopen", "req", Curry(self.RequestNetwork, self))
 end
 
 function ENT:Think()
