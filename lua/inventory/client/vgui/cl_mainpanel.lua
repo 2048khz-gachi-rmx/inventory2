@@ -50,8 +50,6 @@ function f:AppearInventory(p, noanim)
 		local x, y = pos[1], pos[2]
 		p:SetPos(x, y)
 	end
-
-
 end
 
 function f:DisappearInventory(p)
@@ -94,6 +92,11 @@ function f:GetInventoryPanel()
 end
 
 function f:SetInventory(inv, pnl, noanim)
+	if not pnl and self.CurrentInventory and self.CurrentInventory ~= inv then
+		print("!! bad !!", self.InvPanel:GetInventory(), inv)
+		self:DisappearInventory(self.InvPanel)
+	end
+
 	if pnl then
 		self:Emit("SwitchInventory", inv, pnl)
 		self:AppearInventory(pnl)
@@ -133,7 +136,6 @@ function f:SetInventory(inv, pnl, noanim)
 
 
 	if inv.MaxItems then
-
 		for i=1, inv.MaxItems do
 			local slot = p:AddItemSlot()
 			slots[i] = slot
@@ -147,13 +149,9 @@ function f:SetInventory(inv, pnl, noanim)
 				uids[item:GetUID()] = slot
 			end
 		end
-
 	else
-
-		for k,v in pairs(inv:GetItems()) do
-
-		end
-
+		-- ?
+		print("!! no max items?")
 	end
 
 	Inventory:On("ItemMoved", p, function(_, inv, item)
@@ -251,6 +249,15 @@ function f:AreaChanged(x, y, w, h)
 		self.AreaMovingX, self.AreaMovingY = nil, nil
 	end)
 
+end
+
+function f:ShrinkToFit()
+	local ip = self:GetInventoryPanel()
+	local h = ip:GetLinesHeight()
+	local l, t, r, b = ip:GetDockPadding()
+
+	print("ShrinkToFit", ip.Y, h, t, b)
+	self:SetTall(ip.Y + h + t + b)
 end
 
 function f:Attach(p, posfunc)

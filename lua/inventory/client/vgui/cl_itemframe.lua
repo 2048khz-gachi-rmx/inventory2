@@ -109,11 +109,32 @@ function ITEM:BindInventory(inv, slot)
 	end
 end
 
+function ITEM:DoFastAction(why)
+	self:Emit("FastAction", why)
+end
+
+function ITEM:DoDoubleClick()
+	local ret = self:Emit("DoubleClick", self:GetSlot(), self:GetItem())
+	if ret ~= nil then return end
+
+	self:DoFastAction("double")
+end
+
+function ITEM:DoClick()
+	local ret = self:Emit("Click", self:GetSlot(), self:GetItem())
+	if ret ~= nil then return end
+
+	if input.IsControlDown() then
+		self:DoFastAction("ctrl")
+	end
+end
+
+
 function ITEM:Init()
 	self:SetSize(iPan.SlotSize, iPan.SlotSize)
 	self:SetText("")
 	self:SetEnabled(false)
-	self:SetDoubleClickingEnabled(false)
+	--self:SetDoubleClickingEnabled(false)
 
 	self:Droppable("Item")
 	self:SetCursor("arrow") --"none" causes flicker wtf
@@ -274,6 +295,12 @@ function ITEM:CreateModelPanel(it)
 			self.ModelPanel:SetModel(it:GetModel())
 			self.ModelPanel.Item = it
 
+			if IsValid(self.ModelPanel:GetEntity()) then
+				it:GetBaseItem():Emit("UpdateModel", it, self.ModelPanel:GetEntity(), true)
+			end
+
+			it:GetBaseItem():Emit("UpdatePanel", it, self, self.ModelPanel)
+
 			BestGuess(nil, self.ModelPanel)
 		else
 			self.ModelPanel:Remove()
@@ -283,47 +310,53 @@ function ITEM:CreateModelPanel(it)
 		return
 	end
 
-	if not IsValid(self.ModelPanel) and it:GetModel() then
-		local mdl = vgui.Create("DModelPanel", self)
-		mdl.Item = it
+	if not it:GetModel() then return end
 
-		mdl:SetMouseInputEnabled(false)
-		mdl:SetSize(self:GetWide() - self.Rounding*2, self:GetTall())
-		mdl:SetPos(self.Rounding, self.Rounding)
-		mdl:SetModel(it:GetModel())
-		mdl.Spin = true
+	local mdl = vgui.Create("DModelPanel", self)
+	mdl.Item = it
 
-		local pnt = mdl.Paint
+	mdl:SetMouseInputEnabled(false)
+	mdl:SetSize(self:GetWide() - self.Rounding*2, self:GetTall())
+	mdl:SetPos(self.Rounding, self.Rounding)
+	mdl:SetModel(it:GetModel())
+	mdl.Spin = true
 
-		function mdl.Paint(me, w, h)
+	local pnt = mdl.Paint
 
-			--[[if self.PaintingDragging or self.TransparentModel then
-				render.OverrideAlphaWriteEnable( true, false )
-				render.SetWriteDepthToDestAlpha( false )
-				render.OverrideBlend(true, BLEND_SRC_COLOR, BLEND_SRC_ALPHA, BLENDFUNC_MIN, 0, 0, 5)
-			end]]
+	function mdl.Paint(me, w, h)
 
-			draw.EnableFilters()
-			pnt(me, w, h)
-			draw.DisableFilters()
-			--[[if self.PaintingDragging or self.TransparentModel then
-				render.OverrideBlend(false)
-				render.OverrideAlphaWriteEnable( false )
-				render.SetWriteDepthToDestAlpha( true )
-			end]]
+		--[[if self.PaintingDragging or self.TransparentModel then
+			render.OverrideAlphaWriteEnable( true, false )
+			render.SetWriteDepthToDestAlpha( false )
+			render.OverrideBlend(true, BLEND_SRC_COLOR, BLEND_SRC_ALPHA, BLENDFUNC_MIN, 0, 0, 5)
+		end]]
 
-		end
+		draw.EnableFilters()
+		pnt(me, w, h)
+		draw.DisableFilters()
+		--[[if self.PaintingDragging or self.TransparentModel then
+			render.OverrideBlend(false)
+			render.OverrideAlphaWriteEnable( false )
+			render.SetWriteDepthToDestAlpha( true )
+		end]]
 
-		local spin = mdl.LayoutEntity
-		function mdl:LayoutEntity(...)
-			if not self.Spin then return end
-			spin(self, ...)
-		end
-
-		self:On("BaseItemUpdate", mdl, BestGuess, mdl)
-		BestGuess(_, mdl)
-		self.ModelPanel = mdl
 	end
+
+	local spin = mdl.LayoutEntity
+	function mdl:LayoutEntity(...)
+		if not self.Spin then return end
+		spin(self, ...)
+	end
+
+	self:On("BaseItemUpdate", mdl, BestGuess, mdl)
+	BestGuess(_, mdl)
+	self.ModelPanel = mdl
+
+	if IsValid(self.ModelPanel:GetEntity()) then
+		it:GetBaseItem():Emit("UpdateModel", it, self.ModelPanel:GetEntity(), true)
+	end
+
+	it:GetBaseItem():Emit("UpdatePanel", it, self, self.ModelPanel)
 end
 
 function ITEM:SetInventoryPanel(it)
@@ -354,12 +387,6 @@ function ITEM:SetItem(it)
 		Inventory:On("BaseItemDefined", self, ItemFrameUpdate, self)
 
 		self:CreateModelPanel(it)
-
-		if self.ModelPanel and IsValid(self.ModelPanel:GetEntity()) then
-			self.Item:GetBaseItem():Emit("UpdateModel", self.Item, self.ModelPanel:GetEntity(), true)
-		end
-
-		self.Item:GetBaseItem():Emit("UpdatePanel", self.Item, self, self.ModelPanel)
 
 		--self:Emit("Item", it, true)
 		self:OnInventoryUpdated()
@@ -522,10 +549,6 @@ function ITEM:Draw(w, h)
 
 	end]]
 
-end
-
-function ITEM:DoClick()
-	self:Emit("Click", self:GetSlot(), self:GetItem())
 end
 
 function ITEM:DoRightClick()

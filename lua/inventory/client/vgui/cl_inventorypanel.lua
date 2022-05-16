@@ -2,9 +2,10 @@ local PANEL = {}
 local iPan = Inventory.Panels
 
 function PANEL:Init()
+	self:DockPadding(4, 32, 4, 4)
+
 	local scr = vgui.Create("FScrollPanel", self)
 	scr:Dock(FILL)
-	scr:DockMargin(4, 32, 4, 4)
 
 	scr.GradBorder = true
 	scr:GetCanvas():AddDockPadding(0, 8, 0, 8)
@@ -302,7 +303,7 @@ function PANEL:ItemDrop(rec, drop, item, ...)
 		return
 	end
 
-	if sf:Emit("ItemDropOn", rec, drop, item) == false then
+	if sf and sf:Emit("ItemDropOn", rec, drop, item) == false then
 		return
 	end
 
@@ -340,6 +341,13 @@ function PANEL.OnItemClick(itmpnl, invpnl, slot, itm)
 	invpnl:Emit("Click", itmpnl, slot, itm)
 end
 
+function PANEL.OnItemFastAction(itmpnl, invpnl, why)
+	invpnl:Emit("FastAction", itmpnl, why)
+end
+
+PANEL.XPadding = 8
+PANEL.YPadding = 8
+
 function PANEL:AddItemSlot()
 	local i = #self.Slots
 
@@ -350,8 +358,8 @@ function PANEL:AddItemSlot()
 	local x = i % main.FitsItems
 	local y = math.floor(i / main.FitsItems)
 
-	it:SetPos( 	8 + x * (main.SlotSize + main.SlotPadding),
-				8 + y * (main.SlotSize + main.SlotPadding))
+	it:SetPos( 	self.XPadding + x * (main.SlotSize + main.SlotPadding),
+				self.YPadding + y * (main.SlotSize + main.SlotPadding))
 
 	self.Slots[i + 1] = it
 	it:SetInventoryPanel(self)
@@ -360,8 +368,11 @@ function PANEL:AddItemSlot()
 	it:On("ItemInserted", self, self.OnItemAddedIntoSlot, self)
 	it:On("ItemHover", self, self.CheckCanDrop, self)
 	it:On("Click", self, self.OnItemClick, self)
+	it:On("FastAction", self, self.OnItemFastAction, self)
 
 	it:BindInventory(self:GetInventory(), it:GetSlot())
+
+	self.ItemLines = math.max(self.ItemLines or 0, y)
 
 	--[[self:On("Change", it, function(self, inv, ...)
 		if inv:GetItemInSlot(it:GetSlot()) ~= it:GetItem(true) then
@@ -372,7 +383,17 @@ function PANEL:AddItemSlot()
 	end)]]
 
 	it:On("Drop", "FrameItemDrop", function(...) self:ItemDrop(...) end)
+
 	return it
+end
+
+function PANEL:GetItemLines()
+	return self.ItemLines + 1
+end
+
+function PANEL:GetLinesHeight()
+	local main = self:GetMainFrame()
+	return self.YPadding * 2 + (self:GetItemLines() * (main.SlotSize + main.SlotPadding) - main.SlotPadding)
 end
 
 function PANEL:GetItems()
