@@ -188,6 +188,10 @@ function bp:MoveItem(it, slot)	--this is a utility function which swaps slots if
 	it:SetSlot(slot, false)
 	if it2 then it2:SetSlot(b4slot, false) end
 
+	if not self.ReadingNetwork then
+		self:Emit("Change")
+	end
+
 	if SERVER then return Inventory.MySQL.SwitchSlots(it, it2) end
 end
 
@@ -297,16 +301,24 @@ function bp:vprint(...)
 	print(...)
 end
 
+function bp:EmitHook(ev, ...)
+	local ea, eb, ec, ed = self:Emit(ev, ...)
+	if ea ~= nil then return ea, eb, ec, ed end
+
+	local a, b, c, d = hook.Run(self.Name .. "_" .. ev, self, ...)
+	if a ~= nil then return a, b, c, d end
+end
+
 function bp:HasAccess(ply, action, ...)
-	if self.DisallowAllActions then return false end
+	if self.DisallowAllActions then return false, "all disallowed" end
 
 	-- step 1. can they interact at all?
 	local allow = self:Emit("AllowInteract", ply, action, ...)
-	if allow == false then self:vprint("caninteract gave no") return false end
+	if allow == false then self:vprint("caninteract gave no") return false, "interact disallowed" end
 
 	-- step 2.1. can they do this particular action? check via emitter
 	allow = self:Emit("Can" .. action, ply, ...)
-	if allow ~= nil then self:vprint("Can" .. action, "gave no") return allow end
+	if allow ~= nil then self:vprint("Can" .. action, "gave no") return allow, "Can" .. action .. " gave no" end
 
 	-- step 2.2. same but check via ActionCan["action"] function or bool
 
@@ -318,7 +330,7 @@ function bp:HasAccess(ply, action, ...)
 		else
 			allow = self["ActionCan" .. action]
 		end
-		return allow
+		return allow, "ActionCan" .. action
 	end
 
 

@@ -69,15 +69,16 @@ ent:On("PlayerCanAddInventory", "NoAutoAdd", function() -- don't add this invent
 	return false
 end)
 
-local function isOwner(self, ply)
+function ent:IsEntityOwner(ply)
 	local ow = self:GetOwnerUID()
-	if ow ~= ply:SteamID64() and self.UseOwnership then return false end
+	if ow ~= ply:SteamID64() then return false end
 
 	return true
 end
 
 function ent:HasAccess(ply, action, ...)
-	if not isOwner(self, ply) then return false end
+	if self.UseOwnership and not self:IsEntityOwner(ply) then return false end
+
 	return self.__parent.HasAccess(self, ply, action, ...)
 end
 

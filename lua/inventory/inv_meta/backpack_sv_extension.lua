@@ -103,22 +103,29 @@ end
 function bp:CanCrossInventoryMove(it, inv2, slot, ply)
 	-- check if they have that slot available
 
-	if slot and inv2:IsSlotLegal(slot) == false then return false end
+	-- assertf(IsPlayer(ply), "%s is not player (%s)", ply, type(ply))
 
-	if ply and not inv2:HasAccess(ply, "CrossInventoryTo", it, self) then return false end
-	if ply and not self:HasAccess(ply, "CrossInventoryFrom", it, inv2) then return false end
+	if slot and inv2:IsSlotLegal(slot) == false then return false, "illegal slot " .. tostring(slot) end
+
+	if ply then
+		local can, why = inv2:HasAccess(ply, "CrossInventoryTo", it, self)
+		if not can then return false, "no access to other inv: " .. why end
+
+		can, why = self:HasAccess(ply, "CrossInventoryFrom", it, inv2)
+		if not can then return false, "no access to self: " .. why end
+	end
 
 	-- check if inv2 can accept cross-inventory item
-	if inv2:Emit("CanMoveTo", it, self, slot) == false then print("CanMoveTo no", inv2) return false end
+	if inv2:Emit("CanMoveTo", it, self, slot) == false then print("CanMoveTo no", inv2) return false, "cannot move to inv2" end
 
 	-- check if we can give out the item
-	if self:Emit("CanMoveFrom", it, inv2, slot) == false then print("CanMoveFrom no") return false end
+	if self:Emit("CanMoveFrom", it, inv2, slot) == false then print("CanMoveFrom no") return false, "cannot move from self" end
 
 	-- check if inv2 can add an item to itself
-	if inv2:Emit("CanAddItem", it, it:GetUID(), slot) == false then print("CanAdd no") return false end
+	if inv2:Emit("CanAddItem", it, it:GetUID(), slot) == false then print("CanAdd no") return false, "cannot add item to inv2" end
 
 	-- check if the item can be moved
-	if it:Emit("CanCrossMove", self, inv2, slot) == false then print("CanItemAdd no") return false end
+	if it:Emit("CanCrossMove", self, inv2, slot) == false then print("CanCrossMove no") return false, "cannot crossmove item" end
 
 	return true
 end
@@ -146,26 +153,34 @@ end
 function bp:CrossInventoryMove(it, inv2, slot, ply)
 	if not IsInventory(inv2) then
 		errorf("CrossInventoryMove between what invs")
-		return
+		return false, "no second inv given"
 	end
 
 	if it:GetInventory() ~= self then
 		errorf("Can't move an item from an inventory which it doesn't belong to!" ..
 			"(item) %s vs %s (self)", it:GetInventory(), self)
-		return
+		return false, "item doesnt belong to self"
 	end
 
 	slot = slot or inv2:GetFreeSlot()
-	if not slot then print("Can't cross-inventory-move cuz no slot", slot) return false end
-	if not inv2:IsSlotLegal(slot) then printf("Attempted to move item out of inventory bounds (%s > %s)", slot, inv2.MaxItems) return end
+	if not slot then
+		return false, "no slot " .. tostring(slot)
+	end
+
+	if not inv2:IsSlotLegal(slot) then
+		printf("Attempted to move item out of inventory bounds (%s > %s)", slot, inv2.MaxItems)
+		return false, "illegal slot " .. slot
+	end
 
 	local other_item = inv2:GetItemInSlot(slot)
 
 	if other_item then
-		if not inv2:CanCrossInventoryMove(other_item, self, it:GetSlot(), ply) then print(inv2, "#1 doesn't allow CIM") return false end
+		local can, why = inv2:CanCrossInventoryMove(other_item, self, it:GetSlot(), ply)
+		if not can then print(inv2, "#1 doesn't allow CIM", why) return false, why end
 	end
 
-	if not self:CanCrossInventoryMove(it, inv2, nil, ply) then print(self, "#2 doesn't allow CIM") return false end
+	local can, why = self:CanCrossInventoryMove(it, inv2, nil, ply)
+	if not can then print(self, "#2 doesn't allow CIM", why) return false, why end
 
 	local em
 
@@ -173,28 +188,24 @@ function bp:CrossInventoryMove(it, inv2, slot, ply)
 
 	if other_item then
 		em = Inventory.MySQL.SwapInventories(it, other_item)
-			:Then(function()
-				if other_item then
-					ActuallyMove(inv2, self, other_item, mySlot)
-				end
-				ActuallyMove(self, inv2, it, slot)
-
-				self:Emit("CrossInventoryMovedFrom", it, inv2, slot)
-				inv2:Emit("CrossInventoryMovedTo", it, self, slot)
-				return true
-			end)
 
 		self:RemoveItem(it)
+
+		if other_item then
+			ActuallyMove(inv2, self, other_item, mySlot)
+		end
+		ActuallyMove(self, inv2, it, slot)
+
+		self:EmitHook("CrossInventoryMovedFrom", it, inv2, slot)
+		inv2:EmitHook("CrossInventoryMovedTo", it, self, slot)
 	else
 		em = Inventory.MySQL.SetInventory(it, inv2, slot)
-			:Then(function()
-				ActuallyMove(self, inv2, it, slot)
-				self:Emit("CrossInventoryMovedFrom", it, inv2, slot)
-				inv2:Emit("CrossInventoryMovedTo", it, self, slot)
-				return true
-			end)
 
 		self:RemoveItem(it)
+
+		ActuallyMove(self, inv2, it, slot)
+		self:EmitHook("CrossInventoryMovedFrom", it, inv2, slot)
+		inv2:EmitHook("CrossInventoryMovedTo", it, self, slot)
 	end
 
 	return em

@@ -139,6 +139,10 @@ local function load()
 			return false, "bad slot"
 		end
 
+		-- local can, why = inv:CanCrossInventoryMove(it, invto, where, ply)
+		-- if not can then return can, why end
+
+		--[[
 		if not inv:HasAccess(ply, "CrossInventoryFrom", it, invto, where) then
 			return false, "no access - from"
 		end
@@ -146,10 +150,11 @@ local function load()
 		if not invto:HasAccess(ply, "CrossInventoryTo", it, inv, where) then
 			return false, "no access - to"
 		end
+		]]
 
-		local ok = inv:CrossInventoryMove(it, invto, where)
+		local ok, why = inv:CrossInventoryMove(it, invto, where, ply)
+		if not ok then return false, why end
 
-		--if ok ~= false then it:SetSlot(where) end
 		return ok
 	end
 
@@ -163,11 +168,11 @@ local function load()
 		local amt = math.max(net.ReadUInt(32), 1)
 		amt = math.min(amt, it:GetAmount())
 
-		if not inv:CanCrossInventoryMove(it, invto, it2:GetSlot(), ply) then print("cant crossinv") return false end
+		local can, why = inv:CanCrossInventoryMove(it, invto, it2:GetSlot(), ply)
+		if not can then return can, why end
 
-		local amt = it2:CanStack(it, amt)
-
-		if not amt or amt == 0 then print("no stack", amt) return false end
+		amt = it2:CanStack(it, amt)
+		if not amt or amt == 0 then return false, "bad stack: " .. amt end
 
 		it:SetAmount(it:GetAmount() - amt)
 		it2:SetAmount(it2:GetAmount() + amt)
