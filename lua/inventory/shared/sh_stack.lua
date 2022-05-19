@@ -22,18 +22,21 @@ function Inventory.GetInventoryStackInfo(inv, item)
 		return false, false, false
 	end
 
+	local candAmt = stackAmt
 	-- new items are slotted instantly while uid assignment might take a while
 	for slot, itm in pairs(inv:GetSlots()) do
 		--if stackAmt <= 0 then break end
-		local amt = itm:CanStack(item, stackAmt)
+		local amt = itm:CanStack(item, candAmt)
 
 		if amt then
 			candidates[#candidates + 1] = {itm, amt}
-			--stackAmt = stackAmt - amt
+			assert(amt >= 0)
+			candAmt = candAmt - amt
 		end
 	end
 
 	assert(stackAmt >= 0)
+	assert(candAmt >= 0)
 
 	table.sort(candidates, sortFn)
 
