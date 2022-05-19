@@ -254,6 +254,7 @@ function PANEL:StackItem(rec, drop, item, amt)
 	--if crossinv then print("cross-inv stacking is not supported yet :(") return end
 
 	if not input.IsControlDown() then
+		amt = self.IsWheelHeld and math.min(amt or math.huge, math.floor(item:GetAmount() / 2)) or amt
 		rec:GetInventory():RequestStack(item, rec:GetItem(), amt)
 		rec:GetInventory():Emit("Change")
 	else
