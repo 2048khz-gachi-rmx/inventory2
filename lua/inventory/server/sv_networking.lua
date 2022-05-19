@@ -327,6 +327,8 @@ function nw.NetworkInventory(ply, inv, typ, just_return, key) --mark 'just_retur
 	hook.Run("InventoryNetwork", ply, inv)
 
 	if IsInventory(inv) then
+		if not inv:IsValid() then print("! invalid inv", inv) return end -- ignore invalid inventories
+
 		inv:SetLastResync(CurTime()) 	-- track when we last resynced the inventory
 										-- seems to not be used anymore?
 
@@ -468,6 +470,7 @@ function nw.RequestResync(ply, ...)
 	if #nw.ResyncQueue[ply] > 0 then
 		for k,v in ipairs(nw.ResyncQueue[ply]) do
 			ply:NetworkInventory(v)
+			nw.ResyncQueue[ply][k] = nil
 		end
 	else
 		ply:NetworkInventory()
