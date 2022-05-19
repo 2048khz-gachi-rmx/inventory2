@@ -43,29 +43,44 @@ function Inv.GUIDesiredAction(slot, inv, itm, ipnlFrom, ipnlTo)
 	return action, is_cross
 end
 
+local as_move = {
+	Merge = true,
+	Split = true,
+}
 
+local additional_checks = {
+	Merge = function(fromInv, crossInv, fromItem, toSlot)
+		local toItem = toSlot:GetItem(true)
+		if not toItem:CanStack(fromItem) then return false, "cant stack" end
+	end
+}
 
-function Inv.GUICanAction(slot, inv, itm, ipnlFrom, ipnlTo)
-	local action, is_cross = Inv.GUIDesiredAction(slot, inv, itm, ipnlFrom, ipnlTo)
+function Inv.GUICanAction(toSlot, toInv, itm, ipnlFrom, ipnlTo)
+	local action, is_cross = Inv.GUIDesiredAction(toSlot, toInv, itm, ipnlFrom, ipnlTo)
 	if not action then return end
 
-	local inv2 = itm:GetInventory()
-	local itm2 = slot:GetItem(true)
+	-- easy way to test permissions serveside
+	if _FORCE_ALLOW_INV_ACTIONS then return action, is_cross end
 
-	if is_cross then
-		if not inv2:CanCrossInventoryMove(itm, inv, slot:GetSlot()) then return false end
-		--if not inv:CanCrossInventoryMove(itm, inv2, slot:GetSlot()) then return false end
+	local itmInv = itm:GetInventory()
+
+	-- crossmove is a special case as it can swap
+	if action == "Move" and is_cross then
+		local can, why = itmInv:CanCrossInventoryMoveSwap(itm, toInv, toSlot:GetSlot())
+		if not can then return false, why end
 	else
-		if not inv:HasAccess(LocalPlayer(), action, itm) then return false end
-		if not inv2:HasAccess(LocalPlayer(), action, itm) then return false end
-	end
+		if additional_checks[action] then
+			local ok, why = eval(additional_checks[action], itmInv, is_cross and toInv or itmInv, itm, toSlot)
+			if ok == false then return false, why end
+		end
 
-	if action == "Merge" then
-		if not itm2:CanStack(itm) then return false end
-	elseif action == "Move" and itm2 and is_cross then -- check if we can put itm2 into inv
-		--if not inv2:CanCrossInventoryMove(itm2, inv, itm:GetSlot()) then return false end
-		local can = inv:CanCrossInventoryMove(itm2, inv2, itm:GetSlot())
-		if not can then return false end
+		if as_move[action] and is_cross then
+			local can, why = itmInv:CanCrossInventoryMove(itm, toInv, toSlot:GetSlot())
+			if not can then return false, why end
+		else
+			if not toInv:HasAccess(LocalPlayer(), action, itm) then return false end
+			if not itmInv:HasAccess(LocalPlayer(), action, itm) then return false end
+		end
 	end
 
 	return action, is_cross

@@ -130,6 +130,31 @@ function bp:CanCrossInventoryMove(it, inv2, slot, ply)
 	return true
 end
 
+-- also tries swap, if necessary
+function bp:CanCrossInventorySwap(it, inv2, slot, ply)
+	slot = slot or inv2:GetFreeSlot()
+	if not slot then
+		return false, "no slot " .. tostring(slot)
+	end
+
+	if not inv2:IsSlotLegal(slot) then
+		printf("Attempted to move item out of inventory bounds (%s > %s)", slot, inv2.MaxItems)
+		return false, "illegal slot " .. slot
+	end
+
+	local other_item = inv2:GetItemInSlot(slot)
+
+	if other_item then
+		local can, why = inv2:CanCrossInventoryMove(other_item, self, it:GetSlot(), ply)
+		if not can then print(inv2, "#1 doesn't allow CIM", why) return false, why end
+	end
+
+	local can, why = self:CanCrossInventoryMove(it, inv2, nil, ply)
+	if not can then print(self, "#2 doesn't allow CIM", why) return false, why end
+
+	return true
+end
+
 local function ActuallyMove(from, to, it, slot)
 	--local em = Inventory.MySQL.SetInventory(it, to, slot)
 
@@ -174,13 +199,8 @@ function bp:CrossInventoryMove(it, inv2, slot, ply)
 
 	local other_item = inv2:GetItemInSlot(slot)
 
-	if other_item then
-		local can, why = inv2:CanCrossInventoryMove(other_item, self, it:GetSlot(), ply)
-		if not can then print(inv2, "#1 doesn't allow CIM", why) return false, why end
-	end
-
-	local can, why = self:CanCrossInventoryMove(it, inv2, nil, ply)
-	if not can then print(self, "#2 doesn't allow CIM", why) return false, why end
+	local can, why = self:CanCrossInventorySwap(it, inv2, slot, ply)
+	if not can then return false, why end
 
 	local em
 
@@ -196,16 +216,16 @@ function bp:CrossInventoryMove(it, inv2, slot, ply)
 		end
 		ActuallyMove(self, inv2, it, slot)
 
-		self:EmitHook("CrossInventoryMovedFrom", it, inv2, slot)
-		inv2:EmitHook("CrossInventoryMovedTo", it, self, slot)
+		self:EmitHook("CrossInventoryMovedFrom", it, inv2, slot, ply)
+		inv2:EmitHook("CrossInventoryMovedTo", it, self, slot, ply)
 	else
 		em = Inventory.MySQL.SetInventory(it, inv2, slot)
 
 		self:RemoveItem(it)
 
 		ActuallyMove(self, inv2, it, slot)
-		self:EmitHook("CrossInventoryMovedFrom", it, inv2, slot)
-		inv2:EmitHook("CrossInventoryMovedTo", it, self, slot)
+		self:EmitHook("CrossInventoryMovedFrom", it, inv2, slot, ply)
+		inv2:EmitHook("CrossInventoryMovedTo", it, self, slot, ply)
 	end
 
 	return em
@@ -310,8 +330,11 @@ function bp:PickupItem(it, ignore_emitter, nochange)
 		return false, pr, {it}
 	end
 
+	print("Pickup: stk info")
+
 	for _, dat in ipairs(itStk) do
 		local v, amt = unpack(dat)
+		print("	stacking ", amt, "into", v)
 		v:Stack(it)
 	end
 

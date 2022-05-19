@@ -41,6 +41,10 @@ function bp:__tostring()
 	)
 end
 
+function bp:IsValid()
+	return IsValid(self:GetOwner())
+end
+
 function bp:OnExtend(new_inv)
 	new_inv.SQLName = false 	--set these yourself!!
 	new_inv.NetworkID = false
@@ -318,7 +322,7 @@ function bp:HasAccess(ply, action, ...)
 
 	-- step 2.1. can they do this particular action? check via emitter
 	allow = self:Emit("Can" .. action, ply, ...)
-	if allow ~= nil then self:vprint("Can" .. action, "gave no") return allow, "Can" .. action .. " gave no" end
+	if allow ~= nil then self:vprint("Can" .. action, "forced ", allow) return allow, "Can" .. action .. " forced " .. tostring(allow) end
 
 	-- step 2.2. same but check via ActionCan["action"] function or bool
 
@@ -343,8 +347,8 @@ function bp:HasAccess(ply, action, ...)
 		self:vprint("HasAccess every check failed -- ActionCanInteract said", allow)
 	end
 
-	if allow ~= nil then return allow end
-	return ply == self:GetOwner()
+	if allow ~= nil then return allow, "CanInteract" end
+	return ply == self:GetOwner(), "default owner check"
 end
 
 function bp:RemoveChange(it, what)

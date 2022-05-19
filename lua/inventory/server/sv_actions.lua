@@ -165,9 +165,15 @@ local function load()
 		local invto = readInv(ply)
 		local it2 = readItem(ply, invto, "CrossInventory")  -- stack to
 
+		if inv == invto then
+			errorNHf("why are you crossinv-merging into the same inv fucking tard %s", inv)
+			return false, "bad inv"
+		end
+
 		local amt = math.max(net.ReadUInt(32), 1)
 		amt = math.min(amt, it:GetAmount())
 
+		-- we won't be swapping the items, only stacking
 		local can, why = inv:CanCrossInventoryMove(it, invto, it2:GetSlot(), ply)
 		if not can then return can, why end
 
@@ -179,6 +185,10 @@ local function load()
 
 		it:AddChange(INV_ITEM_DATACHANGED) -- ?
 		it2:AddChange(INV_ITEM_DATACHANGED)
+
+		inv:EmitHook("CrossStackOut", it, it2, amt)
+		invto:EmitHook("CrossStackIn", it, it2, amt)
+
 		--if ok ~= false then it:SetSlot(where) end
 		return true
 	end
@@ -189,6 +199,11 @@ local function load()
 
 		local invto = readInv(ply)
 		local slot = net.ReadUInt(16)
+
+		if inv == invto then
+			errorNHf("why are you crossinv-merging into the same inv fucking tard %s", inv)
+			return false, "bad inv"
+		end
 
 		if not invto:ValidateSlot(slot) then
 			return false, "invalid split slot"
@@ -202,8 +217,12 @@ local function load()
 			return
 		end
 
-		if slot > invto.MaxItems or invto:GetItemInSlot(slot) then
-			return false, "slot > max or item"
+		if invto:GetItemInSlot(slot) then
+			return false, "already have an item in slot"
+		end
+
+		if slot > invto.MaxItems then
+			return false, "slot > max"
 		end
 
 		if not it:GetCountable() or amt > it:GetAmount() or amt == 0 then
@@ -214,6 +233,7 @@ local function load()
 		local dat = table.Copy(it:GetData())
 		dat.Amount = amt
 
+		-- we're guaranteed to not have an item there, dont check swap
 		if not inv:CanCrossInventoryMove(it, invto, slot, ply) then
 			return false, "CanCrossInvMove gave false"
 		end
@@ -224,13 +244,9 @@ local function load()
 		new:SetInventory(inv)
 		new:SetSlotRaw(slot)
 
-		-- try moving cross
-		if not inv:HasAccess(ply, "CrossInventoryFrom", new, invto, slot) then
-			return false, "no access - split from"
-		end
-
-		if not invto:HasAccess(ply, "CrossInventoryTo", new, inv, slot) then
-			return false, "no access - split to"
+		-- try moving this new item cross
+		if not inv:CanCrossInventoryMove(new, invto, slot, ply) then
+			return false, "CanCrossInvMove on temp item gave false"
 		end
 
 		-- all good; now actually do it
