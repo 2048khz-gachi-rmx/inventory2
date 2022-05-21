@@ -1,21 +1,29 @@
 --
 Inventory.LootGen.Pools = Inventory.LootGen.Pools or {}
 
-local function make(n)
-	Inventory.LootGen.Pools[n] = Inventory.LootGen.Pool:new(n)
-	return Inventory.LootGen.Pools[n]
+local function make(n, mdls)
+	local pool = Inventory.LootGen.Pool:new(n)
+	Inventory.LootGen.Pools[n] = pool
+	pool.Models = mdls
+
+	return pool
 end
 
-local low = make("lootable_low_small")
-low:Add("blank_bp", 2, {Amount = {3, 9}})
-low:Add("wire", 1, {Amount = {2, 5}})
-low:Add("capacitor", 1, {Amount = {1, 2}})
-low:Add("circuit_board", 0.8, {Amount = {1, 2}})
-low:Add("stem_cells", 0.75, {Amount = {1, 2}})
-low:Add("laserdiode", 0.5, {Amount = {1, 3}})
-low:Add("radiator", 0.4, {Amount = 1})
-low:Add("weaponparts", 0.3, {Amount = 1})
-low:Add("card1", 0.2)
+local pool = make("scrap_low_small")
+pool:Add("blank_bp", 2, {Amount = {3, 9}})
+pool:Add("wire", 1, {Amount = {2, 5}})
+pool:Add("capacitor", 1, {Amount = {1, 2}})
+pool:Add("circuit_board", 0.8, {Amount = {1, 2}})
+pool:Add("stem_cells", 0.75, {Amount = {1, 2}})
+pool:Add("laserdiode", 0.5, {Amount = {1, 3}})
+pool:Add("radiator", 0.4, {Amount = 1})
+pool:Add("weaponparts", 0.3, {Amount = 1})
+pool:Add("card1", 0.2)
+
+local pool = make("wepcrate_low_small", {
+
+})
+
 
 local lootInfo = {
 	weapon = {

@@ -43,6 +43,7 @@ function ENT:Initialize()
 	end
 end
 
+-- for easylua create()
 hook.Add("CPPIAssignOwnership", "NoLootOwner", function(ply, ent)
 	if IsValid(ent) and ent.IsLootableBoks then return false end
 end)

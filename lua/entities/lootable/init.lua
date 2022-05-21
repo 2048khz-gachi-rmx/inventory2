@@ -4,7 +4,7 @@ AddCSLuaFile("cl_init.lua")
 
 util.AddNetworkString("lootable")
 
-local DefaultLootpool = "lootable_low_small"
+local DefaultLootpool = "scrap_low_small"
 
 function ENT:SetLootPool(name, amt)
 	if not Inventory.LootGen.Pools[name] then
