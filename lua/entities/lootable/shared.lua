@@ -4,7 +4,7 @@ ENT.Type = "anim"
 ENT.PrintName = "Base Lootable"
 ENT.RenderGroup = RENDERGROUP_BOTH
 
-ENT.Model = "models/props/cs_assault/washer_box2.mdl"
+ENT.Model = "models/johnsheppard44/caliber/container/metal/crate/loot box.mdl"
 ENT.Skin = 0
 ENT.IsLootableBoks = true
 

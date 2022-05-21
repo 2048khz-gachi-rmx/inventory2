@@ -16,6 +16,8 @@ function ENT:SetLootPool(name, amt)
 	self.LootAmount = amt
 end
 
+function ENT:GetLootPool() return self.LootPool end
+
 function ENT:GenerateLoot(amt)
 	local its = Inventory.LootGen.Generate(self.LootPool, amt)
 
@@ -34,7 +36,9 @@ function ENT:SVInit()
 		self:SetLootPool(DefaultLootpool)
 	end
 
-	self:SetModel(self.Model)
+	if self:GetModel() == "models/error.mdl" then
+		self:SetModel(self.Model)
+	end
 	self:SetSkin(self.Skin)
 
 	self:PhysicsInit(SOLID_VPHYSICS)

@@ -4,14 +4,18 @@ local LG = Inventory.LootGen
 Inventory.LootGen.Pool = Inventory.LootGen.Pool or Emitter:extend()
 local POOL = Inventory.LootGen.Pool
 
+ChainAccessor(POOL, "_Name", "Name")
+
 function POOL:Initialize(name)
 	assert(isstring(name))
 	self.Choices = {}
 	self.ExtraData = {}
+
+	self:SetName(name)
 end
 
 function POOL:_validate(name)
-	if Inventory.Util.GetBase(name) == nil then
+	if not name:match("^_") and Inventory.Util.GetBase(name) == nil then
 		errorNHf("no base for name %s", name)
 		return false
 	end
@@ -82,12 +86,38 @@ function LG.RandomAmount(a)
 	end
 end
 
+function LG.GenerateWeapon(dat)
+	local bp = Inventory.Blueprints
+	local typ = bp.GetRandomType()
+	local tier = WeightedRand.Select(dat.Tiers or {1})
+	local class = bp.GetWeapon(typ, tier)
+
+	local qual = bp.PickQuality(tier, class)
+	local mods = bp.GenerateMods(tier, qual, bp.TierGetMods(tier))
+	local stats = bp.GenerateStats(qual)
+
+	local uses = math.floor( Lerp(math.random() ^ 0.8, 2, 5.5) )
+
+	local wep = Inventory.NewItem(class)
+	wep:SetQualityName(qual:GetName())
+	wep:SetModNames(mods)
+	wep:SetStatRolls(stats)
+	wep:SetUses(uses)
+
+	return wep
+end
+
 function LG.Generate(pool, amt)
 	local ids, dat = pool:SelectMultiple(amt or 1)
 
 	local out = {}
 
 	for k,v in pairs(ids) do
+		if v == "_weapon" then
+			out[#out + 1] = LG.GenerateWeapon(dat[k])
+			continue
+		end
+
 		local itm = Inventory.NewItem(v)
 		out[#out + 1] = itm
 
