@@ -125,7 +125,7 @@ function invnet:Resize(...)
 	for k, it in ipairs(t) do
 		if IsItem(it) then
 			max_id = max(it:GetIID(), max_id)
-			max_uid = max(it:GetUID(), max_uid)
+			max_uid = max(it:GetNWID(), max_uid)
 		else --assuming UID
 			max_uid = max(it, max_uid)
 		end
@@ -143,19 +143,19 @@ function invnet:Resize(...)
 end
 
 function invnet:WriteIDs(it)
-	local uid, iid = it:GetUID(), it:GetIID()
+	local uid, iid = it:GetNWID(), it:GetIID()
 
-	if uid > self.MaxUID then errorf("UID out of initialized range! (attempted to write: %d ; max. was: %d)", uid, self.MaxUID) end
+	if uid > self.MaxUID then errorf("NWID out of initialized range! (attempted to write: %d ; max. was: %d)", uid, self.MaxUID) end
 	if iid > self.MaxID then errorf("IID out of initialized range! (attempted to write: %d ; max. was: %d)", iid, self.MaxID) end
 
 	self:WriteUInt(uid, self.MaxUIDLen).UsesUID = 2
 	self:WriteUInt(iid, self.MaxIDLen).UsesID = 2
 end
 
-function invnet:WriteUID(it)
-	local uid = isnumber(it) and it or it:GetUID()
+function invnet:WriteNWID(it)
+	local uid = isnumber(it) and it or it:GetNWID()
 
-	if uid > self.MaxUID then errorf("UID out of initialized range! (attempted to write: %d ; max. was: %d)", uid, self.MaxUID) end
+	if uid > self.MaxUID then errorf("NWID out of initialized range! (attempted to write: %d ; max. was: %d)", uid, self.MaxUID) end
 	local t = self:WriteUInt(uid, self.MaxUIDLen)
 	t.UsesUID = 2
 	return t
@@ -245,8 +245,8 @@ timer.Simple(0.3, function()
 	end)
 end)
 
-function nw.NetStack(uid, iid)
-	local ns = invnet:new(uid, iid)
+function nw.NetStack(nwid, iid)
+	local ns = invnet:new(nwid, iid)
 	return ns
 end
 
@@ -568,19 +568,19 @@ function nw.ReadInventory(owCheck)
 end
 
 function nw.ReadItem(inv)
-	local uid = net.ReadUInt(32)
+	local nwid = net.ReadUInt(32)
 	if not inv then return false, ("no inventory given") end
 
-	local it = inv:GetItem(uid)
-	if not it then return false, ("[%d] didn't find item UID %d in %s"):format(
-		INVENTORY_CURRENTTOKEN or -1, uid, inv
+	local it = inv:GetItem(nwid)
+	if not it then return false, ("[%d] didn't find item nwid %d in %s"):format(
+		INVENTORY_CURRENTTOKEN or -1, nwid, inv
 		) end
 
 	return it
 end
 
 function Inventory.WriteItem(itm, ns, noResize)
-	ns = ns or Inventory.Networking.NetStack(itm:GetUID(), itm:GetIID())
+	ns = ns or Inventory.Networking.NetStack(itm:GetNWID(), itm:GetIID())
 	if not noResize then ns:Resize(itm) end
 	itm:Serialize(ns, INV_NETWORK_FULLUPDATE)
 	return ns

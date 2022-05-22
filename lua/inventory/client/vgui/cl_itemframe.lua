@@ -143,6 +143,9 @@ function ITEM:Init()
 
 	self:Receiver("Item", function(self, tbl, drop)
 		if self.DropDisabled then return end
+	
+		local itm = tbl[1]:GetItem()
+		if not itm then return end
 
 		if not drop then
 			self.DropHovered = true
@@ -578,7 +581,7 @@ function ITEM:PaintOver(w, h)
 
 	if it then
 		if dev:GetInt() > 0 then
-			draw.SimpleText(it:GetUID(), "OS16", w/2, 0, Colors.DarkerRed, 1, 5)
+			draw.SimpleText(it:GetNWID(), "OS16", w/2, 0, Colors.DarkerRed, 1, 5)
 		end
 
 		if it:GetCountable() then

@@ -152,14 +152,16 @@ function it:SetData(k, v)
 		for k2,v2 in pairs(k) do
 			self.Data[k2] = v2
 		end
-		return Inventory.MySQL.ItemSetData(self, k)
+		--return Inventory.MySQL.ItemSetData(self, k)
+		self.IPersistence:SaveData(k)
+		return
 	elseif not k or not v then
 		errorf("it:SetData: expected table as arg #1 or key/value as #2 and #3: got %s, %s instead", type(k), type(v)) 
 		return
 	end
 
 	self.Data[k] = v
-	return Inventory.MySQL.ItemSetData(self, {[k] = v})
+	self.IPersistence:SaveData(k, v)
 end
 
 ChainAccessor(it, "SQLExists", "SQLExists")

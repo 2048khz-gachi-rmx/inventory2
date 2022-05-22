@@ -119,15 +119,15 @@ function f:SetInventory(inv, pnl, noanim)
 	local uids = {}
 
 	local trackFunc = function(self, slotnum, it)
-		if not it:GetUID() then return end --uh kay
+		if not it:GetNWID() then return end --uh kay
 
-		uids[it:GetUID()] = self
+		uids[it:GetNWID()] = self
 	end
 
 	local unTrackFunc = function(self, it)
-		if not it:GetUID() then return end --uh kay
+		if not it:GetNWID() then return end --uh kay
 
-		if uids[it:GetUID()] == self then uids[it:GetUID()] = nil end
+		if uids[it:GetNWID()] == self then uids[it:GetNWID()] = nil end
 	end
 
 	if not noanim then
@@ -144,9 +144,9 @@ function f:SetInventory(inv, pnl, noanim)
 			slot:On("ItemTakenOut", "UntrackUIDs", unTrackFunc)
 
 			local item = inv:GetItemInSlot(i)
-			if item and item:GetUID() then
+			if item and item:GetNWID() then
 				slot:SetItem(item)
-				uids[item:GetUID()] = slot
+				uids[item:GetNWID()] = slot
 			end
 		end
 	else
@@ -160,7 +160,7 @@ function f:SetInventory(inv, pnl, noanim)
 		local newslot = item:GetSlot()
 
 		if slots[newslot].Item ~= item then
-			local uid = item:GetUID()
+			local uid = item:GetNWID()
 
 			local prev_slot = uids[uid]
 			if IsValid(prev_slot) and prev_slot.Item == item then prev_slot:SetItem(nil) end

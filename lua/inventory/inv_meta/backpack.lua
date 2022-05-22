@@ -100,8 +100,8 @@ function bp:_SetSlot(it, slot)
 	end
 
 	self.Slots[slot] = it
-	if it:GetUID() then
-		self.Items[it:GetUID()] = it
+	if it:GetNWID() then
+		self.Items[it:GetNWID()] = it
 	end
 
 	if it:GetKnown() then it:AddChange(INV_ITEM_MOVED) end --if the player doesn't know about the item, don't replace the change
@@ -112,7 +112,7 @@ end
 function bp:RemoveItem(it, noChange, suppresserror)
 	--just removes an item from itself and networks the change
 
-	local uid = ToUID(it)
+	local uid = ToNWID(it)
 
 	local its, slots = self:GetItems(), self:GetSlots()
 	local foundit
@@ -132,7 +132,10 @@ function bp:RemoveItem(it, noChange, suppresserror)
 		end
 	end
 
-	if not foundit and not suppresserror then errorf("Tried to remove an item which didn't exist in the inventory in the first place!\nInventory: %s\nItem: %s\n", self, it) return end
+	if not foundit and not suppresserror then
+		errorf("Tried to remove an item which didn't exist in the inventory in the first place!\nInventory: %s\nItem: %s\n", self, it)
+		return
+	end
 	if not foundit then return end
 
 	local slot = foundit:GetSlot()
@@ -150,7 +153,7 @@ function bp:RemoveItem(it, noChange, suppresserror)
 
 	foundit:SetInventory(nil)
 	foundit:SetSlot(nil)
-	its[foundit:GetUID()] = nil
+	its[foundit:GetNWID()] = nil
 
 	--if the player doesn't know about the item, don't even tell him about the deletion
 	if foundit:GetKnown() and not noChange then
@@ -170,11 +173,11 @@ end
 
 function bp:DeleteItem(it, suppresserror)
 	--actually completely deletes an item, both from the backpack and from MySQL completely
-	local uid = (isnumber(it) and it) or it:GetUID()
-
 	local it = self:RemoveItem(it, nil, suppresserror)
+	if it then
+		it:Delete()
+	end
 
-	if SERVER then Inventory.MySQL.DeleteItem(it) end
 	return it
 end
 
@@ -189,14 +192,12 @@ function bp:MoveItem(it, slot)	--this is a utility function which swaps slots if
 
 	if it == it2 or it:GetSlot() == slot then return false end
 
-	it:SetSlot(slot, false)
-	if it2 then it2:SetSlot(b4slot, false) end
+	it:SetSlot(slot)
+	if it2 then it2:SetSlot(b4slot) end
 
 	if not self.ReadingNetwork then
 		self:Emit("Change")
 	end
-
-	if SERVER then return Inventory.MySQL.SwitchSlots(it, it2) end
 end
 
 function bp:GetItemInSlot(slot)
@@ -217,7 +218,7 @@ function bp:_CanAddItem(it, ignore_emitter, ignore_slot, ignore_inv)
 	end
 
 	if not ignore_emitter then
-		local can = self:Emit("CanAddItem", it, it:GetUID())
+		local can = self:Emit("CanAddItem", it, it:GetNWID())
 		if can == false then return false end
 	end
 
@@ -247,23 +248,15 @@ function bp:AddItem(it, ignore_emitter, nochange)
 
 	it:SetInventory(self)
 
-	if it:GetUID() then
-		self.Items[it:GetUID()] = it
-	else
-		it:On("AssignUID", "WriteWithUID", function()
-			if it:GetInventory() == self then
-				self.Items[it:GetUID()] = it
-			end
-		end)
-	end
 
+	self.Items[it:GetNWID()] = it
 	self.Slots[it:GetSlot()] = it
 
 	if not nochange then
 		it:AddChange(INV_ITEM_ADDED)
 	end
 
-	self:Emit("AddItem", it, it:GetUID())
+	self:Emit("AddItem", it, it:GetNWID())
 
 	if not self.ReadingNetwork then
 		self:Emit("Change")
@@ -289,7 +282,7 @@ end
 
 function bp:HasItem(it)
 	if IsItem(it) then
-		return self:GetItem(it:GetUID()) == it
+		return self:GetItem(it:GetNWID()) == it
 	else
 		return self:GetItem(it)
 	end

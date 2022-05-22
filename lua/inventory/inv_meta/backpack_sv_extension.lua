@@ -122,7 +122,7 @@ function bp:CanCrossInventoryMove(it, inv2, slot, ply)
 	if self:Emit("CanMoveFrom", it, inv2, slot) == false then print("CanMoveFrom no") return false, "cannot move from self" end
 
 	-- check if inv2 can add an item to itself
-	if inv2:Emit("CanAddItem", it, it:GetUID(), slot) == false then print("CanAdd no") return false, "cannot add item to inv2" end
+	if inv2:Emit("CanAddItem", it, it:GetNWID(), slot) == false then print("CanAdd no") return false, "cannot add item to inv2" end
 
 	-- check if the item can be moved
 	if it:Emit("CanCrossMove", self, inv2, slot) == false then print("CanCrossMove no") return false, "cannot crossmove item" end
@@ -165,9 +165,9 @@ local function ActuallyMove(from, to, it, slot)
 		print(debug.traceback())
 	end
 
-	from:RemoveItem(it, true, true) -- don't write the change 'cause we have crossmoves as a separate change
+	from:RemoveItem(it, true, true) -- don't write the change cuz we have crossmoves as a separate change
 	it:SetSlot(slot)
-	to:AddItem(it, true, true) -- same shit
+	to:AddItem(it, true, true)
 
 	assert(it:GetInventory() == to)
 
@@ -202,13 +202,11 @@ function bp:CrossInventoryMove(it, inv2, slot, ply)
 	local can, why = self:CanCrossInventorySwap(it, inv2, slot, ply)
 	if not can then return false, why end
 
-	local em
-
 	local mySlot = it:GetSlot()
 
-	if other_item then
-		em = Inventory.MySQL.SwapInventories(it, other_item)
+	print("cross inv - moving")
 
+	if other_item then
 		self:RemoveItem(it)
 
 		if other_item then
@@ -216,19 +214,25 @@ function bp:CrossInventoryMove(it, inv2, slot, ply)
 		end
 		ActuallyMove(self, inv2, it, slot)
 
+		print("two items; saving both")
+		it.IPersistence:SaveSlot()
+		other_item.IPersistence:SaveSlot()
+
 		self:EmitHook("CrossInventoryMovedFrom", it, inv2, slot, ply)
 		inv2:EmitHook("CrossInventoryMovedTo", it, self, slot, ply)
 	else
-		em = Inventory.MySQL.SetInventory(it, inv2, slot)
-
 		self:RemoveItem(it)
 
 		ActuallyMove(self, inv2, it, slot)
+
+		print("one item; saving")
+		it.IPersistence:SaveSlot()
+
 		self:EmitHook("CrossInventoryMovedFrom", it, inv2, slot, ply)
 		inv2:EmitHook("CrossInventoryMovedTo", it, self, slot, ply)
 	end
 
-	return em
+	return true
 end
 
 function bp:LoadItems()
@@ -246,34 +250,19 @@ function bp:InsertItem(it, slot)
 		if not slot then print("Can't insert", it, "into", self, "cuz no slots") return false end
 	end
 
-	it:Insert(self)
-	local insSlot
-
 	local pr = Promise()
 
-	if it:GetUID() then
+	it:SetSlot(slot)
+	it:AddChange(INV_ITEM_ADDED)
+	local insSlot = self:AddItem(it)
 
-		it:SetSlot(slot)
-
-		insSlot = self:AddItem(it)
-		if insSlot then
-			it:AddChange(INV_ITEM_ADDED)
-			pr:Resolve(it, insSlot)
-		else
-			pr:Reject(it, insSlot)
-		end
-	else
-		it:Once("AssignUID", function()
-			it:SetSlot(slot)
-			insSlot = self:AddItem(it)
-			if insSlot then
-				it:AddChange(INV_ITEM_ADDED)
-				pr:Resolve(it, insSlot)
-			else
-				pr:Reject(it, insSlot)
-			end
-		end)
+	if not insSlot then
+		pr:Reject()
+		return
 	end
+
+	it:Insert(self)
+	pr:Resolve()
 
 	return pr
 end
@@ -372,7 +361,7 @@ function bp:SerializeItems(typ, key)
 		table.Empty(self.Changes)
 
 		for k,v in pairs(self:GetItems()) do
-			max_uid = math.max(max_uid, v:GetUID())
+			max_uid = math.max(max_uid, v:GetNWID())
 			max_id = math.max(max_id, v:GetIID())
 			amt = amt + 1
 		end
@@ -383,7 +372,7 @@ function bp:SerializeItems(typ, key)
 			local req = v:RequiresRenetwork(self)
 			if not req then continue end
 
-			max_uid = math.max(max_uid, v:GetUID())
+			max_uid = math.max(max_uid, v:GetNWID())
 			max_id = math.max(max_id, v:GetIID())
 			amt = amt + 1
 		end
@@ -464,7 +453,7 @@ function bp:WriteChanges(ns)
 	if hasdels then
 		ns:WriteUInt(#dels, 16).DeletionAmt = true
 		for k,v in ipairs(dels) do
-			ns:WriteUID(v)
+			ns:WriteNWID(v)
 		end
 	end
 
@@ -475,7 +464,7 @@ function bp:WriteChanges(ns)
 	if hascrossmoves then
 		ns:WriteUInt(#crossmove, 16).CrossMovedAmt = true
 		for k,v in ipairs(crossmove) do
-			ns:WriteUID(v)
+			ns:WriteNWID(v)
 			ns:WriteSlot(v, true)
 			--ns:WriteInventory(v:GetInventory())
 		end
@@ -488,7 +477,7 @@ function bp:WriteChanges(ns)
 	if hasmoves then
 		ns:WriteUInt(#moves, 16).MovedAmt = true
 		for k,v in ipairs(moves) do
-			ns:WriteUID(v)
+			ns:WriteNWID(v)
 			ns:WriteSlot(v, true)
 		end
 	end

@@ -25,7 +25,6 @@ end
 function ENT:SetItem(itm)
 	notInitted(self)
 	CheckArg(1, itm, IsItem, "Item")
-	assert(itm:GetUID(), "can't set an item without a UID!")
 
 	local ns = Inventory.WriteItem(itm)
 
@@ -34,7 +33,7 @@ function ENT:SetItem(itm)
 	net.Broadcast()
 
 	self.Item = itm
-	self:SetNWItemID(itm:GetUID())
+	self:SetNWItemID(itm:GetNWID())
 end
 
 function ENT:CanInteract()

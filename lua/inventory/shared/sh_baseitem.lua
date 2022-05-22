@@ -1,11 +1,15 @@
 
 
 function ToUID(it)
-
 	if isnumber(it) then return it
 	elseif IsItem(it) then return it:GetUID()
 	else errorf("ToUID: expected number or item as arg #1, got %s instead", type(it)) end
+end
 
+function ToNWID(it)
+	if isnumber(it) then return it
+	elseif IsItem(it) then return it:GetNWID()
+	else errorf("ToNWID: expected number or item as arg #1, got %s instead", type(it)) end
 end
 
 -- returns BaseItemMeta's name ( metas in base_items/*.lua )

@@ -1,5 +1,9 @@
 setfenv(1, _G)
 local ms = Inventory.MySQL
+
+ms.QueryGen = ms.QueryGen or {}
+local qg = ms.QueryGen
+
 local db = ms.DB
 
 local qerr = function(q, err, sql, a)
@@ -21,6 +25,8 @@ local trerr = function(_, tr, err)
 	end
 	ms.LogError("\n	Transaction error: '%s'\n Errors: %s \n Trace: %s", err, table.concat(errs, ";\n"), debug.traceback("", 2))
 end
+
+ms.TransactionError = trerr
 
 local log = ms.Log
 
@@ -380,14 +386,19 @@ end
 
 local change_invs_query = ms.DB:prepare("UPDATE `items` SET inventory = ?, owner = CAST(? AS UNSIGNED), slot = ? WHERE uid = ?")
 
-function ms.SetInventory(it, inv, slot, dat)
+function qg.Setinventory(it, inv, slot)
 	local _, owuid = inv:GetOwner()
 
-	local prep = change_invs_query
-	prep:setString(1, inv.SQLName)
-	prep:setString(2, owuid or "0")
-	prep:setNumber(3, slot)
-	prep:setNumber(4, it:GetUID())
+	change_invs_query:setString(1, inv.SQLName)
+	change_invs_query:setString(2, owuid or "0")
+	change_invs_query:setNumber(3, slot)
+	change_invs_query:setNumber(4, it:GetUID())
+
+	return change_invs_query
+end
+
+function ms.SetInventory(it, inv, slot)
+	local prep = qg.Setinventory(it, inv, slot)
 
 	local em = MySQLEmitter:new(prep, true)
 
@@ -482,7 +493,7 @@ function ms.FetchPlayerItems(inv, ply)
 			Inventory.Log("Player %s left before we could fetch their items.", sid)
 			return
 		end
-		
+
 		Inventory.Log("MySQL: Fetched info for %q's %s; %d items", ply:Nick(), isbool(inv) and "all inventories" or inv.SQLName, #dat)
 
 		for k,v in ipairs(dat) do
@@ -496,6 +507,14 @@ function ms.FetchPlayerItems(inv, ply)
 end
 
 local setslot_query = ms.DB:prepare("UPDATE `items` SET slot=? WHERE uid=? AND owner=CAST(? AS UNSIGNED)")
+
+function qg.SetSlot(slot, it, inv)
+	setslot_query:setNumber(1, slot)
+	setslot_query:setNumber(2, it:GetUID())
+	setslot_query:setString(3, inv:GetOwnerUID())
+
+	return setslot_query
+end
 
 function ms.SetSlot(it, inv)
 	if not it:GetUID() then return end
@@ -523,7 +542,7 @@ end
 
 --takes: tablename, swapping-uid, puid, slot1 (number - move from), slot2 (number - move to)
 
-local qry = "UPDATE `items` SET slot = %s WHERE uid = %s AND owner = %s" --ms.DB:prepare("UPDATE `items` SET slot = ? WHERE uid = ? AND owner = ?")
+local swapQry = "UPDATE `items` SET slot = %s WHERE uid = %s AND owner = %s" --ms.DB:prepare("UPDATE `items` SET slot = ? WHERE uid = ? AND owner = ?")
 
 local function swapSlots(tname, uid, uid2, sid, slot1, slot2)
 	local t = ms.DB:createTransaction()
@@ -537,15 +556,14 @@ local function swapSlots(tname, uid, uid2, sid, slot1, slot2)
 		qry:setString(3, sid)
 	t:addQuery(qry)]]
 
-	local qry2 = qry:format(slot1, uid, sid)
+	local qry2 = swapQry:format(slot1, uid, sid)
 	t:addQuery(ms.DB:query(qry2))
 
-	qry2 = qry:format(slot2, uid2, sid)
+	qry2 = swapQry:format(slot2, uid2, sid)
 	t:addQuery(ms.DB:query(qry2))
 
 	local em = MySQLEmitter:new(t, true)
 		:Catch(trerr)
-		:Then(function() end)
 	return em
 end
 
@@ -615,17 +633,21 @@ local patch_dat_query = ms.DB:prepare("UPDATE items SET data = JSON_MERGE_PATCH(
 
 -- Merge the SQL data with provided table of key-values (the table will be JSON'd)
 
-function ms.ItemSetData(it, t)
-	t = t or it:GetData()
-	if not it:GetUID() then return end -- not initialized yet? ms.UpdateProperties will take care of it if so
-
+function qg.SetData(it, t)
 	local json = ms.SerializeData(it, t)
-	if not json then errorf("Failed to get JSON from arg: %s", t) return end --?
-
-	--printf("ItemSetData: patching JSON %s", json)
+	if not json then errorf("Failed to get JSON from arg: %s", t) return end -- ?
 
 	patch_dat_query:setString(1, json)
 	patch_dat_query:setNumber(2, it:GetUID())
 
-	return MySQLEmitter(patch_dat_query, true)
+	return patch_dat_query
+end
+
+function ms.ItemSetData(it, t)
+	t = t or it:GetData()
+	if not it:GetUID() then return end -- not initialized yet?
+
+	local qry = qg.SetData(it, t)
+
+	return MySQLEmitter(qry, true)
 end

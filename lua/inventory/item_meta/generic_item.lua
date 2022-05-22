@@ -5,6 +5,8 @@ it.IsItem = true
 
 Inventory.ItemObjects.Generic = it
 
+if SERVER then include("sv_persistence_ext.lua") end
+
 it.__tostring = function(self)
 	return ("%s '%s' | ItemID: %s, ItemUID: %s"):format(
 		self.ClassName or "Missing class!",
@@ -43,6 +45,7 @@ function it:Initialize(uid, iid, ...)
 	self.ItemUID = uid
 	self.Data = {}
 	self.LastNetworkedVars = {}
+	self.NWID = -1
 
 	self._Commited = {
 		Delete = {},
@@ -51,6 +54,10 @@ function it:Initialize(uid, iid, ...)
 	}
 
 	self:SetValid(true)
+
+	if SERVER then
+		self.IPersistence = Inventory.ItemPersistence:new(self)
+	end
 
 	local base = Inventory.BaseItems[iid]
 
@@ -61,6 +68,18 @@ function it:Initialize(uid, iid, ...)
 	base:Emit("CreatedInstance", self)
 
 	--self:ChangeInitArgs(uid, ...)
+end
+
+function it:GetNWID()
+	if self.NWID == -1 and SERVER then
+		self.NWID = uniq.Seq("ItemNWID")
+	end
+
+	return self.NWID
+end
+
+function it:SetNWID(n)
+	self.NWID = n
 end
 
 local function equalData(dat1, dat2)
@@ -80,8 +99,6 @@ end
 -- can stack it2 into self?
 
 function it:CanStack(it2, amt)
-	
-
 	local otherData = IsItem(it2) and it2:GetData() or istable(it2) and it2
 	it2 = IsItem(it2) and it2
 
@@ -109,7 +126,7 @@ function it:Delete()
 	end
 	self:SetValid(false)
 	if SERVER then
-		Inventory.MySQL.DeleteItem(self)
+		self.IPersistence:Delete()
 	end
 
 	self._Commited.Delete[self:IncrementToken()] = true
@@ -206,8 +223,21 @@ function it:SetSlot(slot, sql)
 	self.Slot = slot
 
 	if inv and SERVER and self:GetSQLExists() and sql ~= false then
-		Inventory.MySQL.SetSlot(self, inv)
+		-- Inventory.MySQL.SetSlot(self, inv)
+		self.IPersistence:SaveSlot(slot, inv)
 	end
+end
+
+function it:SwapSlots(slot)
+	if self:GetSlot() == slot then return false end
+
+	local inv = self:GetInventory()
+
+	local it2 = inv and inv:GetItemInSlot(slot)
+	local b4slot = self:GetSlot()
+
+	self:SetSlot(slot)
+	if it2 then it2:SetSlot(b4slot) end
 end
 
 function it:SetSlotRaw(slot)

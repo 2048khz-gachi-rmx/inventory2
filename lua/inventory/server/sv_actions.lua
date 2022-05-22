@@ -93,12 +93,13 @@ local function load()
 		new:SetSlotRaw(where)
 
 		if inv:Emit("CanAddItem", new) == false then
-			print("cannot add item")
 			return
 		end
 
 		it:SetAmount(it:GetAmount() - amt)
 		new:SetSlot(where)
+
+		Inventory.Networking.RequestUpdate(ply, inv)
 
 		inv:InsertItem(new):Then(function(...)
 			if IsValid(ply) then Inventory.Networking.RequestUpdate(ply, inv) end
@@ -333,7 +334,7 @@ local function load()
 
 
 		if succ == false then
-			print("action failed - ", inv or "no error")
+			printf("action %s failed - %s", act, inv or "no error")
 			-- resync all inventories the player wrote that they have access to
 			nw.RequestResync(ply, unpack(cur_invs))
 		elseif succ then

@@ -43,6 +43,7 @@ function Inventory.ReconstructItem(uid, iid, invobj, dat)
 
 	local itm = makeItem(iid, invobj, dat)
 	itm:SetUID(uid)
+	itm:Emit("AssignUID", uid)
 
 	return itm
 end

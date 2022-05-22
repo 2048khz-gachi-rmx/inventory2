@@ -329,7 +329,7 @@ function invnet:WriteItem(it, ignore)
         return
     end
 
-    self:WriteUInt(it:GetUID(), 32)
+    self:WriteUInt(it:GetNWID(), 32)
 end
 
 function nw.Netstack()

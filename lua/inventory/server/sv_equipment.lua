@@ -29,10 +29,7 @@ local function load(act)
 			local em = it:Equip(ply, slot)
 			if not em then return false end
 
-			em:Then(function()
-				upd(ply, inv, Inventory.GetEquippableInventory(ply), tok)
-			end)
-
+			upd(ply, inv, Inventory.GetEquippableInventory(ply), tok)
 		else
 			local invto = ply.Inventory.Permanent --act.readInv(ply)
 
@@ -42,9 +39,7 @@ local function load(act)
 			local em = it:Unequip(ply, slot, invto)
 			if not em then return false end
 
-			em:Then(function()
-				upd(ply, inv, Inventory.GetEquippableInventory(ply), tok)
-			end)
+			upd(ply, inv, Inventory.GetEquippableInventory(ply), tok)
 		end
 
 		--return false

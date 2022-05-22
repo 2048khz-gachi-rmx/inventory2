@@ -31,7 +31,7 @@ function bp:CanCrossInventoryMove(it, inv2, slot)
 	if can == false then return false end
 
 	--check if inv2 can add an item to itself
-	can = inv2:Emit("CanAddItem", it, it:GetUID())
+	can = inv2:Emit("CanAddItem", it, it:GetNWID())
 	if can == false then return false end
 
 	return true
