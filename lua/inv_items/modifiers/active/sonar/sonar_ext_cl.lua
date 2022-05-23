@@ -77,10 +77,10 @@ end)
 
 :SetOnActivate(function(base, me, mod)
 	local pr = base:RequestAction(mod)
-	me:EmitSound("test/deploy" .. math.random(1, 3) .. ".mp3", 50, math.random(90, 110), 0.7)
+	me:EmitSound("grp/sonar/deploy" .. math.random(1, 3) .. ".mp3", 50, math.random(90, 110), 0.7)
 
 	me:LiveTimer("SonarServo", base.ServoTimer, function()
-		me:EmitSound("test/servo" .. math.random(1, 3) .. ".mp3", 50, math.random(100, 100), 0.7)
+		me:EmitSound("grp/sonar/servo" .. math.random(1, 3) .. ".mp3", 50, math.random(100, 100), 0.7)
 	end)
 
 	base:StartCannon()
@@ -93,7 +93,7 @@ end)
 		end)
 
 		me:Timer("SonarCannonRetract", 1, function()
-			ply:EmitSound("test/finish" .. math.random(1, 3) .. ".mp3",
+			ply:EmitSound("grp/sonar/finish" .. math.random(1, 3) .. ".mp3",
 				50, math.random(90, 110), 0.7)
 
 			base:EndCannon()
