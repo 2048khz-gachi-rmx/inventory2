@@ -66,3 +66,20 @@ function it:MoveToInventory(inv, slot)
 	self._Commited.CrossInv[self:IncrementToken()] = ("%p:%s"):format(inv, slot)
 end
 
+
+function it:PostGenerateText(cloud, markup)
+
+end
+
+function it:GenerateText(cloud, markup)
+	return false -- separator required?
+end
+
+
+it:On("GenerateText", "Base", function(self, cloud, markup)
+	self:GenerateText(cloud, markup)
+end)
+
+it:On("PostGenerateText", "Base", function(self, cloud, markup)
+	self:PostGenerateText(cloud, markup)
+end)

@@ -27,7 +27,7 @@ end
 
 -- returns ItemMeta ( metas in item_meta/*.lua )
 function Inventory.Util.GetMeta(iid)
-	local base = Inventory.Util.GetBaseMeta(iid)
+	local base = Inventory.Util.GetBase(iid)
 	if not base then return false end
 
 	return Inventory.ItemObjects[base.ItemClass]

@@ -1,6 +1,7 @@
 --
 
 local gen = Inventory.GetClass("item_meta", "generic_item")
+
 local uq = Inventory.ItemObjects.Unique or gen:Extend("Unique")
 
 DataAccessor(uq, "QualityName", "QualityName", nil, FORCE_STRING)

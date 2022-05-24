@@ -37,7 +37,6 @@ end
 
 bp:Register()
 
-
 function bp:GetWeaponType()
 	return Inventory.Blueprints.WeaponPoolReverse[self:GetResult()]
 end

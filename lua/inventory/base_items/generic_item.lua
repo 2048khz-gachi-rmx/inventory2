@@ -67,6 +67,7 @@ function Base:Initialize(name)
 	self.ItemName = name --ID as a string
 	self.Name = name --nice name, can be overridden
 
+	-- copy to the instance
 	self.BaseName = self.BaseName
 	self.ItemClass = self.ItemClass
 
@@ -76,6 +77,11 @@ function Base:Initialize(name)
 	Inventory.BaseItems[self.ItemName] = self
 
 	Inventory:Emit("BaseItemInit", self)
+end
+
+function Base:OverrideItemClass(new)
+	self.ItemClass = new
+	return self
 end
 
 function Base:SetRarity(rar)
