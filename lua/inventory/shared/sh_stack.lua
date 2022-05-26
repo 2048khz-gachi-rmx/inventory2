@@ -10,7 +10,15 @@ local sortFn = function(a, b)
 	return a[1]:GetSlot() < b[1]:GetSlot()
 end
 
-function Inventory.GetInventoryStackInfo(inv, item)
+local none = {
+	-- Slots = {allowed_stack_slot, ...}, -- slots we're allowed to stack to
+	-- NYI: NewSlots = {allowed_new_slot, ...} -- slots we're allowed to create new items in
+	-- AllowNew = true/false -- whether we should attempt to create new items
+}
+
+function Inventory.GetInventoryStackInfo(inv, item, opts)
+	opts = istable(opts) and opts or none
+
 	CheckArg(1, inv, IsInventory, "Inventory")
 	CheckArg(2, item, IsItem, "Item")
 
@@ -24,14 +32,29 @@ function Inventory.GetInventoryStackInfo(inv, item)
 
 	local candAmt = stackAmt
 	-- new items are slotted instantly while uid assignment might take a while
-	for slot, itm in pairs(inv:GetSlots()) do
-		--if stackAmt <= 0 then break end
-		local amt = itm:CanStack(item, candAmt)
 
-		if amt then
-			candidates[#candidates + 1] = {itm, amt}
-			assert(amt >= 0)
-			candAmt = candAmt - amt
+	if istable(opts.Slots) then
+		for _, slot in pairs(opts.Slots) do
+			local invItm = inv:GetItemInSlot(slot)
+			if not invItm then continue end
+
+			local amt = invItm:CanStack(item, candAmt)
+			if amt then
+				candidates[#candidates + 1] = {invItm, amt}
+				assert(amt >= 0)
+				candAmt = candAmt - amt
+			end
+		end
+	else
+		for slot, itm in pairs(inv:GetSlots()) do
+			--if stackAmt <= 0 then break end
+			local amt = itm:CanStack(item, candAmt)
+
+			if amt then
+				candidates[#candidates + 1] = {itm, amt}
+				assert(amt >= 0)
+				candAmt = candAmt - amt
+			end
 		end
 	end
 
@@ -42,6 +65,7 @@ function Inventory.GetInventoryStackInfo(inv, item)
 
 	for k, dat in ipairs(candidates) do
 		if stackAmt <= 0 then
+			print("nilled", k)
 			candidates[k] = nil
 		end
 
@@ -49,12 +73,35 @@ function Inventory.GetInventoryStackInfo(inv, item)
 	end
 
 	local createNew = {}
+
+	if stackAmt > 0 and opts.AllowNew == false then
+		return stackAmt, candidates, createNew
+	end
+
 	local ignoreSlots = {}
+	local optSlots = opts.Slots
+	local cpyIdx = 1
 
 	while stackAmt > 0 do
-		local slot = inv:GetFreeSlot(ignoreSlots)
-		if not slot then
-			return stackAmt, candidates, createNew
+		local slot
+
+		if optSlots then
+			slot = optSlots[cpyIdx]
+			if not slot then
+				return stackAmt, candidates, createNew
+			end
+
+			cpyIdx = cpyIdx + 1
+
+			if not inv:IsSlotLegal(slot) or inv:GetItemInSlot(slot) then
+				continue
+			end
+		else
+			slot = inv:GetFreeSlot(ignoreSlots)
+
+			if not slot then
+				return stackAmt, candidates, createNew
+			end
 		end
 
 		local toCreate = math.min(maxStack, stackAmt)
