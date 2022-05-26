@@ -62,3 +62,9 @@ Inventory.BaseItemObjects.Generic("coal")
 
 	:SetCountable(true)
 	:SetMaxStack(50)
+
+	:On("UpdateModel", "ResourceSkin", function(base, item, ent, inPnl)
+		if not inPnl then
+			ent:SetModelScale(0.05)
+		end
+	end)
