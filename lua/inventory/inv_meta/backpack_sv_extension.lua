@@ -90,11 +90,7 @@ function bp:NewItemNetwork(who, iid, slot, dat, nostack)
 
 	local pr, left = self:NewItem(iid, slot, dat, nostack)
 
-	pr:Then(function(...)
-		if IsValid(self:GetOwner()) then
-			Inventory.Networking.NetworkInventory(who, self, INV_NETWORK_UPDATE)
-		end
-	end)
+	Inventory.Networking.NetworkInventory(who, self, INV_NETWORK_UPDATE)
 
 	return pr, left
 end
@@ -175,7 +171,7 @@ local function ActuallyMove(from, to, it, slot)
 end
 
 -- move from bp to inv2
-function bp:CrossInventoryMove(it, inv2, slot, ply)
+function bp:CrossInventoryMove(it, inv2, toSlot, ply)
 	if not IsInventory(inv2) then
 		errorf("CrossInventoryMove between what invs")
 		return false, "no second inv given"
@@ -187,49 +183,45 @@ function bp:CrossInventoryMove(it, inv2, slot, ply)
 		return false, "item doesnt belong to self"
 	end
 
-	slot = slot or inv2:GetFreeSlot()
-	if not slot then
-		return false, "no slot " .. tostring(slot)
+	toSlot = toSlot or inv2:GetFreeSlot()
+	if not toSlot then
+		return false, "no slot " .. tostring(toSlot)
 	end
 
-	if not inv2:IsSlotLegal(slot) then
-		printf("Attempted to move item out of inventory bounds (%s > %s)", slot, inv2.MaxItems)
-		return false, "illegal slot " .. slot
+	if not inv2:IsSlotLegal(toSlot) then
+		printf("Attempted to move item out of inventory bounds (%s > %s)", toSlot, inv2.MaxItems)
+		return false, "illegal slot " .. toSlot
 	end
 
-	local other_item = inv2:GetItemInSlot(slot)
+	local other_item = inv2:GetItemInSlot(toSlot)
 
-	local can, why = self:CanCrossInventorySwap(it, inv2, slot, ply)
+	local can, why = self:CanCrossInventorySwap(it, inv2, toSlot, ply)
 	if not can then return false, why end
 
-	local mySlot = it:GetSlot()
-
-	print("cross inv - moving")
+	local fromSlot = it:GetSlot()
 
 	if other_item then
 		self:RemoveItem(it)
 
 		if other_item then
-			ActuallyMove(inv2, self, other_item, mySlot)
+			ActuallyMove(inv2, self, other_item, fromSlot)
 		end
-		ActuallyMove(self, inv2, it, slot)
+		ActuallyMove(self, inv2, it, toSlot)
 
-		print("two items; saving both")
 		it.IPersistence:SaveSlot()
 		other_item.IPersistence:SaveSlot()
 
-		self:EmitHook("CrossInventoryMovedFrom", it, inv2, slot, ply)
-		inv2:EmitHook("CrossInventoryMovedTo", it, self, slot, ply)
+		self:EmitHook("CrossInventoryMovedFrom", it, inv2, toSlot, fromSlot, ply)
+		inv2:EmitHook("CrossInventoryMovedTo", it, self, toSlot, fromSlot, ply)
 	else
 		self:RemoveItem(it)
 
-		ActuallyMove(self, inv2, it, slot)
+		ActuallyMove(self, inv2, it, toSlot)
 
-		print("one item; saving")
 		it.IPersistence:SaveSlot()
 
-		self:EmitHook("CrossInventoryMovedFrom", it, inv2, slot, ply)
-		inv2:EmitHook("CrossInventoryMovedTo", it, self, slot, ply)
+		self:EmitHook("CrossInventoryMovedFrom", it, inv2, toSlot, fromSlot, ply)
+		inv2:EmitHook("CrossInventoryMovedTo", it, self, toSlot, fromSlot, ply)
 	end
 
 	return true
@@ -281,20 +273,14 @@ local function canAdd(self, it, em, skipInv)
 	return true
 end
 
-function bp:PickupItem(it, ignore_emitter, nochange)
+function bp:PickupItem(it, opts, ignore_emitter, nochange)
 	CheckArg(1, it, IsItem, "Item")
-
-	local prs = {}
-
-	--[[if not it:GetSlot() then
-		it:SetSlot(self:GetFreeSlot())
-	end]]
 
 	if not canAdd(self, it, ignore_emitter, true) then
 		return false, false
 	end
 
-	local left, itStk, newStk = Inventory.GetInventoryStackInfo(self, it)
+	local left, itStk, newStk = Inventory.GetInventoryStackInfo(self, it, opts)
 
 	if not left and not itStk then
 		-- item unstackable, just add it
@@ -309,28 +295,22 @@ function bp:PickupItem(it, ignore_emitter, nochange)
 		self:AddItem(it, ignore_emitter, nochange)
 		it:AssignInventory()
 
-		local pr = Promise()
-		pr:Resolve() -- instant resolve, nice
-
 		if not self.ReadingNetwork then
 			self:Emit("Change")
 		end
 
-		return false, pr, {it}
+		return false, {it}
 	end
-
-	print("Pickup: stk info")
 
 	for _, dat in ipairs(itStk) do
 		local v, amt = unpack(dat)
-		print("	stacking ", amt, "into", v)
 		v:Stack(it)
 	end
 
 	local newIts = Inventory.CreateStackedItems(self, it, newStk)
 
 	for k,v in ipairs(newIts) do
-		prs[#prs + 1] = self:InsertItem(v)
+		self:InsertItem(v)
 	end
 
 	if left then
@@ -343,9 +323,7 @@ function bp:PickupItem(it, ignore_emitter, nochange)
 		self:Emit("Change")
 	end
 
-	local pr = Promise.OnAll(prs)
-
-	return left, pr, newIts
+	return left, newIts
 end
 
 --[[------------------------------]]
