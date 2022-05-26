@@ -17,7 +17,7 @@ local function makeItem(iid, invobj, dat)
 	end
 
 	if dat then
-		for k,v in pairs(item.Data) do
+		for k,v in pairs(dat) do
 			item.Data[k] = v
 		end
 	end

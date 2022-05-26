@@ -2,7 +2,7 @@ local PANEL = {}
 local iPan = Inventory.Panels
 
 function PANEL:Init()
-	self:DockPadding(4, 32, 4, 4)
+	self:EnableName(true)
 
 	local scr = vgui.Create("FScrollPanel", self)
 	scr:Dock(FILL)
@@ -18,6 +18,16 @@ function PANEL:Init()
 	self.Slots = {}
 	self.Items = {}
 	self.Inventory = nil
+end
+
+function PANEL:EnableName(b)
+	self._NameEnabled = b
+
+	if not b then
+		self:DockPadding(4, 4, 4, 4)
+	else
+		self:DockPadding(4, 32, 4, 4)
+	end
 end
 
 function PANEL:Think()
@@ -349,6 +359,20 @@ end
 PANEL.XPadding = 8
 PANEL.YPadding = 8
 
+function PANEL:TrackItemSlot(it, sl)
+	self.Slots[sl] = it
+	it:SetInventoryPanel(self)
+	it:SetSlot(sl)
+	it:SetMainFrame(self:GetMainFrame())
+	it:On("ItemInserted", self, self.OnItemAddedIntoSlot, self)
+	it:On("ItemHover", self, self.CheckCanDrop, self)
+	it:On("Click", self, self.OnItemClick, self)
+	it:On("FastAction", self, self.OnItemFastAction, self)
+	it:On("Drop", "FrameItemDrop", function(...) self:ItemDrop(...) end)
+
+	it:BindInventory(self:GetInventory(), it:GetSlot())
+end
+
 function PANEL:AddItemSlot()
 	local i = #self.Slots
 
@@ -356,34 +380,17 @@ function PANEL:AddItemSlot()
 
 	local main = self:GetMainFrame()
 
-	local x = i % main.FitsItems
-	local y = math.floor(i / main.FitsItems)
+	if main then
+		local x = i % main.FitsItems
+		local y = math.floor(i / main.FitsItems)
 
-	it:SetPos( 	self.XPadding + x * (main.SlotSize + main.SlotPadding),
-				self.YPadding + y * (main.SlotSize + main.SlotPadding))
+		it:SetPos( 	self.XPadding + x * (main.SlotSize + main.SlotPadding),
+					self.YPadding + y * (main.SlotSize + main.SlotPadding))
 
-	self.Slots[i + 1] = it
-	it:SetInventoryPanel(self)
-	it:SetSlot(i + 1)
-	it:SetMainFrame(self:GetMainFrame())
-	it:On("ItemInserted", self, self.OnItemAddedIntoSlot, self)
-	it:On("ItemHover", self, self.CheckCanDrop, self)
-	it:On("Click", self, self.OnItemClick, self)
-	it:On("FastAction", self, self.OnItemFastAction, self)
+		self.ItemLines = math.max(self.ItemLines or 0, y)
+	end
 
-	it:BindInventory(self:GetInventory(), it:GetSlot())
-
-	self.ItemLines = math.max(self.ItemLines or 0, y)
-
-	--[[self:On("Change", it, function(self, inv, ...)
-		if inv:GetItemInSlot(it:GetSlot()) ~= it:GetItem(true) then
-			it:SetItem(inv:GetItemInSlot(it:GetSlot()))
-		end
-
-		it:OnInventoryUpdated()
-	end)]]
-
-	it:On("Drop", "FrameItemDrop", function(...) self:ItemDrop(...) end)
+	self:TrackItemSlot(it, i + 1)
 
 	return it
 end
@@ -411,10 +418,15 @@ end
 
 function PANEL:Draw(w, h)
 	if not self.Inventory then return end
-	if self.NoPaint then return end
+	if self.NoDraw or not self._NameEnabled then return end
 
 	local inv = self.Inventory
 	draw.SimpleText(inv:GetName(), "OS28", w/2, 16, color_white, 1, 1)
+end
+
+function PANEL:SetShouldPaint(b)
+	self.NoDraw = not b
+	self.Scroll.NoDraw = self.NoDraw
 end
 
 function PANEL:Paint(w, h)

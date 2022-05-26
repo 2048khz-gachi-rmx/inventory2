@@ -67,7 +67,9 @@ function Inv.GUICanAction(toSlot, toInv, itm, ipnlFrom, ipnlTo)
 	-- crossmove is a special case as it can swap
 	if action == "Move" and is_cross then
 		local can, why = itmInv:CanCrossInventoryMoveSwap(itm, toInv, toSlot:GetSlot())
-		if not can then return false, why end
+		if not can then
+			return false, why
+		end
 	else
 		if additional_checks[action] then
 			local ok, why = eval(additional_checks[action], itmInv, is_cross and toInv or itmInv, itm, toSlot)
@@ -79,7 +81,7 @@ function Inv.GUICanAction(toSlot, toInv, itm, ipnlFrom, ipnlTo)
 			if not can then return false, why end
 		else
 			if not toInv:HasAccess(LocalPlayer(), action, itm) then return false end
-			if not itmInv:HasAccess(LocalPlayer(), action, itm) then return false end
+			if toInv ~= itmInv and not itmInv:HasAccess(LocalPlayer(), action, itm) then return false end
 		end
 	end
 

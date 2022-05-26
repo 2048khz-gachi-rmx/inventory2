@@ -256,7 +256,6 @@ function f:ShrinkToFit()
 	local h = ip:GetLinesHeight()
 	local l, t, r, b = ip:GetDockPadding()
 
-	print("ShrinkToFit", ip.Y, h, t, b)
 	self:SetTall(ip.Y + h + t + b)
 end
 

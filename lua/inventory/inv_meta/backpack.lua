@@ -195,6 +195,7 @@ function bp:MoveItem(it, slot)	--this is a utility function which swaps slots if
 	it:SetSlot(slot)
 	if it2 then it2:SetSlot(b4slot) end
 
+	self:EmitHook("Moved", it, slot, it2, b4slot, ply)
 	if not self.ReadingNetwork then
 		self:Emit("Change")
 	end

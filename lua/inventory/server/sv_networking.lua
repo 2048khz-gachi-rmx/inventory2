@@ -2,9 +2,18 @@ util.AddNetworkString("Inventory")
 util.AddNetworkString("InventoryConstants")
 
 local PLAYER = FindMetaTable("Player")
-
 Inventory.Networking = Inventory.Networking or {InventoryIDs = {}}
 local nw = Inventory.Networking
+
+nw.ResyncCDs = nw.ResyncCDs or {}
+nw.ResyncQueue = nw.ResyncQueue or {}
+
+nw.UpdateCDs = nw.UpdateCDs or {}
+nw.UpdateQueue = nw.UpdateQueue or {}
+
+local resyncCDs = nw.ResyncCDs
+local resyncCD = 1.5
+local updateCD = 0.25
 
 local invnet = netstack:extend()
 _G.invnet = invnet
@@ -421,16 +430,6 @@ end
 
 PLAYER.SetInventoryNWToken = nw.SetToken
 PLAYER.GetInventoryNWToken = nw.GetToken
-
-nw.ResyncCDs = nw.ResyncCDs or {}
-nw.ResyncQueue = nw.ResyncQueue or {}
-
-nw.UpdateCDs = nw.UpdateCDs or {}
-nw.UpdateQueue = nw.UpdateQueue or {}
-
-local resyncCDs = nw.ResyncCDs
-local resyncCD = 3
-local updateCD = 0.5
 
 
 local function insInvs(t, v)
