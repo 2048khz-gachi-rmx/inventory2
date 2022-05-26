@@ -38,7 +38,7 @@ vt:On("CanCrossInventoryFrom", "Vault", function(self, ply, itm, inv2, slot)
 	return false
 end)
 
-vt:On("CrossInventoryMovedTo", "Vault", function(self, itm, inv2, slot)
+vt:On("CrossInventoryMovedTo", "Vault", function(self, itm, inv2, slot, fromSlot, ply)
 	itm.AllowedVaultTransfer = false
 end)
 
