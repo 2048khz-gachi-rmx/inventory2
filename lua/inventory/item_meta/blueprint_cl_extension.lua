@@ -129,3 +129,123 @@ function bp:PaintBlueprint(x, y, w, h, fake, col)
 		error("Retard: " .. err)
 	end
 end
+
+
+local bpmat = Material("__error")
+draw.GetMaterial("https://i.imgur.com/zhejG17.png", "bp128.png", nil, function(mat)
+	bpmat = mat
+end)
+
+local caches = {}
+local t3c1, t3c2 = Color(4, 12, 8), Color(0.3, 2, 1)
+local t4c1, t4c2 = Color(12, 4, 0), Color(12, 4, 0)
+
+Inventory.BlueprintPaints = {
+
+	--[[
+		Tier 1 paint
+	]]
+
+	[1] = function(self, x, y, w, h)
+		surface.SetDrawColor(Colors.DarkWhite)
+		surface.DrawMaterial("https://i.imgur.com/zhejG17.png", "bp128.png", x + w * 0.1, y + h * 0.1, w * 0.8, h * 0.8)
+	end,
+
+	--[[
+		Tier 2 paint
+	]]
+
+	[2] = function(self, x, y, w, h)
+		x, y = x + math.floor(w * 0.1), y + math.floor(h * 0.1)
+		local dw, dh = math.ceil(w - x * 2), math.ceil(h - y * 2)
+		local id = 2
+
+		if caches[id] then
+			surface.SetDrawColor(255, 255, 255)
+			caches[id]:Paint(x, y, dw, dh, true)
+			surface.SetMaterial(bpmat)
+			surface.DrawTexturedRect(x, y, dw, dh)
+		else
+			local hand = BSHADOWS.GenerateCache("bp_tier" .. id, w, h)
+			hand:SetGenerator(function(hand, w, h)
+				surface.SetDrawColor(255, 255, 255)
+				surface.SetMaterial(bpmat)
+				surface.DrawTexturedRect(0, 0, w, h)
+			end)
+
+			caches[id] = hand
+			hand:CacheShadow(1, 6, 8, Colors.DarkGray, Colors.DarkGray)
+		end
+	end,
+
+	--[[
+		Tier 3 paint
+	]]
+
+	[3] = function(self, x, y, w, h)
+		x, y = x + math.floor(w * 0.1), y + math.floor(h * 0.1)
+		local dw, dh = math.ceil(w - x * 2), math.ceil(h - y * 2)
+		local id = 3
+
+		if caches[id] then
+			surface.SetDrawColor(255, 255, 255, 110)
+			caches[id]:Paint(x, y, dw, dh, true)
+			surface.SetMaterial(bpmat)
+			surface.SetDrawColor(255, 255, 255)
+			surface.DrawTexturedRect(x, y, dw, dh)
+		else
+			local hand = BSHADOWS.GenerateCache("bp_tier" .. id, w, h)
+			hand:SetGenerator(function(hand, w, h)
+				surface.SetDrawColor(255, 255, 255)
+				surface.SetMaterial(bpmat)
+				surface.DrawTexturedRect(0, 0, w, h)
+			end)
+
+			caches[id] = hand
+			hand:CacheShadow(3, {14, 8}, 8, t3c1, t3c2)
+		end
+	end,
+
+	--[[
+		Tier 4 paint
+	]]
+
+	[4] = function(self, x, y, w, h)
+		x, y = x + math.floor(w * 0.1), y + math.floor(h * 0.1)
+		local dw, dh = math.ceil(w - x * 2), math.ceil(h - y * 2)
+		local id = 4
+
+		if caches[id] then
+			surface.SetDrawColor(255, 255, 255)
+			caches[id]:Paint(x, y, dw, dh, true)
+			surface.SetMaterial(bpmat)
+			surface.DrawTexturedRect(x, y, dw, dh)
+		else
+			local hand = BSHADOWS.GenerateCache("bp_tier" .. id, w, h)
+			hand:SetGenerator(function(hand, w, h)
+				surface.SetDrawColor(255, 255, 255)
+				surface.SetMaterial(bpmat)
+				surface.DrawTexturedRect(0, 0, w, h)
+			end)
+
+			caches[id] = hand
+			hand:CacheShadow(3, {18, 12}, 8, t4c1, t4c2)
+		end
+	end,
+
+	--[[
+		Tier 5 paint (no)
+	]]
+
+	[5] = function(self, w, h)
+		local x, y = self:LocalToScreen(0, 0)
+
+		BSHADOWS.BeginShadow(x, y, w, h)
+
+			surface.SetDrawColor(color_white)
+			surface.SetMaterial(bpmat)
+			surface.DrawTexturedRect(w/2 - 40, h/2 - 40, 80, 80)
+
+		BSHADOWS.EndShadow(2, 45, 1, 205, 60, 2, nil, Color(230, 5, 5), Color(170, 1, 1))
+	end,
+}
