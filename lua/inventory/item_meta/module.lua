@@ -8,7 +8,7 @@ BaseItemAccessor(mod, "Compatibles", "Compatibles")
 
 mod:On("CanCrossMove", "CompatOnly", function(self, inv1, inv2, slot)
 
-	local listeners = inv2:GetListeners("CanInstallModule")
+	--[[local listeners = inv2:GetListeners("CanInstallModule")
 	local any_listeners = listeners and #listeners >= 0
 
 	-- if we failed the emit check, we bail
@@ -38,11 +38,8 @@ mod:On("CanCrossMove", "CompatOnly", function(self, inv1, inv2, slot)
 
 	if inv2.IsEntityInventory and not any_listeners and
 		not (predefCompats and table.Count(predefCompats) > 0) then
-		print("no listeners, no compats")
 		return false
-	end
-
-	print("can install")
+	end]]
 end)
 
 mod:Register()

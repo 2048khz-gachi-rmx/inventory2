@@ -13,5 +13,4 @@ ovck 	:SetName("Overclocker")
 			render.PopFilterMin()
 		end)
 
-		:SetCountable(true)
-		:SetMaxStack(10)
+		:SetCountable(false)
