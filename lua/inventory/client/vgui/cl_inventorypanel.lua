@@ -216,7 +216,7 @@ function PANEL:SplitItem(rec, drop, item)
 	sl:SetMinMax(1, item:GetAmount() - 1)
 	sl:SetValue(math.floor(item:GetAmount() / 2))
 
-	yes.Label = ("%s -> %s / %s"):format(item:GetAmount(), item:GetAmount() - sl:GetValue(), sl:GetValue())
+	yes.Label = ("%s / %s"):format(item:GetAmount() - sl:GetValue(), sl:GetValue())
 	local iid = item:GetItemID()
 
 	local meta = Inventory.Util.GetMeta(iid)
@@ -227,7 +227,7 @@ function PANEL:SplitItem(rec, drop, item)
 	function sl:OnValueChanged(new)
 		new = math.floor(new)
 		newitem:SetAmount(new)
-		yes.Label = ("%s -> %s / %s"):format(item:GetAmount(), item:GetAmount() - new, new)
+		yes.Label = ("%s / %s"):format(item:GetAmount() - new, new)
 		inv:Emit("Change")
 	end
 
@@ -255,6 +255,21 @@ function PANEL:SplitItem(rec, drop, item)
 	rec:SetFakeItem(newitem)
 
 	self:GetInventory():Emit("Change")
+
+
+	rec:On("InventoryUpdated", cl, function()
+		if rec:GetItem(true) then
+			cl:PopOut()
+			cl:SetMouseInputEnabled(false)
+		end
+	end)
+
+	drop:On("InventoryUpdated", cl, function()
+		if drop:GetItem(true) ~= item then
+			cl:PopOut()
+			cl:SetMouseInputEnabled(false)
+		end
+	end)
 end
 
 function PANEL:StackItem(rec, drop, item, amt)
@@ -278,11 +293,11 @@ function PANEL:StackItem(rec, drop, item, amt)
 		sl:SetValue(math.Round(max / 2))
 		sl:SetDecimals(0)
 		sl:UpdateNotches()
-		yes.Label = ("%s / %s -> %s / %s"):format(item:GetAmount(), rec:GetItem():GetAmount(), item:GetAmount() - sl:GetValue(), rec:GetItem():GetAmount() + sl:GetValue())
+		yes.Label = ("%s / %s"):format(item:GetAmount() - sl:GetValue(), rec:GetItem():GetAmount() + sl:GetValue())
 
 		function sl:OnValueChanged(new)
 			new = math.floor(new)
-			yes.Label = ("%s / %s -> %s / %s"):format(item:GetAmount(), rec:GetItem():GetAmount(), item:GetAmount() - new, rec:GetItem():GetAmount() + new)
+			yes.Label = ("%s / %s"):format(item:GetAmount() - new, rec:GetItem():GetAmount() + new)
 		end
 
 		function yes:DoClick()

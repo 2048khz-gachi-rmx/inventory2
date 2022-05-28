@@ -183,6 +183,8 @@ function ITEM:OnInventoryUpdated()
 	if self:GetItem() then
 		self:GetItem():GetBaseItem():Emit("UpdatePanel", self:GetItem(), self, self.ModelPanel)
 	end
+
+	self:Emit("InventoryUpdated")
 end
 
 function ITEM:OnMousePressed(c)
@@ -378,6 +380,8 @@ function ITEM:SetItem(it)
 	self:SetEnabled(Either(it, true, false))
 	if self.FakeItem then self:SetFakeItem(nil) end
 
+	local pre = self.Item
+
 	if it then
 		self.BorderColor = it.BorderColor and it.BorderColor:Copy() or Colors.LightGray
 		self.FakeBorderColor = nil
@@ -406,7 +410,6 @@ function ITEM:SetItem(it)
 			self.ModelPanel = nil
 		end
 	end
-
 end
 
 

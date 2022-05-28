@@ -100,10 +100,6 @@ local function load()
 		new:SetSlot(where)
 
 		Inventory.Networking.RequestUpdate(ply, inv)
-
-		inv:InsertItem(new):Then(function(...)
-			if IsValid(ply) then Inventory.Networking.RequestUpdate(ply, inv) end
-		end, GenerateErrorer("SplitActionInsert"))
 	end
 
 	nw.Actions[INV_ACTION_MERGE] = function(ply)
