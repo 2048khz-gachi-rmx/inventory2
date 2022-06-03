@@ -91,6 +91,7 @@ local function load()
 		new:SetOwner(ply)
 		new:SetInventory(inv)
 		new:SetSlotRaw(where)
+		inv:InsertItem(new)
 
 		if inv:Emit("CanAddItem", new) == false then
 			return
@@ -250,17 +251,11 @@ local function load()
 		it:SetAmount(it:GetAmount() - amt)
 		new:SetInventory(invto)
 		new:SetSlot(slot)
+		new:SetData(dat)
+		invto:InsertItem(new)
 
-		invto:InsertItem(new):Then(function()
-			local em = new:SetData(dat)
-
-			em:Then(function()
-				if IsValid(ply) then
-					ply:NetworkInventory(inv, INV_NETWORK_UPDATE)
-					ply:NetworkInventory(invto, INV_NETWORK_UPDATE)
-				end
-			end, GenerateErrorer("InventoryActions"))
-		end, GenerateErrorer("InventoryActions"))
+		ply:NetworkInventory(inv, INV_NETWORK_UPDATE)
+		ply:NetworkInventory(invto, INV_NETWORK_UPDATE)
 
 		return true
 	end
