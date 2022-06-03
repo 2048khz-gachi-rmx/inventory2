@@ -62,13 +62,9 @@ function it:AssignInventory(inv, slot)
 
 	local sid = invobj and invobj:GetOwnerID()
 
-	local em = Inventory.MySQL.SetInventory(self, inv, slot)
-
-	em:Then(print, print)
+	self:SaveSlot()
 	self:SetInventory(inv)
 	self:SetSlot(slot)
-
-	return em
 end
 
 -- Stick the item into inventory SQL automatically

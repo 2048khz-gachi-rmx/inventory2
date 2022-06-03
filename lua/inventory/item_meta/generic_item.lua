@@ -120,6 +120,13 @@ function it:Stack(it)
 	return amt - toStk
 end
 
+function it:TakeAmount(amt)
+	local take = math.min(amt, self:GetAmount())
+	self:SetAmount(self:GetAmount() - take)
+
+	return take
+end
+
 function it:Delete()
 	if self:GetInventory() then
 		self:GetInventory():RemoveItem(self)
