@@ -57,7 +57,9 @@ local additional_checks = {
 
 function Inv.GUICanAction(toSlot, toInv, itm, ipnlFrom, ipnlTo)
 	local action, is_cross = Inv.GUIDesiredAction(toSlot, toInv, itm, ipnlFrom, ipnlTo)
-	if not action then return end
+	if not action then
+		return false, "didnt resolve action"
+	end
 
 	-- easy way to test permissions serveside
 	if _FORCE_ALLOW_INV_ACTIONS then return action, is_cross end
@@ -68,20 +70,25 @@ function Inv.GUICanAction(toSlot, toInv, itm, ipnlFrom, ipnlTo)
 	if action == "Move" and is_cross then
 		local can, why = itmInv:CanCrossInventoryMoveSwap(itm, toInv, toSlot:GetSlot())
 		if not can then
-			return false, why
+			return false, why or "guican - no error - CanCrossInventoryMoveSwap"
 		end
 	else
 		if additional_checks[action] then
 			local ok, why = eval(additional_checks[action], itmInv, is_cross and toInv or itmInv, itm, toSlot)
-			if ok == false then return false, why end
+			if ok == false then return false, why or "guican - no error - additional_checks " .. action end
 		end
 
 		if as_move[action] and is_cross then
 			local can, why = itmInv:CanCrossInventoryMove(itm, toInv, toSlot:GetSlot())
-			if not can then return false, why end
+			if not can then return false, why or "guican - no error - CanCrossInventoryMove" end
 		else
-			if not toInv:HasAccess(LocalPlayer(), action, itm) then return false end
-			if toInv ~= itmInv and not itmInv:HasAccess(LocalPlayer(), action, itm) then return false end
+			if not toInv:HasAccess(LocalPlayer(), action, itm) then
+				return false, "no access for " .. action .. ": " .. tostring(toInv)
+			end
+			
+			if toInv ~= itmInv and not itmInv:HasAccess(LocalPlayer(), action, itm) then
+				return false, "no access for " .. action .. ": " .. tostring(itmInv)
+			end
 		end
 	end
 

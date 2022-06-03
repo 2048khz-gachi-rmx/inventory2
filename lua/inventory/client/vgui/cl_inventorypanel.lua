@@ -348,10 +348,14 @@ end
 function PANEL.CheckCanDrop(slotTo, invpnl, slotFrom, itm)
 	-- HoverGradientColor
 
-	local can = Inventory.GUICanAction(
+	local can, why = Inventory.GUICanAction(
 		slotTo, invpnl:GetInventory(), itm,
 		slotFrom:GetInventoryPanel(), slotTo:GetInventoryPanel()
 	)
+
+	if not can and invpnl:GetInventory().VerbosePermissions then
+		print("CheckCanDrop - ", why or "no error")
+	end
 
 	if not can and not slotTo.HoverGradientColor then
 		slotTo.HoverGradientColor = Colors.DarkerRed

@@ -249,7 +249,6 @@ function bp:AddItem(it, ignore_emitter, nochange)
 
 	it:SetInventory(self)
 
-
 	self.Items[it:GetNWID()] = it
 	self.Slots[it:GetSlot()] = it
 
