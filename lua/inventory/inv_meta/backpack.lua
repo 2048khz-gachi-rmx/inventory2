@@ -163,9 +163,7 @@ function bp:RemoveItem(it, noChange, suppresserror)
 		self.Changes[foundit] = nil
 	end
 
-	if not self.ReadingNetwork then
-		self:Emit("Change")
-	end
+	self:NotifyChange()
 
 	self:Emit("RemovedItem", it, slot)
 	return foundit
@@ -196,9 +194,7 @@ function bp:MoveItem(it, slot)	--this is a utility function which swaps slots if
 	if it2 then it2:SetSlot(b4slot) end
 
 	self:EmitHook("Moved", it, slot, it2, b4slot, ply)
-	if not self.ReadingNetwork then
-		self:Emit("Change")
-	end
+	self:NotifyChange()
 end
 
 function bp:GetItemInSlot(slot)
@@ -236,6 +232,12 @@ function bp:_CanAddItem(it, ignore_emitter, ignore_slot, ignore_inv)
 	return true
 end
 
+function bp:NotifyChange()
+	if not self.ReadingNetwork then
+		self:Emit("Change")
+	end
+end
+
 function bp:AddItem(it, ignore_emitter, nochange)
 	local can, why, fmts = self:_CanAddItem(it, ignore_emitter)
 
@@ -258,9 +260,7 @@ function bp:AddItem(it, ignore_emitter, nochange)
 
 	self:Emit("AddItem", it, it:GetNWID())
 
-	if not self.ReadingNetwork then
-		self:Emit("Change")
-	end
+	self:NotifyChange()
 
 	return it:GetSlot()
 end

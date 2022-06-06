@@ -75,6 +75,8 @@ function it:GenerateText(cloud, markup)
 	return false -- separator required?
 end
 
+BaseItemAccessorFn(it, "AmountString", "AmountString")
+BaseItemAccessorFn(it, "AmountFormat", "AmountFormat")
 
 it:On("GenerateText", "Base", function(self, cloud, markup)
 	self:GenerateText(cloud, markup)

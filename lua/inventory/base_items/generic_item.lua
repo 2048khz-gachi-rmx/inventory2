@@ -201,6 +201,20 @@ ChainAccessor(Base, "FOV", "FOV")
 ChainAccessor(Base, "LookAng", "LookAng")
 ChainAccessor(Base, "ShouldSpin", "ShouldSpin")
 
+ChainAccessor(Base, "AmountFormat", "AmountFormat")
+Base.AmountFormat = "x%d"
+
+function Base:GetAmountFormat(n)
+	local fmt = self.AmountFormat
+	if isfunction(fmt) then
+		return fmt(self, n)
+	else
+		return fmt:format(n)
+	end
+end
+
+Base.GetAmountString = Base.GetAmountFormat
+
 function Base:SetCountable(b)
 
 	if not self.Countable and b == true then

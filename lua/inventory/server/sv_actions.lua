@@ -123,6 +123,8 @@ local function load()
 		it:AddChange(INV_ITEM_DATACHANGED)
 		it2:AddChange(INV_ITEM_DATACHANGED)
 
+		inv:NotifyChange()
+
 		return true, inv
 	end
 
@@ -187,6 +189,9 @@ local function load()
 		inv:EmitHook("CrossStackOut", it, it2, amt)
 		invto:EmitHook("CrossStackIn", it, it2, amt)
 
+		inv:NotifyChange()
+		invto:NotifyChange()
+	
 		--if ok ~= false then it:SetSlot(where) end
 		return true
 	end
@@ -257,6 +262,8 @@ local function load()
 		ply:NetworkInventory(inv, INV_NETWORK_UPDATE)
 		ply:NetworkInventory(invto, INV_NETWORK_UPDATE)
 
+		inv:NotifyChange()
+
 		return true
 	end
 
@@ -273,16 +280,14 @@ local function load()
 			return false, "no access - to"
 		end
 
-		local ok, prs, new = invto:PickupItem(it)
+		local _, new = invto:PickupItem(it)
 
-		if prs then
-			prs:Then(function(...)
-				ply:UpdateInventory(inv)
-				ply:UpdateInventory(invto)
-			end, function(...)
-				print("bad pickup request from", ply, ...)
-			end)
+		if not new then
+			return
 		end
+
+		ply:UpdateInventory(inv)
+		ply:UpdateInventory(invto)
 	end
 
 	nw.Actions[INV_ACTION_USE] = function(ply)

@@ -120,9 +120,8 @@ function PANEL:MoveItem(rec, drop, item)
 	Inventory.Networking.PerformAction(crossinv and INV_ACTION_CROSSINV_MOVE or INV_ACTION_MOVE, ns)]]
 end
 
-function PANEL:CreateSplitSelection(rec, drop, item)
+function PANEL:CreateSplitSelection(rec, drop, item, fake)
 	if IsValid(self.SplitCloud) then
-		self.SplitCloud.BoundTo:SetFakeItem(nil)
 		self.SplitCloud:Remove()
 	end
 
@@ -141,7 +140,10 @@ function PANEL:CreateSplitSelection(rec, drop, item)
 	end
 
 	function cl:OnRemove()
-		if IsValid(self.BoundTo) then self.BoundTo:SetFakeItem(nil) end
+		local f = self.BoundTo
+		if IsValid(f) and f:GetItem() == fake then
+			f:SetFakeItem(nil)
+		end
 		self.SplitCloud = nil
 	end
 
@@ -183,44 +185,51 @@ function PANEL:CreateSplitSelection(rec, drop, item)
 
 end
 
-function PANEL:SplitItem(rec, drop, item)
+function PANEL:SplitItem(rec, drop, item, amt)
+	local crossinv = rec:GetInventory() ~= item:GetInventory()
+	local act_enum = crossinv and INV_ACTION_CROSSINV_SPLIT or INV_ACTION_SPLIT
 
+	local ns = Inventory.Networking.Netstack()
+	ns:WriteInventory(item:GetInventory())
+	ns:WriteItem(item)
+
+	if crossinv then
+		ns:WriteInventory(rec:GetInventory())
+	end
+	ns:WriteUInt(rec:GetSlot(), 16)
+	ns:WriteUInt(amt, 32)
+
+	Inventory.Networking.PerformAction(act_enum, ns)
+end
+
+
+function PANEL:StartSplitItem(rec, drop, item)
 	local crossinv = rec:GetInventory() ~= item:GetInventory()
 	local act_enum = crossinv and INV_ACTION_CROSSINV_SPLIT or INV_ACTION_SPLIT
 	--if crossinv then print("cross-inv splitting is not supported yet :(") return end
 
 	local inv = self:GetInventory()
+	local ipnl = self
 
 	if self.IsWheelHeld then
 		local amt = math.floor(item:GetAmount() / 2)
 
-		local ns = Inventory.Networking.Netstack()
-		ns:WriteInventory(item:GetInventory())
-		ns:WriteItem(item)
-
-		if crossinv then
-			ns:WriteInventory(rec:GetInventory())
-		end
-		ns:WriteUInt(rec:GetSlot(), 16)
-		ns:WriteUInt(amt, 32)
-
-		Inventory.Networking.PerformAction(act_enum, ns)
+		self:SplitItem(rec, drop, item, amt)
 
 		return
 	end
 
 	if item:GetAmount() == 1 then return end --can't split 1 dude
 
-	local cl, sl, yes, no = self:CreateSplitSelection(rec, drop, item)
+	local iid = item:GetItemID()
+	local newitem = Inventory.NewItem(iid)
+
+	local cl, sl, yes, no = self:CreateSplitSelection(rec, drop, item, newitem)
 	yes.Font = "OSB18"
 	sl:SetMinMax(1, item:GetAmount() - 1)
 	sl:SetValue(math.floor(item:GetAmount() / 2))
 
 	yes.Label = ("%s / %s"):format(item:GetAmount() - sl:GetValue(), sl:GetValue())
-	local iid = item:GetItemID()
-
-	local meta = Inventory.Util.GetMeta(iid)
-	local newitem = Inventory.NewItem(iid)
 
 	newitem:SetAmount(math.floor(item:GetAmount() / 2))
 	newitem:MoveToSlot(rec:GetSlot())
@@ -235,19 +244,9 @@ function PANEL:SplitItem(rec, drop, item)
 		cl:PopOut()
 		self.SplitCloud = nil
 
-		local ns = Inventory.Networking.Netstack()
-		ns:WriteInventory(item:GetInventory())
-		ns:WriteItem(item)
-
-		if crossinv then
-			ns:WriteInventory(rec:GetInventory())
-		end
-
-		ns:WriteUInt(rec:GetSlot(), 16)
 		local amt = math.floor(sl:GetValue())
-		ns:WriteUInt(amt, 32)
+		ipnl:SplitItem(rec, drop, item, amt)
 
-		Inventory.Networking.PerformAction(act_enum, ns)
 		rec:SetFakeItem(nil)
 		rec:SetItem(newitem)
 	end
@@ -256,9 +255,9 @@ function PANEL:SplitItem(rec, drop, item)
 
 	self:GetInventory():Emit("Change")
 
-
 	rec:On("InventoryUpdated", cl, function()
 		if rec:GetItem(true) then
+			print("boppnig out 1")
 			cl:PopOut()
 			cl:SetMouseInputEnabled(false)
 		end
@@ -266,6 +265,7 @@ function PANEL:SplitItem(rec, drop, item)
 
 	drop:On("InventoryUpdated", cl, function()
 		if drop:GetItem(true) ~= item then
+			print("boppnig out 2")
 			cl:PopOut()
 			cl:SetMouseInputEnabled(false)
 		end
@@ -275,8 +275,6 @@ end
 function PANEL:StackItem(rec, drop, item, amt)
 	local crossinv = rec:GetInventory() ~= item:GetInventory()
 	local act_enum = crossinv and INV_ACTION_CROSSINV_MERGE or INV_ACTION_MERGE
-
-	--if crossinv then print("cross-inv stacking is not supported yet :(") return end
 
 	if not input.IsControlDown() then
 		amt = self.IsWheelHeld and math.min(amt or math.huge, math.floor(item:GetAmount() / 2)) or amt
@@ -338,7 +336,7 @@ function PANEL:ItemDrop(rec, drop, item, ...)
 	if action == "Move" then
 		self:MoveItem(rec, drop, item)
 	elseif action == "Split" then
-		self:SplitItem(rec, drop, item)
+		self:StartSplitItem(rec, drop, item)
 	elseif action == "Merge" then
 		self:StackItem(rec, drop, item)
 	end

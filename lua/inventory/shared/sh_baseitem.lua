@@ -24,6 +24,11 @@ function Inventory.Util.GetBaseMeta(iid)
 	return name and Inventory.BaseItemObjects[name]
 end
 
+function Inventory.Util.Amount(id, n)
+	local base = Inventory.Util.GetBase(id)
+
+	return base and base:GetAmountString(n) or "no?"
+end
 
 -- returns ItemMeta ( metas in item_meta/*.lua )
 function Inventory.Util.GetMeta(iid)
@@ -112,11 +117,11 @@ function BaseItemAccessor(it, varname, getname)
 end
 
 function BaseItemAccessorFn(it, varname, getname)
-	it["Get" .. getname] = function(self)
+	it["Get" .. getname] = function(self, ...)
 		local base = self:GetBaseItem()
 		if not base then errorf("Item %s didn't have a base item!", it) return end
 
-		return base["Get" .. varname] (base)
+		return base["Get" .. varname] (base, ...)
 	end
 end
 

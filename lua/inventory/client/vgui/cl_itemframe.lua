@@ -94,6 +94,8 @@ function ITEM:TrackChanges(inv, slot)
 	inv:On("Change", self, function(...)
 		if inv:GetItemInSlot(slot) ~= self:GetItem(true) then
 			self:SetItem(inv:GetItemInSlot(slot))
+		else
+			self:OnInventoryUpdated()
 		end
 	end)
 end
@@ -181,7 +183,12 @@ ChainAccessor(ITEM, "Slot", "Slot")
 
 function ITEM:OnInventoryUpdated()
 	if self:GetItem() then
-		self:GetItem():GetBaseItem():Emit("UpdatePanel", self:GetItem(), self, self.ModelPanel)
+		local base = self:GetItem():GetBaseItem()
+		base:Emit("UpdatePanel", self:GetItem(), self, self.ModelPanel)
+
+		if IsValid(self.ModelPanel) and IsValid(self.ModelPanel:GetEntity()) then
+			base:Emit("UpdateModel", self:GetItem(), self.ModelPanel:GetEntity(), true)
+		end
 	end
 
 	self:Emit("InventoryUpdated")
@@ -597,13 +604,14 @@ function ITEM:PaintOver(w, h)
 			local amtFont = "MR18"
 			if amt then
 				surface.SetFont(amtFont)
-				local tw, th = surface.GetTextSize("x" .. amt)
+				local fmt = it:GetAmountString(amt) or "?x" .. amt
+				local tw, th = surface.GetTextSize(fmt)
 
 				local tpadx = 2
 				local tpady = 2
 
 				draw.RoundedBoxEx(self.Rounding, w - tpadx*3 - tw, h - th, tw + tpadx*2, th - tpady, boxCol, true)
-				draw.SimpleText("x" .. amt, amtFont, w - tpadx*2, h, amtCol, 2, 4)
+				draw.SimpleText(fmt, amtFont, w - tpadx*2, h, amtCol, 2, 4)
 			end
 		end
 

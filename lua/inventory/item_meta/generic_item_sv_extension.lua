@@ -62,7 +62,7 @@ function it:AssignInventory(inv, slot)
 
 	local sid = invobj and invobj:GetOwnerID()
 
-	self:SaveSlot()
+	self.IPersistence:SaveSlot()
 	self:SetInventory(inv)
 	self:SetSlot(slot)
 end
