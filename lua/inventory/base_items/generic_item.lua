@@ -166,9 +166,20 @@ function Base:NetworkVar(net_typ, what, id, ...)
 		id = nil
 	end
 
-	if isnumber(typ) and given ~= typ - 1 then errorf("Mismatched amount of args provided (%d) vs. args needed (%d): %s", given, typ - 1, table.concat(args)) return end
-	if not isstring(what) and not isfunction(what) then errorf("NetworkVar accepts either a string (key in its' .Data table) or a function which determines how to network! Got %s instead", type(what)) return end
-	if isfunction(what) and not id then errorf("NetworkVar needs an ID as the 3rd argument if you provide a function as the second arg!") return end
+	if isnumber(typ) and given ~= typ - 1 then
+		errorf("Mismatched amount of args provided (%d) vs. args needed (%d): %s", given, typ - 1, table.concat(args))
+		return
+	end
+
+	if not isstring(what) and not isfunction(what) then
+		errorf("NetworkVar accepts either a string (key in its' .Data table) or a function which determines how to network! Got %s instead", type(what))
+		return
+	end
+
+	if isfunction(what) and not id then
+		errorf("NetworkVar needs an ID as the 3rd argument if you provide a function as the second arg!")
+		return
+	end
 
 	local key = #self.NetworkedVars + 1
 	if istable(self.NetworkedVars[id or what]) then key = self.NetworkedVars[id or what].id end
@@ -177,6 +188,11 @@ function Base:NetworkVar(net_typ, what, id, ...)
 
 	self.NetworkedVars[key] = t
 	self.NetworkedVars[id or what] = t
+
+	for k,v in pairs(self.Extensions) do
+		v:NetworkVar(net_typ, what, id, ...)
+	end
+
 	return self
 end
 
