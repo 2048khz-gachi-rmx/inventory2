@@ -52,7 +52,7 @@ function bp:CanCrossInventoryMoveSwap(it, inv2, slot)
 
 	if other_item then
 		local can, why = inv2:CanCrossInventoryMove(other_item, self, it:GetSlot())
-		print("other item allowed move to", self, can, why)
+		self:vprint("other item allowed move to", self, can, why)
 		if not can then self:vprint(inv2, "#1 doesn't allow CIM", why) return false, why end
 	end
 

@@ -74,15 +74,15 @@ function nw.ShouldAction(itm, act, tok, dat, dat2)
     if acts[tok] then
         if act == "CrossInv" then
             local svSez = ("%p:%s"):format(dat, dat2)
-            print(svSez, acts[tok])
+
             if svSez ~= acts[tok] then
+            	print(svSez, acts[tok])
                 print("desync! ^", tok, dat)
                 return true
             end
 
             return false
         elseif acts[tok] == dat then
-            print(act, acts[tok], dat)
             return false
         end
     else
@@ -219,6 +219,11 @@ function nw.Resync()
     nw.PerformAction(INV_ACTION_RESYNC)
 end
 
+local typNames = {
+	[INV_NETWORK_UPDATE] = "DeltaUpdate",
+	[INV_NETWORK_FULLUPDATE] = "FullUpdate",
+}
+
 function nw.ReadUpdate(len, type)
     local invs = net.ReadUInt(8)
     local ent = net.ReadEntity()
@@ -228,13 +233,15 @@ function nw.ReadUpdate(len, type)
         tok = net.ReadUInt(16)
     end
 
+    local uname = typNames[type] or "[unknown update " .. type .. "]"
+
     if not IsValid(ent) then
-    	realLog("CL-NW: Update: Received %d inventories for AN INVALID ENTITY!!!", invs)
+    	realLog("CL-NW: %s: Received %d inventories for AN INVALID ENTITY!!!", uname, invs)
     	realLog("       Packet length is %d bytes, ignoring...", len / 8)
     	return
     end
 
-    realLog("CL-NW: Update: Received %d inventories for %s; packet length is %d bytes", invs, ent, len / 8)
+    realLog("CL-NW: %s: Received %d inventories for %s; packet length is %d bytes", uname, invs, ent, len / 8)
 
     local invs_table = {} --map out all the entity's inventories into {[nwID] = obj} pairs
 
