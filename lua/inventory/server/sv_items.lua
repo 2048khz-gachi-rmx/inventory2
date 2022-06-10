@@ -57,11 +57,18 @@ local function equalData(dat1, dat2)
 	return true
 end
 
--- if returned true that means the item was stacked in some existing items
--- if returned table then that's a table of new items it had ta create (the second arg will be how much was left unstacked)
+--[==================================[
+	returns:
+		1: table of NEW items (or false if item is unstackable)
+		2: table of items that were stacked into
+		3: amount of items left unstacked
+--]==================================]
 
 function Inventory.CheckStackability(inv, iid, dat)
 	local base = Inventory.Util.GetBase(iid)
+	if not base then
+		return false, ("no base for iid %s"):format(iid)
+	end
 
 	if not dat or not dat.Amount then
 		dat = {}
@@ -72,7 +79,7 @@ function Inventory.CheckStackability(inv, iid, dat)
 
 	iid = Inventory.Util.ItemNameToID(iid)
 
-	if not base or not base.Countable then return false end
+	if not base or not base.Countable then return false, "base uncountable" end
 	local maxstack = base:GetMaxStack()
 
 	local amt = dat.Amount
@@ -85,18 +92,17 @@ function Inventory.CheckStackability(inv, iid, dat)
 		local canStack = v:CanStack(dat, amt)
 		if not canStack then continue end
 
-		v:SetAmount(v:GetAmount() + canStack)
+		v:SetAmount(v:GetAmount() + math.min(amt, canStack))
 		amt = amt - canStack
 		if canStack > 0 then
 			stackedIn[#stackedIn + 1] = v
 		end
 
-		if amt == 0 then return true, stackedIn end -- stacked all in; return true
-		if amt < 0 then errorf("How the fuck did amount become less than 0: canStack %d, max %d, amt %d", canStack, max, amt) return true end
+		if amt == 0 then return {}, stackedIn, 0 end -- stacked all in; return an empty table of new items
 	end
 
 	local canCreate = math.ceil(amt / maxstack)
-	local ret = {}
+	local newIts = {}
 
 	for i=1, canCreate do
 		local free = inv:GetFreeSlot()
@@ -108,12 +114,12 @@ function Inventory.CheckStackability(inv, iid, dat)
 		it:SetAmount(canGive)
 		it:SetSlot(free)
 
-		ret[i] = it
+		newIts[i] = it
 
 		amt = amt - canGive
 	end
 
-	return ret, amt
+	return newIts, stackedIn, amt
 end
 
 

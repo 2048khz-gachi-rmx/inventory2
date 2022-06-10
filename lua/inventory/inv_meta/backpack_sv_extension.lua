@@ -8,55 +8,58 @@ ChainAccessor(bp, "LastResync", "LastResync")
 	the maybe number is the amount of items left which couldnt be stacked in anywhere
 ]]
 
+--[==================================[
+	new api:
+		returns:
+			if success:
+				table: new items created
+				table: items stacked into (where applicable)
+				number: items unstacked
+
+			if failed:
+				bool: false  - so you can do `if not cumsock...`
+				string: why
+		ie:
+			1: { new_item1, new_item2, };
+			2: { stacked_into };
+			3: 0 -- no items left unstacked
+--]==================================]
+
 function bp:NewItem(iid, slot, dat, nostack)
 	if not isstring(iid) and not isnumber(iid) then
 		errorf("Attempted to create item with IID: %s (%s)", iid, type(iid))
 		return
 	end
 
-	local pr = Promise()
-
 	local can, why = self:Emit("CanCreateItem", iid, dat, slot)
-	if can == false then return false, ("Cannot create item (%s)"):format(why or "emit returned false") end
+	if can == false then
+		return false, ("Cannot create item (%s)"):format(why or "emit returned false")
+	end
 
 
 	if not nostack then
-		local its, left = Inventory.CheckStackability(self, iid, dat)
+		local newIts, stkInto, left = Inventory.CheckStackability(self, iid, dat)
 
-		-- table of new items given; now to insert them in SQL
-		if istable(its) then
-			local prs = {}
-			for k,v in ipairs(its) do
-				local newPr = Promise()
-				table.insert(prs, newPr)
+		if newIts then
+			-- table of new items given = stack complete, now to insert them in SQL
 
-				if self.UseSQL ~= false then
+			if self.UseSQL ~= false then
+				for k,v in ipairs(newIts) do
 					v:Insert(self)
 					self:AddItem(v, true)
-
-					v:On("AssignUID", "InsertIntoInv", function(v, uid)
-						v:AddChange(INV_ITEM_ADDED)
-						newPr:Resolve(v)
-					end)
-				else
-					newPr:Resolve(v)
+					v:AddChange(INV_ITEM_ADDED)
 				end
 			end
 
-
-			return Promise.OnAll(prs), left
-		end
-
-		if its == true then
-			pr:Resolve(false, left)
-			return pr, 0
+			return its, stkInto, left
 		end
 	end
 
 	slot = slot or self:GetFreeSlot()
+
 	if not slot or slot > self.MaxItems then
-		pr:Reject( ("Didn't find a slot where to put the item or it was above MaxItems! (%s > %d)"):format(slot, self.MaxItems) )
-		return pr, dat and dat.Amount or 0
+		return false,
+			("no slot to put the item or its >MaxItems (%s > %d)"):format(slot, self.MaxItems)
 	end
 
 	local it = Inventory.NewItem(iid, self, dat)
@@ -65,15 +68,9 @@ function bp:NewItem(iid, slot, dat, nostack)
 	if self.UseSQL ~= false then
 		it:Insert(self)
 		self:AddItem(it, true)
-
-		it:Once("AssignUID", function()
-			pr:Resolve({it})
-		end)
-	else
-		pr:Resolve({it})
 	end
 
-	return pr, 0
+	return {it}, {}, 0
 end
 
 function bp:NewItemNetwork(who, iid, slot, dat, nostack)
@@ -88,11 +85,11 @@ function bp:NewItemNetwork(who, iid, slot, dat, nostack)
 		who = self:GetOwner()
 	end
 
-	local pr, left = self:NewItem(iid, slot, dat, nostack)
+	local new, stk, left = self:NewItem(iid, slot, dat, nostack)
 
 	Inventory.Networking.NetworkInventory(who, self, INV_NETWORK_UPDATE)
 
-	return pr, left
+	return new, stk, left
 end
 
 -- can you move FROM this inv?
