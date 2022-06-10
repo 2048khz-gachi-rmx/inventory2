@@ -115,13 +115,16 @@ function Inventory.GetInventoryStackInfo(inv, item, opts)
 	return false, candidates, createNew
 end
 
-function Inventory.CreateStackedItems(inv, tpl, tbl)
-	local base = Inventory.Util.GetBase(tpl)
-	local iid = tpl:GetItemID()
+function Inventory.CreateStackedItems(inv, from, tbl)
+	local iid = from:GetItemID()
 
 	local ret = {}
 
+	local dat = from:GetData()
+
 	for slot, amt in pairs(tbl) do
+		dat.Amount = amt -- for initializers i guess?
+
 		local it = Inventory.NewItem(iid, inv, dat)
 		it:SetAmount(amt)
 		it:SetSlot(slot)
