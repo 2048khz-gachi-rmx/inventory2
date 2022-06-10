@@ -83,11 +83,25 @@ function it:SetNWID(n)
 end
 
 local function equalData(dat1, dat2)
+	local c = 0
+
 	for k,v in pairs(dat1) do
+		c = c + 1
 		if dat2[k] ~= v and k ~= "Amount" then
 			return false
 		end
 	end
+	
+	local pk
+
+	for i=1, c do
+		pk = next(dat2, pk) -- pk cant be nil because the previous loop would've caught it
+	end
+
+	if next(dat2, pk) ~= nil then -- we have more keys than in dat1; not equal
+		return false
+	end
+
 	return true
 end
 
@@ -176,7 +190,6 @@ it.GetPermaData = it.GetData
 
 DataAccessor(it, "Amount", "Amount", function(it, amt)
 	if amt == 0 then
-		print("item ran out of amount (amt = ", amt, ", ", it, "), deleting...")
 		it:Delete()
 	end
 end)
