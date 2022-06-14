@@ -27,6 +27,7 @@ function it:_CallTextGenerators(cloud)
 		--cloud.MinW =  64
 	else
 		mup:InvalidateLayout(true)
+		mup:Recalculate()
 	end
 
 	local len = #cloud.DoneText

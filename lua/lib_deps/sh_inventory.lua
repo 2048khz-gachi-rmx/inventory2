@@ -161,6 +161,12 @@ end
 Inventory.ReloadInventory = reload
 Inventory.Reload = reload
 
+
+function Inventory.DirtyReload()
+	Inventory = nil
+	include("lib_deps/sh_inventory.lua")
+end
+
 LibItUp.OnInitEntity(LoadInventory)
 
 --[[

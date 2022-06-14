@@ -82,16 +82,26 @@ function it:SetNWID(n)
 	self.NWID = n
 end
 
-local function equalData(dat1, dat2)
+
+local function tblEqual(dat1, dat2, unloop)
+	unloop = unloop or {}
 	local c = 0
 
 	for k,v in pairs(dat1) do
 		c = c + 1
-		if dat2[k] ~= v and k ~= "Amount" then
-			return false
+
+		if dat2[k] ~= v then
+			if istable(v) and istable(dat2[k]) then
+				if unloop[v] then continue end
+
+				unloop[v] = true
+				if not tblEqual(dat2[k], v) then return false end
+			elseif k ~= "Amount" then
+				return false
+			end
 		end
 	end
-	
+
 	local pk
 
 	for i=1, c do
@@ -116,7 +126,9 @@ function it:CanStack(it2, amt)
 	local otherData = IsItem(it2) and it2:GetData() or istable(it2) and it2
 	it2 = IsItem(it2) and it2
 
-	if otherData and not equalData(self.Data, otherData) then return false end
+	if otherData and not tblEqual(self.Data, otherData) then
+		return false
+	end
 	if it2 and self:GetItemID() ~= it2:GetItemID() then return false end
 	if not self:GetMaxStack() or (it2 and not it2:GetMaxStack()) then return false end
 	if self:GetAmount() == self:GetMaxStack() then return false end

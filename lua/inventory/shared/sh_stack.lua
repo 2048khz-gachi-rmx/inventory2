@@ -39,6 +39,7 @@ function Inventory.GetInventoryStackInfo(inv, item, opts)
 			if not invItm then continue end
 
 			local amt = invItm:CanStack(item, candAmt)
+
 			if amt then
 				candidates[#candidates + 1] = {invItm, amt}
 				assert(amt >= 0)
