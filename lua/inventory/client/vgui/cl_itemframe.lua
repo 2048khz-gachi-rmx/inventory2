@@ -93,7 +93,7 @@ end
 function ITEM:TrackChanges(inv, slot)
 	inv:On("Change", self, function(...)
 		if inv:GetItemInSlot(slot) ~= self:GetItem(true) then
-			self:SetItem(inv:GetItemInSlot(slot))
+			self:SetItem(inv:GetItemInSlot(slot)) -- it'll call OnInventoryUpdated
 		else
 			self:OnInventoryUpdated()
 		end
@@ -416,6 +416,8 @@ function ITEM:SetItem(it)
 			self.ModelPanel:Remove()
 			self.ModelPanel = nil
 		end
+
+		self:OnInventoryUpdated()
 	end
 end
 

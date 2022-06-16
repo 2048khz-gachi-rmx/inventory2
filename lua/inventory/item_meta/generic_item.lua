@@ -111,7 +111,7 @@ local function tblEqual(dat1, dat2, unloop)
 	if next(dat2, pk) ~= nil then -- we have more keys than in dat1; not equal
 		return false
 	end
-
+	
 	return true
 end
 

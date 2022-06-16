@@ -151,7 +151,7 @@ function it:SetData(k, v)
 		--return Inventory.MySQL.ItemSetData(self, k)
 		self.IPersistence:SaveData(k)
 		return
-	elseif not k or not v then
+	elseif k == nil or v == nil then
 		errorf("it:SetData: expected table as arg #1 or key/value as #2 and #3: got %s, %s instead", type(k), type(v)) 
 		return
 	end

@@ -48,15 +48,6 @@ function Inventory.ReconstructItem(uid, iid, invobj, dat)
 	return itm
 end
 
-local function equalData(dat1, dat2)
-	for k,v in pairs(dat1) do
-		if dat2[k] ~= v and k ~= "Amount" then
-			return false
-		end
-	end
-	return true
-end
-
 --[==================================[
 	returns:
 		1: table of NEW items (or false if item is unstackable)
