@@ -31,6 +31,18 @@ function it:IncrementToken()
 	return TOKEN
 end
 
+function it:EmitChange()
+	if not self._suppressChange or self._suppressChange == 0 then
+		self:Emit("Change")
+	end
+	return self
+end
+
+function it:SuppressChanges(b)
+	self._suppressChange = math.max(0, (self._suppressChange or 0) + (b and 1 or -1))
+	return self
+end
+
 function it:Initialize(uid, iid, ...)
 	assert(iid, "ItemID must be provided when constructing an item object!")
 
@@ -258,6 +270,8 @@ function it:SetSlot(slot, sql)
 		-- Inventory.MySQL.SetSlot(self, inv)
 		self.IPersistence:SaveSlot(slot, inv)
 	end
+
+	self:EmitChange()
 end
 
 function it:SwapSlots(slot)
@@ -283,6 +297,8 @@ end
 function it:ReadNetworkedVars()
 	local base = self:GetBaseItem()
 
+	self:SuppressChanges(true)
+
 	for k,v in ipairs(base.NetworkedVars) do
 		local read = net.ReadBool()
 		if not read then continue end
@@ -294,6 +310,8 @@ function it:ReadNetworkedVars()
 		end
 	end
 
+	self:SuppressChanges(false)
+		:EmitChange()
 end
 
 

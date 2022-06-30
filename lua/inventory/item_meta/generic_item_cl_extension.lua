@@ -46,16 +46,18 @@ function it:AddChange(k)
 end
 
 function it:SetData(k, v)
-	if istable(k) then
+	if istable(k) and v == nil then
 		for k2,v2 in pairs(k) do
 			self.Data[k2] = v2
 		end
-	elseif not k or not v then
+	elseif k == nil or v == nil then
 		errorf("it:SetData: expected table as arg #1 or key/value as #2 and #3: got %s, %s instead", type(k), type(v)) 
 		return
+	else
+		self.Data[k] = v
 	end
 
-	self.Data[k] = v
+	self:EmitChange()
 end
 
 function it:MoveToSlot(slot)

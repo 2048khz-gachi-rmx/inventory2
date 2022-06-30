@@ -93,9 +93,9 @@ end
 function ITEM:TrackChanges(inv, slot)
 	inv:On("Change", self, function(...)
 		if inv:GetItemInSlot(slot) ~= self:GetItem(true) then
-			self:SetItem(inv:GetItemInSlot(slot)) -- it'll call OnInventoryUpdated
+			self:SetItem(inv:GetItemInSlot(slot)) -- it'll call OnInventoryUpdate
 		else
-			self:OnInventoryUpdated()
+			self:OnInventoryUpdate()
 		end
 	end)
 end
@@ -181,7 +181,7 @@ end
 
 ChainAccessor(ITEM, "Slot", "Slot")
 
-function ITEM:OnInventoryUpdated()
+function ITEM:OnPropertyUpdate()
 	if self:GetItem() then
 		local base = self:GetItem():GetBaseItem()
 		base:Emit("UpdatePanel", self:GetItem(), self, self.ModelPanel)
@@ -189,8 +189,13 @@ function ITEM:OnInventoryUpdated()
 		if IsValid(self.ModelPanel) and IsValid(self.ModelPanel:GetEntity()) then
 			base:Emit("UpdateModel", self:GetItem(), self.ModelPanel:GetEntity(), true)
 		end
-	end
 
+		self:Emit("PropertyUpdated")
+	end
+end
+
+function ITEM:OnInventoryUpdate()
+	self:OnPropertyUpdate()
 	self:Emit("InventoryUpdated")
 end
 
@@ -238,14 +243,7 @@ function ITEM:Think()
 	self:Emit("Think")
 end
 
-function ITEM:OnCursorEntered()
-	self:Emit("Hover")
-
-	local it = self:GetItem(true)
-	if not it then return end
-
-	hook.Run("InventoryItemHovered", self, it)
-
+function ITEM:CreateCloud()
 	local cl = (IsValid(self.Cloud) and self.Cloud) or vgui.Create("ItemCloud", self)
 	cl:Popup()
 	cl:SetSize(self:GetSize())
@@ -260,6 +258,40 @@ function ITEM:OnCursorEntered()
 	end
 
 	self.Cloud = cl
+
+	return cl
+end
+
+function ITEM:_RecreateCloud()
+	local it = self:GetItem(true)
+	if not it then return end
+
+	local cl = self.Cloud
+	local ex = IsValid(cl)
+	local pre
+
+	if ex then
+		cl:Remove()
+		pre = cl:GetAnimFrac()
+	end
+
+	cl = self:CreateCloud()
+	if ex then
+		cl:SetAnimFrac(pre)
+	end
+end
+
+function ITEM:OnCursorEntered()
+	self:Emit("Hover")
+
+	local it = self:GetItem(true)
+	if not it then return end
+
+	hook.Run("InventoryItemHovered", self, it)
+
+	local cl = self:CreateCloud()
+
+	self:On("PropertyUpdated", "UpdateCloud", self._RecreateCloud)
 end
 
 function ITEM:OnCursorExited()
@@ -271,6 +303,7 @@ function ITEM:OnCursorExited()
 	if not cl then return end
 
 	cl:Popup(false)
+	self:RemoveListener("PropertyUpdated", "UpdateCloud")
 end
 
 function ITEM:OpenOptions()
@@ -383,11 +416,23 @@ end
 ChainAccessor(ITEM, "Inventory", "Inventory", true)
 ChainAccessor(ITEM, "InventoryPanel", "InventoryPanel", true)
 
+
+function ITEM:TrackItemChanges()
+	local itm = self:GetItem(true)
+	if not itm then errorNHf("no item to track changes of") return end
+
+	itm:On("Change", self, function()
+		if self:GetItem(true) ~= itm then itm:RemoveListener("Change", self) return end
+
+		self:OnPropertyUpdate()
+	end)
+end
+
 function ITEM:SetItem(it)
 	self:SetEnabled(Either(it, true, false))
 	if self.FakeItem then self:SetFakeItem(nil) end
 
-	local pre = self.Item
+	local prev = self.Item
 
 	if it then
 		self.BorderColor = it.BorderColor and it.BorderColor:Copy() or Colors.LightGray
@@ -403,9 +448,10 @@ function ITEM:SetItem(it)
 		self:CreateModelPanel(it)
 
 		--self:Emit("Item", it, true)
-		self:OnInventoryUpdated()
-	elseif self.Item then --nilling the existing item
-		self:Emit("ItemTakenOut", self.Item)
+		self:OnInventoryUpdate()
+		self:TrackItemChanges()
+	elseif prev then --nilling the existing item
+		self:Emit("ItemTakenOut", prev)
 		self:SetCursor("arrow")
 
 		self.Item = nil
@@ -417,7 +463,8 @@ function ITEM:SetItem(it)
 			self.ModelPanel = nil
 		end
 
-		self:OnInventoryUpdated()
+		self:OnInventoryUpdate()
+		--self:TrackItemChanges()
 	end
 end
 

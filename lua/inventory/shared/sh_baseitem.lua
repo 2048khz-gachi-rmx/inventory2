@@ -156,11 +156,7 @@ function DataAccessor(it, varname, getname, setcallback, force_type)
 			return
 		end
 
-		if SERVER then
-			self:SetData(varname, v)
-		else
-			self.Data[varname] = v
-		end
+		self:SetData(varname, v)
 
 		if setcallback then
 			setcallback(self, v)
