@@ -331,6 +331,7 @@ local function load()
 
 		if succ == false then
 			printf("action %s failed - %s", act, inv or "no error")
+			printf("resyncing %s inventories...", #cur_invs)
 			-- resync all inventories the player wrote that they have access to
 			nw.RequestResync(ply, unpack(cur_invs))
 		elseif succ then

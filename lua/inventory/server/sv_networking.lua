@@ -467,8 +467,12 @@ function nw.RequestResync(ply, ...)
 	resyncCDs[ply] = CurTime()
 
 	if #nw.ResyncQueue[ply] > 0 then
-		ply:NetworkInventory(nw.ResyncQueue[ply])
-		nw.ResyncQueue[ply] = nil
+		-- TODO: batch inventories of same ents together
+		-- (we can't just slam the queue in NetworkInventory because inventories can belong to different ents)
+		for k,v in ipairs(nw.ResyncQueue[ply]) do
+			ply:NetworkInventory(v)
+			nw.ResyncQueue[ply][k] = nil
+		end
 	else
 		ply:NetworkInventory()
 	end

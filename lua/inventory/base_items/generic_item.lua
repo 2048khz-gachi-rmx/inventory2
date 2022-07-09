@@ -155,6 +155,11 @@ end
 -- if it's a function then the second argument will be whether the var is being read or written
 -- `true` if written, `false` if read
 
+-- `net_typ`: type of data (Bool, UInt, etc)
+-- `what`: name of the key in data to network (see above for function)
+-- `id`: ID of the network-er (necessary if using netstack way)
+-- `...`: stuff to pass to the net func if necessary (for example, UInt size)
+
 function Base:NetworkVar(net_typ, what, id, ...)
 	local typ = types[net_typ]
 	local given = select('#', ...)
