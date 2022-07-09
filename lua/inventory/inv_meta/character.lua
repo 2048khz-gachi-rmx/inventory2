@@ -10,6 +10,7 @@ char.NetworkID = 4
 char.MaxItems = 50
 char.IsCharacterInventory = true
 
+-- allow only for the visuals
 char.ActionCanCrossInventoryFrom = CLIENT
 char.ActionCanCrossInventoryTo = CLIENT
 
@@ -41,6 +42,10 @@ end)
 function char:Initialize()
 	self.Slots = {}
 	self.Allowed = {}
+end
+
+function char:ActionCanInteract(ply, act, ...)
+	return self:GetOwner() == ply
 end
 
 function char:Unequip(it, slot, inv)

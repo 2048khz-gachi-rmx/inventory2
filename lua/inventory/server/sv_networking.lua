@@ -467,13 +467,34 @@ function nw.RequestResync(ply, ...)
 	resyncCDs[ply] = CurTime()
 
 	if #nw.ResyncQueue[ply] > 0 then
-		for k,v in ipairs(nw.ResyncQueue[ply]) do
-			ply:NetworkInventory(v)
-			nw.ResyncQueue[ply][k] = nil
-		end
+		ply:NetworkInventory(nw.ResyncQueue[ply])
+		nw.ResyncQueue[ply] = nil
 	else
 		ply:NetworkInventory()
 	end
+end
+
+function nw.CheckedRequestResync(ply, ...)
+	local invs = {...}
+	if #invs == 0 then
+		invs = ply.Inventory
+	end
+
+	local queue = {}
+
+	for k,v in ipairs(invs) do
+		insInvs(queue, v)
+	end
+
+	for i=#queue, 1, -1 do
+		local inv = queue[i]
+		if not inv:HasAccess(ply, "Resync") then
+			table.remove(queue, i)
+			log("Player %s requested resync for %s without access... cheater?", ply, inv)
+		end
+	end
+
+	nw.RequestResync(ply, queue)
 end
 
 function nw.RequestUpdate(ply, ...)
