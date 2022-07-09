@@ -20,9 +20,9 @@ function it:WriteNetworkedVars(ns, typ)
 			ns:WriteBool(true).PacketName = "Has NetworkedVar - function: " .. tostring(self)
 			ret:MergeInto(ns)
 		else
-			if not self.Data[v.what] or
+			if self.Data[v.what] == nil or
 				(typ ~= INV_NETWORK_FULLUPDATE and self.LastNetworkedVars[v.what] == self.Data[v.what]) then
-				local why = not self.Data[v.what] and "(not set)"
+				local why = (self.Data[v.what] == nil) and "(not set)"
 					or "(already networked before: " .. self.LastNetworkedVars[v.what] .. ")"
 
 				ns:WriteBool(false).PacketName = "Lack of predefined NWVar - " .. v.what .. " " .. why
@@ -141,8 +141,30 @@ function it:AddChange(typ)
 	end
 end
 
-function it:SetData(k, v)
+-- mark the item for data re-network
+function it:ChangedData()
 	self:AddChange(INV_ITEM_DATACHANGED)
+end
+
+-- sets data without reporting to persistence
+function it:SetTempData(k, v)
+	self:ChangedData()
+
+	if istable(k) then
+		for k2,v2 in pairs(k) do
+			self.Data[k2] = v2
+		end
+		return
+	elseif k == nil or v == nil then
+		errorf("it:SetData: expected table as arg #1 or key/value as #2 and #3: got %s, %s instead", type(k), type(v))
+		return
+	end
+
+	self.Data[k] = v
+end
+
+function it:SetData(k, v)
+	self:ChangedData()
 
 	if istable(k) then
 		for k2,v2 in pairs(k) do
@@ -159,6 +181,8 @@ function it:SetData(k, v)
 	self.Data[k] = v
 	self.IPersistence:SaveData(k, v)
 end
+
+
 
 ChainAccessor(it, "SQLExists", "SQLExists")
 
