@@ -14,3 +14,8 @@ ovck 	:SetName("Overclocker")
 		end)
 
 		:SetCountable(false)
+
+function ovck:GetStrength()
+	-- self is the item instance
+	return 1.3
+end

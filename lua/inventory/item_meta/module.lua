@@ -6,6 +6,25 @@ mod.IsModule = true
 BaseItemAccessor(gen, "IsModule", "Module")
 BaseItemAccessor(mod, "Compatibles", "Compatibles")
 
+EphemDataAccessor(mod, "Installed", "Installed")
+
+if SERVER then
+	function mod:SetInstalledEntity(ent)
+		if not IsValid(ent) then
+			self:SetInstalled(false)
+		else
+			self:SetInstalled(true)
+		end
+
+		self._installedEntity = ent
+		return self
+	end
+
+	function mod:GetInstalledEntity(ent)
+		return self._installedEntity
+	end
+end
+
 mod:On("CanCrossMove", "CompatOnly", function(self, inv1, inv2, slot)
 
 	--[[local listeners = inv2:GetListeners("CanInstallModule")
