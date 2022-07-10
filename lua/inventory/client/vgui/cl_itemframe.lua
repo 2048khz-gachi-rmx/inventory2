@@ -271,8 +271,8 @@ function ITEM:_RecreateCloud()
 	local pre
 
 	if ex then
-		cl:Remove()
 		pre = cl:GetAnimFrac()
+		cl:Remove()
 	end
 
 	cl = self:CreateCloud()
