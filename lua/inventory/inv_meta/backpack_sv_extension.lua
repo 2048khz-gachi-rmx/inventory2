@@ -51,10 +51,11 @@ function bp:NewItem(iid, slot, dat, nostack)
 				end
 			end
 
-			return its, stkInto, left
+			return newIts, stkInto, left
 		end
 	end
 
+	-- didnt stack nuthin, create a new item
 	slot = slot or self:GetFreeSlot()
 
 	if not slot or slot > self.MaxItems then
