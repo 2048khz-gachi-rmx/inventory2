@@ -8,55 +8,59 @@ ChainAccessor(bp, "LastResync", "LastResync")
 	the maybe number is the amount of items left which couldnt be stacked in anywhere
 ]]
 
+--[==================================[
+	new api:
+		returns:
+			if success:
+				table: new items created
+				table: items stacked into (where applicable)
+				number: items unstacked
+
+			if failed:
+				bool: false  - so you can do `if not cumsock...`
+				string: why
+		ie:
+			1: { new_item1, new_item2, };
+			2: { stacked_into };
+			3: 0 -- no items left unstacked
+--]==================================]
+
 function bp:NewItem(iid, slot, dat, nostack)
 	if not isstring(iid) and not isnumber(iid) then
 		errorf("Attempted to create item with IID: %s (%s)", iid, type(iid))
 		return
 	end
 
-	local pr = Promise()
-
 	local can, why = self:Emit("CanCreateItem", iid, dat, slot)
-	if can == false then return false, ("Cannot create item (%s)"):format(why or "emit returned false") end
+	if can == false then
+		return false, ("Cannot create item (%s)"):format(why or "emit returned false")
+	end
 
 
 	if not nostack then
-		local its, left = Inventory.CheckStackability(self, iid, dat)
+		local newIts, stkInto, left = Inventory.CheckStackability(self, iid, dat)
 
-		-- table of new items given; now to insert them in SQL
-		if istable(its) then
-			local prs = {}
-			for k,v in ipairs(its) do
-				local newPr = Promise()
-				table.insert(prs, newPr)
+		if newIts then
+			-- table of new items given = stack complete, now to insert them in SQL
 
-				if self.UseSQL ~= false then
+			if self.UseSQL ~= false then
+				for k,v in ipairs(newIts) do
 					v:Insert(self)
 					self:AddItem(v, true)
-
-					v:On("AssignUID", "InsertIntoInv", function(v, uid)
-						v:AddChange(INV_ITEM_ADDED)
-						newPr:Resolve(v)
-					end)
-				else
-					newPr:Resolve(v)
+					v:AddChange(INV_ITEM_ADDED)
 				end
 			end
 
-
-			return Promise.OnAll(prs), left
-		end
-
-		if its == true then
-			pr:Resolve(false, left)
-			return pr, 0
+			return newIts, stkInto, left
 		end
 	end
 
+	-- didnt stack nuthin, create a new item
 	slot = slot or self:GetFreeSlot()
+
 	if not slot or slot > self.MaxItems then
-		pr:Reject( ("Didn't find a slot where to put the item or it was above MaxItems! (%s > %d)"):format(slot, self.MaxItems) )
-		return pr, dat and dat.Amount or 0
+		return false,
+			("no slot to put the item or its >MaxItems (%s > %d)"):format(slot, self.MaxItems)
 	end
 
 	local it = Inventory.NewItem(iid, self, dat)
@@ -65,15 +69,9 @@ function bp:NewItem(iid, slot, dat, nostack)
 	if self.UseSQL ~= false then
 		it:Insert(self)
 		self:AddItem(it, true)
-
-		it:Once("AssignUID", function()
-			pr:Resolve({it})
-		end)
-	else
-		pr:Resolve({it})
 	end
 
-	return pr, 0
+	return {it}, {}, 0
 end
 
 function bp:NewItemNetwork(who, iid, slot, dat, nostack)
@@ -88,37 +86,65 @@ function bp:NewItemNetwork(who, iid, slot, dat, nostack)
 		who = self:GetOwner()
 	end
 
-	local pr, left = self:NewItem(iid, slot, dat, nostack)
+	local new, stk, left = self:NewItem(iid, slot, dat, nostack)
 
-	pr:Then(function(...)
-		if IsValid(self:GetOwner()) then
-			Inventory.Networking.NetworkInventory(who, self, INV_NETWORK_UPDATE)
-		end
-	end)
+	Inventory.Networking.NetworkInventory(who, self, INV_NETWORK_UPDATE)
 
-	return pr, left
+	return new, stk, left
 end
 
 -- can you move FROM this inv?
 function bp:CanCrossInventoryMove(it, inv2, slot, ply)
 	-- check if they have that slot available
 
-	if slot and inv2:IsSlotLegal(slot) == false then return false end
+	-- assertf(IsPlayer(ply), "%s is not player (%s)", ply, type(ply))
 
-	if ply and not inv2:HasAccess(ply, "CrossInventoryTo", it, self) then return false end
-	if ply and not self:HasAccess(ply, "CrossInventoryFrom", it, inv2) then return false end
+	if slot and inv2:IsSlotLegal(slot) == false then return false, "illegal slot " .. tostring(slot) end
+
+	if ply then
+		local can, why = inv2:HasAccess(ply, "CrossInventoryTo", it, self)
+		if not can then return false, "no access to other inv: " .. why end
+
+		can, why = self:HasAccess(ply, "CrossInventoryFrom", it, inv2)
+		if not can then return false, "no access to self: " .. why end
+	end
 
 	-- check if inv2 can accept cross-inventory item
-	if inv2:Emit("CanMoveTo", it, self, slot) == false then print("CanMoveTo no", inv2) return false end
+	if inv2:Emit("CanMoveTo", it, self, slot) == false then print("CanMoveTo no", inv2) return false, "cannot move to inv2" end
 
 	-- check if we can give out the item
-	if self:Emit("CanMoveFrom", it, inv2, slot) == false then print("CanMoveFrom no") return false end
+	if self:Emit("CanMoveFrom", it, inv2, slot) == false then print("CanMoveFrom no") return false, "cannot move from self" end
 
 	-- check if inv2 can add an item to itself
-	if inv2:Emit("CanAddItem", it, it:GetUID(), slot) == false then print("CanAdd no") return false end
+	if inv2:Emit("CanAddItem", it, it:GetNWID(), slot) == false then print("CanAdd no") return false, "cannot add item to inv2" end
 
 	-- check if the item can be moved
-	if it:Emit("CanCrossMove", self, inv2, slot) == false then print("CanItemAdd no") return false end
+	if it:Emit("CanCrossMove", self, inv2, slot) == false then print("CanCrossMove no") return false, "cannot crossmove item" end
+
+	return true
+end
+
+-- also tries swap, if necessary
+function bp:CanCrossInventorySwap(it, inv2, slot, ply)
+	slot = slot or inv2:GetFreeSlot()
+	if not slot then
+		return false, "no slot " .. tostring(slot)
+	end
+
+	if not inv2:IsSlotLegal(slot) then
+		printf("Attempted to move item out of inventory bounds (%s > %s)", slot, inv2.MaxItems)
+		return false, "illegal slot " .. slot
+	end
+
+	local other_item = inv2:GetItemInSlot(slot)
+
+	if other_item then
+		local can, why = inv2:CanCrossInventoryMove(other_item, self, it:GetSlot(), ply)
+		if not can then print(inv2, "#1 doesn't allow CIM", why) return false, why end
+	end
+
+	local can, why = self:CanCrossInventoryMove(it, inv2, nil, ply)
+	if not can then print(self, "#2 doesn't allow CIM", why) return false, why end
 
 	return true
 end
@@ -133,9 +159,9 @@ local function ActuallyMove(from, to, it, slot)
 		print(debug.traceback())
 	end
 
-	from:RemoveItem(it, true, true) -- don't write the change 'cause we have crossmoves as a separate change
+	from:RemoveItem(it, true, true) -- don't write the change cuz we have crossmoves as a separate change
 	it:SetSlot(slot)
-	to:AddItem(it, true, true) -- same shit
+	to:AddItem(it, true, true)
 
 	assert(it:GetInventory() == to)
 
@@ -143,61 +169,60 @@ local function ActuallyMove(from, to, it, slot)
 end
 
 -- move from bp to inv2
-function bp:CrossInventoryMove(it, inv2, slot, ply)
+function bp:CrossInventoryMove(it, inv2, toSlot, ply)
 	if not IsInventory(inv2) then
 		errorf("CrossInventoryMove between what invs")
-		return
+		return false, "no second inv given"
 	end
 
 	if it:GetInventory() ~= self then
 		errorf("Can't move an item from an inventory which it doesn't belong to!" ..
 			"(item) %s vs %s (self)", it:GetInventory(), self)
-		return
+		return false, "item doesnt belong to self"
 	end
 
-	slot = slot or inv2:GetFreeSlot()
-	if not slot then print("Can't cross-inventory-move cuz no slot", slot) return false end
-	if not inv2:IsSlotLegal(slot) then printf("Attempted to move item out of inventory bounds (%s > %s)", slot, inv2.MaxItems) return end
-
-	local other_item = inv2:GetItemInSlot(slot)
-
-	if other_item then
-		if not inv2:CanCrossInventoryMove(other_item, self, it:GetSlot(), ply) then print(inv2, "#1 doesn't allow CIM") return false end
+	toSlot = toSlot or inv2:GetFreeSlot()
+	if not toSlot then
+		return false, "no slot " .. tostring(toSlot)
 	end
 
-	if not self:CanCrossInventoryMove(it, inv2, nil, ply) then print(self, "#2 doesn't allow CIM") return false end
+	if not inv2:IsSlotLegal(toSlot) then
+		printf("Attempted to move item out of inventory bounds (%s > %s)", toSlot, inv2.MaxItems)
+		return false, "illegal slot " .. toSlot
+	end
 
-	local em
+	local other_item = inv2:GetItemInSlot(toSlot)
 
-	local mySlot = it:GetSlot()
+	local can, why = self:CanCrossInventorySwap(it, inv2, toSlot, ply)
+	if not can then return false, why end
+
+	local fromSlot = it:GetSlot()
 
 	if other_item then
-		em = Inventory.MySQL.SwapInventories(it, other_item)
-			:Then(function()
-				if other_item then
-					ActuallyMove(inv2, self, other_item, mySlot)
-				end
-				ActuallyMove(self, inv2, it, slot)
-
-				self:Emit("CrossInventoryMovedFrom", it, inv2, slot)
-				inv2:Emit("CrossInventoryMovedTo", it, self, slot)
-				return true
-			end)
-
 		self:RemoveItem(it)
+
+		if other_item then
+			ActuallyMove(inv2, self, other_item, fromSlot)
+		end
+		ActuallyMove(self, inv2, it, toSlot)
+
+		it.IPersistence:SaveSlot()
+		other_item.IPersistence:SaveSlot()
+
+		self:EmitHook("CrossInventoryMovedFrom", it, inv2, toSlot, fromSlot, ply)
+		inv2:EmitHook("CrossInventoryMovedTo", it, self, toSlot, fromSlot, ply)
 	else
-		em = Inventory.MySQL.SetInventory(it, inv2, slot)
-			:Then(function()
-				ActuallyMove(self, inv2, it, slot)
-				self:Emit("CrossInventoryMovedFrom", it, inv2, slot)
-				inv2:Emit("CrossInventoryMovedTo", it, self, slot)
-				return true
-			end)
-
 		self:RemoveItem(it)
+
+		ActuallyMove(self, inv2, it, toSlot)
+
+		it.IPersistence:SaveSlot()
+
+		self:EmitHook("CrossInventoryMovedFrom", it, inv2, toSlot, fromSlot, ply)
+		inv2:EmitHook("CrossInventoryMovedTo", it, self, toSlot, fromSlot, ply)
 	end
 
-	return em
+	return true
 end
 
 function bp:LoadItems()
@@ -215,34 +240,19 @@ function bp:InsertItem(it, slot)
 		if not slot then print("Can't insert", it, "into", self, "cuz no slots") return false end
 	end
 
-	it:Insert(self)
-	local insSlot
-
 	local pr = Promise()
 
-	if it:GetUID() then
+	it:SetSlot(slot)
+	it:AddChange(INV_ITEM_ADDED)
+	local insSlot = self:AddItem(it)
 
-		it:SetSlot(slot)
-
-		insSlot = self:AddItem(it)
-		if insSlot then
-			it:AddChange(INV_ITEM_ADDED)
-			pr:Resolve(it, insSlot)
-		else
-			pr:Reject(it, insSlot)
-		end
-	else
-		it:Once("AssignUID", function()
-			it:SetSlot(slot)
-			insSlot = self:AddItem(it)
-			if insSlot then
-				it:AddChange(INV_ITEM_ADDED)
-				pr:Resolve(it, insSlot)
-			else
-				pr:Reject(it, insSlot)
-			end
-		end)
+	if not insSlot then
+		pr:Reject()
+		return
 	end
+
+	it:Insert(self)
+	pr:Resolve()
 
 	return pr
 end
@@ -261,20 +271,14 @@ local function canAdd(self, it, em, skipInv)
 	return true
 end
 
-function bp:PickupItem(it, ignore_emitter, nochange)
+function bp:PickupItem(it, opts, ignore_emitter, nochange)
 	CheckArg(1, it, IsItem, "Item")
-
-	local prs = {}
-
-	--[[if not it:GetSlot() then
-		it:SetSlot(self:GetFreeSlot())
-	end]]
 
 	if not canAdd(self, it, ignore_emitter, true) then
 		return false, false
 	end
 
-	local left, itStk, newStk = Inventory.GetInventoryStackInfo(self, it)
+	local left, itStk, newStk = Inventory.GetInventoryStackInfo(self, it, opts)
 
 	if not left and not itStk then
 		-- item unstackable, just add it
@@ -289,14 +293,11 @@ function bp:PickupItem(it, ignore_emitter, nochange)
 		self:AddItem(it, ignore_emitter, nochange)
 		it:AssignInventory()
 
-		local pr = Promise()
-		pr:Resolve() -- instant resolve, nice
-
 		if not self.ReadingNetwork then
 			self:Emit("Change")
 		end
 
-		return false, pr, {it}
+		return false, {it}
 	end
 
 	for _, dat in ipairs(itStk) do
@@ -307,7 +308,7 @@ function bp:PickupItem(it, ignore_emitter, nochange)
 	local newIts = Inventory.CreateStackedItems(self, it, newStk)
 
 	for k,v in ipairs(newIts) do
-		prs[#prs + 1] = self:InsertItem(v)
+		self:InsertItem(v)
 	end
 
 	if left then
@@ -320,9 +321,7 @@ function bp:PickupItem(it, ignore_emitter, nochange)
 		self:Emit("Change")
 	end
 
-	local pr = Promise.OnAll(prs)
-
-	return left, pr, newIts
+	return left, newIts
 end
 
 --[[------------------------------]]
@@ -338,7 +337,7 @@ function bp:SerializeItems(typ, key)
 		table.Empty(self.Changes)
 
 		for k,v in pairs(self:GetItems()) do
-			max_uid = math.max(max_uid, v:GetUID())
+			max_uid = math.max(max_uid, v:GetNWID())
 			max_id = math.max(max_id, v:GetIID())
 			amt = amt + 1
 		end
@@ -349,7 +348,7 @@ function bp:SerializeItems(typ, key)
 			local req = v:RequiresRenetwork(self)
 			if not req then continue end
 
-			max_uid = math.max(max_uid, v:GetUID())
+			max_uid = math.max(max_uid, v:GetNWID())
 			max_id = math.max(max_id, v:GetIID())
 			amt = amt + 1
 		end
@@ -430,7 +429,7 @@ function bp:WriteChanges(ns)
 	if hasdels then
 		ns:WriteUInt(#dels, 16).DeletionAmt = true
 		for k,v in ipairs(dels) do
-			ns:WriteUID(v)
+			ns:WriteNWID(v)
 		end
 	end
 
@@ -441,7 +440,7 @@ function bp:WriteChanges(ns)
 	if hascrossmoves then
 		ns:WriteUInt(#crossmove, 16).CrossMovedAmt = true
 		for k,v in ipairs(crossmove) do
-			ns:WriteUID(v)
+			ns:WriteNWID(v)
 			ns:WriteSlot(v, true)
 			--ns:WriteInventory(v:GetInventory())
 		end
@@ -454,7 +453,7 @@ function bp:WriteChanges(ns)
 	if hasmoves then
 		ns:WriteUInt(#moves, 16).MovedAmt = true
 		for k,v in ipairs(moves) do
-			ns:WriteUID(v)
+			ns:WriteNWID(v)
 			ns:WriteSlot(v, true)
 		end
 	end

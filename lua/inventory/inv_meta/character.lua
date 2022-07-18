@@ -10,6 +10,7 @@ char.NetworkID = 4
 char.MaxItems = 50
 char.IsCharacterInventory = true
 
+-- allow only for the visuals
 char.ActionCanCrossInventoryFrom = CLIENT
 char.ActionCanCrossInventoryTo = CLIENT
 
@@ -18,15 +19,15 @@ char:On("CanOpen", "NoOpen", function()
 end)
 
 char:On("CanAddItem", "ManualOnly", function(self, it)
-	return self.Allowed[it:GetUID()] -- you can only add items here through the :Equip() method
+	return self.Allowed[it:GetNWID()] -- you can only add items here through the :Equip() method
 end)
 
 char:On("CanMoveTo", "EquipOnly", function(self, it, slot)
-	return self.Allowed[it:GetUID()]
+	return self.Allowed[it:GetNWID()]
 end)
 
 char:On("CanMoveFrom", "UnequipOnly", function(self, it, slot)
-	return self.Allowed[it:GetUID()]
+	return self.Allowed[it:GetNWID()]
 end)
 
 char:On("CanMoveItem", "FittingOnly", function(self, it, slot)
@@ -43,36 +44,37 @@ function char:Initialize()
 	self.Allowed = {}
 end
 
+function char:ActionCanInteract(ply, act, ...)
+	return self:GetOwner() == ply
+end
+
 function char:Unequip(it, slot, inv)
-	if not IsInventory(inv) then error("Unequip where dude") return end
+	if not IsInventory(inv) then error("Unequip where dude") return false end
+	if not IsItem(it) then error("What are you unequipping dude") return false end
 
-	--local it = self.Slots[slot]
-	if not IsItem(it) then error("What are you unequipping dude") return end
+	self:CrossInventoryMove(it, inv, slot)
+	self.Allowed[it:GetNWID()] = nil
 
-	local mem = self:CrossInventoryMove(it, inv, slot)
-	self.Allowed[it:GetUID()] = nil
-
-	return mem
+	return true
 end
 
 function char:Equip(it, slot)
 	if IsItem(self.Slots[slot]) then
 		-- item there already; unequip and it'll make us crossinv move
-		self.Allowed[it:GetUID()] = true
-		local mem = self:Unequip(self.Slots[slot], it:GetSlot(), it:GetInventory()) --switch items places
+		self.Allowed[it:GetNWID()] = true
+		self:Unequip(self.Slots[slot], it:GetSlot(), it:GetInventory()) --switch items places
 		self.Slots[slot] = it
 
-		return mem
+		return true
 	end
 
-	self.Allowed[it:GetUID()] = true
+	self.Allowed[it:GetNWID()] = true
 
 	local inv = it:GetInventory()
-	local mem = inv:CrossInventoryMove(it, self, slot)
+	inv:CrossInventoryMove(it, self, slot)
 
 	self.Slots[slot] = it
-	--self:AddChange(it, INV_ITEM_ADDED)
-	return mem
+	return true
 end
 
 char:Register()

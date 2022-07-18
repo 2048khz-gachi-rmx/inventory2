@@ -359,5 +359,5 @@ end
 
 net.Receive("dropped_item_itm", function()
 	local itm = Inventory.Networking.ReadItem(uid_sz, iid_sz)
-	Inventory.DroppedItemPool[itm:GetUID()] = itm
+	Inventory.DroppedItemPool[itm:GetNWID()] = itm
 end)

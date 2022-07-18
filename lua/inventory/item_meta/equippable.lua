@@ -20,31 +20,27 @@ function eq:Unequip(ply, slot, intoInv)
 	local char = Inventory.GetEquippableInventory(ply)
 	if not char then errorf("What the fuck can't equip on %s cuz no character inventory", ply) end
 
-	local mem = char:Unequip(self, slot, intoInv)
+	local ok = char:Unequip(self, slot, intoInv)
 
-	if mem then
-		mem:Then(function()
-			self:SetEquipped(false)
-		end)
+	if ok then
+		self:SetEquipped(false)
 	end
 
-	return mem
+	return ok
 end
 
 function eq:Equip(ply, slot)
 	local char = Inventory.GetEquippableInventory(ply)
 	if not char then errorf("What the fuck can't equip on %s cuz no character inventory", ply) end
 
-	local mem = char:Equip(self, slot)
+	local ok = char:Equip(self, slot)
 
-	if mem then
-		mem:Then(function()
-			self:SetSlot(slot)
-			self:SetEquipped(true)
-		end)
+	if ok then
+		self:SetSlot(slot)
+		self:SetEquipped(true)
 	end
 
-	return mem
+	return ok
 end
 
 

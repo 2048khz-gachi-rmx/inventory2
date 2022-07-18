@@ -6,9 +6,28 @@ mod.IsModule = true
 BaseItemAccessor(gen, "IsModule", "Module")
 BaseItemAccessor(mod, "Compatibles", "Compatibles")
 
+EphemDataAccessor(mod, "Installed", "Installed")
+
+if SERVER then
+	function mod:SetInstalledEntity(ent)
+		if not IsValid(ent) then
+			self:SetInstalled(false)
+		else
+			self:SetInstalled(true)
+		end
+
+		self._installedEntity = ent
+		return self
+	end
+
+	function mod:GetInstalledEntity(ent)
+		return self._installedEntity
+	end
+end
+
 mod:On("CanCrossMove", "CompatOnly", function(self, inv1, inv2, slot)
 
-	local listeners = inv2:GetListeners("CanInstallModule")
+	--[[local listeners = inv2:GetListeners("CanInstallModule")
 	local any_listeners = listeners and #listeners >= 0
 
 	-- if we failed the emit check, we bail
@@ -38,11 +57,8 @@ mod:On("CanCrossMove", "CompatOnly", function(self, inv1, inv2, slot)
 
 	if inv2.IsEntityInventory and not any_listeners and
 		not (predefCompats and table.Count(predefCompats) > 0) then
-		print("no listeners, no compats")
 		return false
-	end
-
-	print("can install")
+	end]]
 end)
 
 mod:Register()

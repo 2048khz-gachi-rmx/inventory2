@@ -13,5 +13,9 @@ ovck 	:SetName("Overclocker")
 			render.PopFilterMin()
 		end)
 
-		:SetCountable(true)
-		:SetMaxStack(10)
+		:SetCountable(false)
+
+function ovck:GetStrength()
+	-- self is the item instance
+	return 1.3
+end

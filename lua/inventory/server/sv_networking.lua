@@ -2,9 +2,18 @@ util.AddNetworkString("Inventory")
 util.AddNetworkString("InventoryConstants")
 
 local PLAYER = FindMetaTable("Player")
-
 Inventory.Networking = Inventory.Networking or {InventoryIDs = {}}
 local nw = Inventory.Networking
+
+nw.ResyncCDs = nw.ResyncCDs or {}
+nw.ResyncQueue = nw.ResyncQueue or {}
+
+nw.UpdateCDs = nw.UpdateCDs or {}
+nw.UpdateQueue = nw.UpdateQueue or {}
+
+local resyncCDs = nw.ResyncCDs
+local resyncCD = 1.5
+local updateCD = 0.25
 
 local invnet = netstack:extend()
 _G.invnet = invnet
@@ -125,7 +134,7 @@ function invnet:Resize(...)
 	for k, it in ipairs(t) do
 		if IsItem(it) then
 			max_id = max(it:GetIID(), max_id)
-			max_uid = max(it:GetUID(), max_uid)
+			max_uid = max(it:GetNWID(), max_uid)
 		else --assuming UID
 			max_uid = max(it, max_uid)
 		end
@@ -143,19 +152,19 @@ function invnet:Resize(...)
 end
 
 function invnet:WriteIDs(it)
-	local uid, iid = it:GetUID(), it:GetIID()
+	local uid, iid = it:GetNWID(), it:GetIID()
 
-	if uid > self.MaxUID then errorf("UID out of initialized range! (attempted to write: %d ; max. was: %d)", uid, self.MaxUID) end
+	if uid > self.MaxUID then errorf("NWID out of initialized range! (attempted to write: %d ; max. was: %d)", uid, self.MaxUID) end
 	if iid > self.MaxID then errorf("IID out of initialized range! (attempted to write: %d ; max. was: %d)", iid, self.MaxID) end
 
 	self:WriteUInt(uid, self.MaxUIDLen).UsesUID = 2
 	self:WriteUInt(iid, self.MaxIDLen).UsesID = 2
 end
 
-function invnet:WriteUID(it)
-	local uid = isnumber(it) and it or it:GetUID()
+function invnet:WriteNWID(it)
+	local uid = isnumber(it) and it or it:GetNWID()
 
-	if uid > self.MaxUID then errorf("UID out of initialized range! (attempted to write: %d ; max. was: %d)", uid, self.MaxUID) end
+	if uid > self.MaxUID then errorf("NWID out of initialized range! (attempted to write: %d ; max. was: %d)", uid, self.MaxUID) end
 	local t = self:WriteUInt(uid, self.MaxUIDLen)
 	t.UsesUID = 2
 	return t
@@ -245,8 +254,8 @@ timer.Simple(0.3, function()
 	end)
 end)
 
-function nw.NetStack(uid, iid)
-	local ns = invnet:new(uid, iid)
+function nw.NetStack(nwid, iid)
+	local ns = invnet:new(nwid, iid)
 	return ns
 end
 
@@ -327,6 +336,8 @@ function nw.NetworkInventory(ply, inv, typ, just_return, key) --mark 'just_retur
 	hook.Run("InventoryNetwork", ply, inv)
 
 	if IsInventory(inv) then
+		if not inv:IsValid() then print("! invalid inv", inv) return end -- ignore invalid inventories
+
 		inv:SetLastResync(CurTime()) 	-- track when we last resynced the inventory
 										-- seems to not be used anymore?
 
@@ -420,16 +431,6 @@ end
 PLAYER.SetInventoryNWToken = nw.SetToken
 PLAYER.GetInventoryNWToken = nw.GetToken
 
-nw.ResyncCDs = nw.ResyncCDs or {}
-nw.ResyncQueue = nw.ResyncQueue or {}
-
-nw.UpdateCDs = nw.UpdateCDs or {}
-nw.UpdateQueue = nw.UpdateQueue or {}
-
-local resyncCDs = nw.ResyncCDs
-local resyncCD = 3
-local updateCD = 0.5
-
 
 local function insInvs(t, v)
 	if IsInventory(v) and not table.HasValue(t, v) then
@@ -466,12 +467,38 @@ function nw.RequestResync(ply, ...)
 	resyncCDs[ply] = CurTime()
 
 	if #nw.ResyncQueue[ply] > 0 then
+		-- TODO: batch inventories of same ents together
+		-- (we can't just slam the queue in NetworkInventory because inventories can belong to different ents)
 		for k,v in ipairs(nw.ResyncQueue[ply]) do
 			ply:NetworkInventory(v)
+			nw.ResyncQueue[ply][k] = nil
 		end
 	else
 		ply:NetworkInventory()
 	end
+end
+
+function nw.CheckedRequestResync(ply, ...)
+	local invs = {...}
+	if #invs == 0 then
+		invs = ply.Inventory
+	end
+
+	local queue = {}
+
+	for k,v in ipairs(invs) do
+		insInvs(queue, v)
+	end
+
+	for i=#queue, 1, -1 do
+		local inv = queue[i]
+		if not inv:HasAccess(ply, "Resync") then
+			table.remove(queue, i)
+			log("Player %s requested resync for %s without access... cheater?", ply, inv)
+		end
+	end
+
+	nw.RequestResync(ply, queue)
 end
 
 function nw.RequestUpdate(ply, ...)
@@ -565,19 +592,19 @@ function nw.ReadInventory(owCheck)
 end
 
 function nw.ReadItem(inv)
-	local uid = net.ReadUInt(32)
+	local nwid = net.ReadUInt(32)
 	if not inv then return false, ("no inventory given") end
 
-	local it = inv:GetItem(uid)
-	if not it then return false, ("[%d] didn't find item UID %d in %s"):format(
-		INVENTORY_CURRENTTOKEN or -1, uid, inv
+	local it = inv:GetItem(nwid)
+	if not it then return false, ("[%d] didn't find item nwid %d in %s"):format(
+		INVENTORY_CURRENTTOKEN or -1, nwid, inv
 		) end
 
 	return it
 end
 
 function Inventory.WriteItem(itm, ns, noResize)
-	ns = ns or Inventory.Networking.NetStack(itm:GetUID(), itm:GetIID())
+	ns = ns or Inventory.Networking.NetStack(itm:GetNWID(), itm:GetIID())
 	if not noResize then ns:Resize(itm) end
 	itm:Serialize(ns, INV_NETWORK_FULLUPDATE)
 	return ns

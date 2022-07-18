@@ -21,13 +21,7 @@ local gray = Color(100, 100, 100)
 local sepPrePost = false
 
 function wep:GenerateText(cloud, markup)
-	cloud:SetMaxW( math.max(cloud:GetItemFrame():GetWide() * 2.5, cloud:GetMaxW()) )
-	self:GenerateRarityText(cloud, markup)
-
-	local needSep = self:GenerateStatsText(cloud, markup)
-	needSep = self:GenerateModifiersText(cloud, markup, needSep)
-
-	sepPrePost = needSep
+	sepPrePost = Inventory.ItemObjects.Unique.GenerateText(self, cloud, markup)
 end
 
 function wep:PostGenerateText(cloud, markup)

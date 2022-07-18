@@ -67,6 +67,7 @@ function Base:Initialize(name)
 	self.ItemName = name --ID as a string
 	self.Name = name --nice name, can be overridden
 
+	-- copy to the instance
 	self.BaseName = self.BaseName
 	self.ItemClass = self.ItemClass
 
@@ -76,6 +77,11 @@ function Base:Initialize(name)
 	Inventory.BaseItems[self.ItemName] = self
 
 	Inventory:Emit("BaseItemInit", self)
+end
+
+function Base:OverrideItemClass(new)
+	self.ItemClass = new
+	return self
 end
 
 function Base:SetRarity(rar)
@@ -149,6 +155,11 @@ end
 -- if it's a function then the second argument will be whether the var is being read or written
 -- `true` if written, `false` if read
 
+-- `net_typ`: type of data (Bool, UInt, etc)
+-- `what`: name of the key in data to network (see above for function)
+-- `id`: ID of the network-er (necessary if using netstack way)
+-- `...`: stuff to pass to the net func if necessary (for example, UInt size)
+
 function Base:NetworkVar(net_typ, what, id, ...)
 	local typ = types[net_typ]
 	local given = select('#', ...)
@@ -160,9 +171,20 @@ function Base:NetworkVar(net_typ, what, id, ...)
 		id = nil
 	end
 
-	if isnumber(typ) and given ~= typ - 1 then errorf("Mismatched amount of args provided (%d) vs. args needed (%d): %s", given, typ - 1, table.concat(args)) return end
-	if not isstring(what) and not isfunction(what) then errorf("NetworkVar accepts either a string (key in its' .Data table) or a function which determines how to network! Got %s instead", type(what)) return end
-	if isfunction(what) and not id then errorf("NetworkVar needs an ID as the 3rd argument if you provide a function as the second arg!") return end
+	if isnumber(typ) and given ~= typ - 1 then
+		errorf("Mismatched amount of args provided (%d) vs. args needed (%d): %s", given, typ - 1, table.concat(args))
+		return
+	end
+
+	if not isstring(what) and not isfunction(what) then
+		errorf("NetworkVar accepts either a string (key in its' .Data table) or a function which determines how to network! Got %s instead", type(what))
+		return
+	end
+
+	if isfunction(what) and not id then
+		errorf("NetworkVar needs an ID as the 3rd argument if you provide a function as the second arg!")
+		return
+	end
 
 	local key = #self.NetworkedVars + 1
 	if istable(self.NetworkedVars[id or what]) then key = self.NetworkedVars[id or what].id end
@@ -171,6 +193,11 @@ function Base:NetworkVar(net_typ, what, id, ...)
 
 	self.NetworkedVars[key] = t
 	self.NetworkedVars[id or what] = t
+
+	for k,v in pairs(self.Extensions) do
+		v:NetworkVar(net_typ, what, id, ...)
+	end
+
 	return self
 end
 
@@ -194,6 +221,20 @@ ChainAccessor(Base, "CamPos", "CamPos")
 ChainAccessor(Base, "FOV", "FOV")
 ChainAccessor(Base, "LookAng", "LookAng")
 ChainAccessor(Base, "ShouldSpin", "ShouldSpin")
+
+ChainAccessor(Base, "AmountFormat", "AmountFormat")
+Base.AmountFormat = "x%d"
+
+function Base:GetAmountFormat(n)
+	local fmt = self.AmountFormat
+	if isfunction(fmt) then
+		return fmt(self, n)
+	else
+		return fmt:format(n)
+	end
+end
+
+Base.GetAmountString = Base.GetAmountFormat
 
 function Base:SetCountable(b)
 

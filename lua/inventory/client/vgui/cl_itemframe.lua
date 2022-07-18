@@ -93,7 +93,9 @@ end
 function ITEM:TrackChanges(inv, slot)
 	inv:On("Change", self, function(...)
 		if inv:GetItemInSlot(slot) ~= self:GetItem(true) then
-			self:SetItem(inv:GetItemInSlot(slot))
+			self:SetItem(inv:GetItemInSlot(slot)) -- it'll call OnInventoryUpdate
+		else
+			self:OnInventoryUpdate()
 		end
 	end)
 end
@@ -109,11 +111,32 @@ function ITEM:BindInventory(inv, slot)
 	end
 end
 
+function ITEM:DoFastAction(why)
+	self:Emit("FastAction", why)
+end
+
+function ITEM:DoDoubleClick()
+	local ret = self:Emit("DoubleClick", self:GetSlot(), self:GetItem())
+	if ret ~= nil then return end
+
+	self:DoFastAction("double")
+end
+
+function ITEM:DoClick()
+	local ret = self:Emit("Click", self:GetSlot(), self:GetItem())
+	if ret ~= nil then return end
+
+	if input.IsControlDown() then
+		self:DoFastAction("ctrl")
+	end
+end
+
+
 function ITEM:Init()
 	self:SetSize(iPan.SlotSize, iPan.SlotSize)
 	self:SetText("")
 	self:SetEnabled(false)
-	self:SetDoubleClickingEnabled(false)
+	--self:SetDoubleClickingEnabled(false)
 
 	self:Droppable("Item")
 	self:SetCursor("arrow") --"none" causes flicker wtf
@@ -122,6 +145,9 @@ function ITEM:Init()
 
 	self:Receiver("Item", function(self, tbl, drop)
 		if self.DropDisabled then return end
+	
+		local itm = tbl[1]:GetItem()
+		if not itm then return end
 
 		if not drop then
 			self.DropHovered = true
@@ -155,10 +181,22 @@ end
 
 ChainAccessor(ITEM, "Slot", "Slot")
 
-function ITEM:OnInventoryUpdated()
+function ITEM:OnPropertyUpdate()
 	if self:GetItem() then
-		self:GetItem():GetBaseItem():Emit("UpdatePanel", self:GetItem(), self, self.ModelPanel)
+		local base = self:GetItem():GetBaseItem()
+		base:Emit("UpdatePanel", self:GetItem(), self, self.ModelPanel)
+
+		if IsValid(self.ModelPanel) and IsValid(self.ModelPanel:GetEntity()) then
+			base:Emit("UpdateModel", self:GetItem(), self.ModelPanel:GetEntity(), true)
+		end
+
+		self:Emit("PropertyUpdated")
 	end
+end
+
+function ITEM:OnInventoryUpdate()
+	self:OnPropertyUpdate()
+	self:Emit("InventoryUpdated")
 end
 
 function ITEM:OnMousePressed(c)
@@ -205,14 +243,7 @@ function ITEM:Think()
 	self:Emit("Think")
 end
 
-function ITEM:OnCursorEntered()
-	self:Emit("Hover")
-
-	local it = self:GetItem(true)
-	if not it then return end
-
-	hook.Run("InventoryItemHovered", self, it)
-
+function ITEM:CreateCloud()
 	local cl = (IsValid(self.Cloud) and self.Cloud) or vgui.Create("ItemCloud", self)
 	cl:Popup()
 	cl:SetSize(self:GetSize())
@@ -227,6 +258,40 @@ function ITEM:OnCursorEntered()
 	end
 
 	self.Cloud = cl
+
+	return cl
+end
+
+function ITEM:_RecreateCloud()
+	local it = self:GetItem(true)
+	if not it then return end
+
+	local cl = self.Cloud
+	local ex = IsValid(cl)
+	local pre
+
+	if ex then
+		pre = cl:GetAnimFrac()
+		cl:Remove()
+	end
+
+	cl = self:CreateCloud()
+	if ex then
+		cl:SetAnimFrac(pre)
+	end
+end
+
+function ITEM:OnCursorEntered()
+	self:Emit("Hover")
+
+	local it = self:GetItem(true)
+	if not it then return end
+
+	hook.Run("InventoryItemHovered", self, it)
+
+	local cl = self:CreateCloud()
+
+	self:On("PropertyUpdated", "UpdateCloud", self._RecreateCloud)
 end
 
 function ITEM:OnCursorExited()
@@ -238,6 +303,7 @@ function ITEM:OnCursorExited()
 	if not cl then return end
 
 	cl:Popup(false)
+	self:RemoveListener("PropertyUpdated", "UpdateCloud")
 end
 
 function ITEM:OpenOptions()
@@ -274,6 +340,12 @@ function ITEM:CreateModelPanel(it)
 			self.ModelPanel:SetModel(it:GetModel())
 			self.ModelPanel.Item = it
 
+			if IsValid(self.ModelPanel:GetEntity()) then
+				it:GetBaseItem():Emit("UpdateModel", it, self.ModelPanel:GetEntity(), true)
+			end
+
+			it:GetBaseItem():Emit("UpdatePanel", it, self, self.ModelPanel)
+
 			BestGuess(nil, self.ModelPanel)
 		else
 			self.ModelPanel:Remove()
@@ -283,46 +355,53 @@ function ITEM:CreateModelPanel(it)
 		return
 	end
 
-	if not IsValid(self.ModelPanel) and it:GetModel() then
-		local mdl = vgui.Create("DModelPanel", self)
-		mdl.Item = it
+	if not it:GetModel() then return end
 
-		mdl:SetMouseInputEnabled(false)
-		mdl:SetSize(self:GetWide() - self.Rounding*2, self:GetTall())
-		mdl:SetPos(self.Rounding, self.Rounding)
-		mdl:SetModel(it:GetModel())
-		mdl.Spin = true
+	local mdl = vgui.Create("DModelPanel", self)
+	mdl.Item = it
 
-		local pnt = mdl.Paint
+	mdl:SetMouseInputEnabled(false)
+	mdl:SetSize(self:GetWide() - self.Rounding*2, self:GetTall())
+	mdl:SetPos(self.Rounding, self.Rounding)
+	mdl:SetModel(it:GetModel())
+	mdl.Spin = true
 
-		function mdl.Paint(me, w, h)
+	local pnt = mdl.Paint
 
-			--[[if self.PaintingDragging or self.TransparentModel then
-				render.OverrideAlphaWriteEnable( true, false )
-				render.SetWriteDepthToDestAlpha( false )
-				render.OverrideBlend(true, BLEND_SRC_COLOR, BLEND_SRC_ALPHA, BLENDFUNC_MIN, 0, 0, 5)
-			end]]
+	function mdl.Paint(me, w, h)
 
-			pnt(me, w, h)
+		--[[if self.PaintingDragging or self.TransparentModel then
+			render.OverrideAlphaWriteEnable( true, false )
+			render.SetWriteDepthToDestAlpha( false )
+			render.OverrideBlend(true, BLEND_SRC_COLOR, BLEND_SRC_ALPHA, BLENDFUNC_MIN, 0, 0, 5)
+		end]]
 
-			--[[if self.PaintingDragging or self.TransparentModel then
-				render.OverrideBlend(false)
-				render.OverrideAlphaWriteEnable( false )
-				render.SetWriteDepthToDestAlpha( true )
-			end]]
+		draw.EnableFilters()
+		pnt(me, w, h)
+		draw.DisableFilters()
+		--[[if self.PaintingDragging or self.TransparentModel then
+			render.OverrideBlend(false)
+			render.OverrideAlphaWriteEnable( false )
+			render.SetWriteDepthToDestAlpha( true )
+		end]]
 
-		end
-
-		local spin = mdl.LayoutEntity
-		function mdl:LayoutEntity(...)
-			if not self.Spin then return end
-			spin(self, ...)
-		end
-
-		self:On("BaseItemUpdate", mdl, BestGuess, mdl)
-		BestGuess(_, mdl)
-		self.ModelPanel = mdl
 	end
+
+	local spin = mdl.LayoutEntity
+	function mdl:LayoutEntity(...)
+		if not self.Spin then return end
+		spin(self, ...)
+	end
+
+	self:On("BaseItemUpdate", mdl, BestGuess, mdl)
+	BestGuess(_, mdl)
+	self.ModelPanel = mdl
+
+	if IsValid(self.ModelPanel:GetEntity()) then
+		it:GetBaseItem():Emit("UpdateModel", it, self.ModelPanel:GetEntity(), true)
+	end
+
+	it:GetBaseItem():Emit("UpdatePanel", it, self, self.ModelPanel)
 end
 
 function ITEM:SetInventoryPanel(it)
@@ -337,9 +416,23 @@ end
 ChainAccessor(ITEM, "Inventory", "Inventory", true)
 ChainAccessor(ITEM, "InventoryPanel", "InventoryPanel", true)
 
+
+function ITEM:TrackItemChanges()
+	local itm = self:GetItem(true)
+	if not itm then errorNHf("no item to track changes of") return end
+
+	itm:On("Change", self, function()
+		if self:GetItem(true) ~= itm then itm:RemoveListener("Change", self) return end
+
+		self:OnPropertyUpdate()
+	end)
+end
+
 function ITEM:SetItem(it)
 	self:SetEnabled(Either(it, true, false))
 	if self.FakeItem then self:SetFakeItem(nil) end
+
+	local prev = self.Item
 
 	if it then
 		self.BorderColor = it.BorderColor and it.BorderColor:Copy() or Colors.LightGray
@@ -354,16 +447,11 @@ function ITEM:SetItem(it)
 
 		self:CreateModelPanel(it)
 
-		if self.ModelPanel and IsValid(self.ModelPanel:GetEntity()) then
-			self.Item:GetBaseItem():Emit("UpdateModel", self.Item, self.ModelPanel:GetEntity(), true)
-		end
-
-		self.Item:GetBaseItem():Emit("UpdatePanel", self.Item, self, self.ModelPanel)
-
 		--self:Emit("Item", it, true)
-		self:OnInventoryUpdated()
-	elseif self.Item then --nilling the existing item
-		self:Emit("ItemTakenOut", self.Item)
+		self:OnInventoryUpdate()
+		self:TrackItemChanges()
+	elseif prev then --nilling the existing item
+		self:Emit("ItemTakenOut", prev)
 		self:SetCursor("arrow")
 
 		self.Item = nil
@@ -374,8 +462,10 @@ function ITEM:SetItem(it)
 			self.ModelPanel:Remove()
 			self.ModelPanel = nil
 		end
-	end
 
+		self:OnInventoryUpdate()
+		--self:TrackItemChanges()
+	end
 end
 
 
@@ -523,10 +613,6 @@ function ITEM:Draw(w, h)
 
 end
 
-function ITEM:DoClick()
-	self:Emit("Click", self:GetSlot(), self:GetItem())
-end
-
 function ITEM:DoRightClick()
 	self:OpenOptions()
 end
@@ -554,7 +640,7 @@ function ITEM:PaintOver(w, h)
 
 	if it then
 		if dev:GetInt() > 0 then
-			draw.SimpleText(it:GetUID(), "OS16", w/2, 0, Colors.DarkerRed, 1, 5)
+			draw.SimpleText(it:GetNWID(), "OS16", w/2, 0, Colors.DarkerRed, 1, 5)
 		end
 
 		if it:GetCountable() then
@@ -567,13 +653,14 @@ function ITEM:PaintOver(w, h)
 			local amtFont = "MR18"
 			if amt then
 				surface.SetFont(amtFont)
-				local tw, th = surface.GetTextSize("x" .. amt)
+				local fmt = it:GetAmountString(amt) or "?x" .. amt
+				local tw, th = surface.GetTextSize(fmt)
 
 				local tpadx = 2
 				local tpady = 2
 
 				draw.RoundedBoxEx(self.Rounding, w - tpadx*3 - tw, h - th, tw + tpadx*2, th - tpady, boxCol, true)
-				draw.SimpleText("x" .. amt, amtFont, w - tpadx*2, h, amtCol, 2, 4)
+				draw.SimpleText(fmt, amtFont, w - tpadx*2, h, amtCol, 2, 4)
 			end
 		end
 

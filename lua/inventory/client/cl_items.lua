@@ -24,7 +24,7 @@ end
 
 function Inventory.ReconstructItem(uid, iid, invobj, data)
 	local itm = Inventory.NewItem(iid, invobj, data)
-	itm:SetUID(uid)
+	itm:SetNWID(uid)
 
 	return itm
 end

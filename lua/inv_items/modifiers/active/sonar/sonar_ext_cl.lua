@@ -65,14 +65,10 @@ el:SetIcon(Icon("https://i.imgur.com/OjieIw3.png", "beacon.png"):SetSize(64, 64)
 
 	White()
 	draw.BeginMask()
-	--draw.SetMaskDraw(true)
 		surface.DrawRect(mx, y, math.ceil(fsz), sz)
 	draw.DrawOp()
 		icc:Paint(x, y, sz, sz)
 	draw.FinishMask()
-
-	
-	-- print(col, acf, mod)
 end)
 
 :SetOnActivate(function(base, me, mod)

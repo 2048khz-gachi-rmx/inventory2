@@ -20,7 +20,7 @@ function f:PostPaint(w, h)
 
 end
 
-function f:AppearInventory(p)
+function f:AppearInventory(p, noanim)
 	for k,v in ipairs(p.DisappearAnims) do
 		v:Stop()
 		p.DisappearAnims[k] = nil
@@ -28,22 +28,28 @@ function f:AppearInventory(p)
 
 	p:SetZPos(0)
 	p:Show()
-	p:PopIn(0.2, 0)
+	
+	if not noanim then
+		p:PopIn(0.2, 0)
 
-	local fromabove = p:NewAnimation(0.35, 0, 0.4)
-	local pos = self:GetPositioned()
-	local x, y = pos[1], pos[2]
+		local fromabove = p:NewAnimation(0.35, 0, 0.4)
+		local pos = self:GetPositioned()
+		local x, y = pos[1], pos[2]
 
-	fromabove.Think = function(_, pnl, frac)
-		local off = 16
+		fromabove.Think = function(_, pnl, frac)
+			local off = 16
 
-		local x = x - off + off * frac
-		local y = y - 8 + 8 * frac
+			local x = x - off + off * frac
+			local y = y - 8 + 8 * frac
 
-		pnl:SetPos(x, y)
+			pnl:SetPos(x, y)
+		end
+	else
+		p:SetAlpha(255)
+		local pos = self:GetPositioned()
+		local x, y = pos[1], pos[2]
+		p:SetPos(x, y)
 	end
-
-
 end
 
 function f:DisappearInventory(p)
@@ -86,6 +92,11 @@ function f:GetInventoryPanel()
 end
 
 function f:SetInventory(inv, pnl, noanim)
+	if not pnl and self.CurrentInventory and self.CurrentInventory ~= inv then
+		print("!! bad !!", self.InvPanel:GetInventory(), inv)
+		self:DisappearInventory(self.InvPanel)
+	end
+
 	if pnl then
 		self:Emit("SwitchInventory", inv, pnl)
 		self:AppearInventory(pnl)
@@ -108,22 +119,23 @@ function f:SetInventory(inv, pnl, noanim)
 	local uids = {}
 
 	local trackFunc = function(self, slotnum, it)
-		if not it:GetUID() then return end --uh kay
+		if not it:GetNWID() then return end --uh kay
 
-		uids[it:GetUID()] = self
+		uids[it:GetNWID()] = self
 	end
 
 	local unTrackFunc = function(self, it)
-		if not it:GetUID() then return end --uh kay
+		if not it:GetNWID() then return end --uh kay
 
-		if uids[it:GetUID()] == self then uids[it:GetUID()] = nil end
+		if uids[it:GetNWID()] == self then uids[it:GetNWID()] = nil end
 	end
 
-	if not noanim then p:PopIn(0.1, 0.05) end
+	if not noanim then
+		p:PopIn(0.1, 0.05)
+	end
 
 
 	if inv.MaxItems then
-
 		for i=1, inv.MaxItems do
 			local slot = p:AddItemSlot()
 			slots[i] = slot
@@ -132,18 +144,14 @@ function f:SetInventory(inv, pnl, noanim)
 			slot:On("ItemTakenOut", "UntrackUIDs", unTrackFunc)
 
 			local item = inv:GetItemInSlot(i)
-			if item and item:GetUID() then
+			if item and item:GetNWID() then
 				slot:SetItem(item)
-				uids[item:GetUID()] = slot
+				uids[item:GetNWID()] = slot
 			end
 		end
-
 	else
-
-		for k,v in pairs(inv:GetItems()) do
-
-		end
-
+		-- ?
+		print("!! no max items?")
 	end
 
 	Inventory:On("ItemMoved", p, function(_, inv, item)
@@ -152,7 +160,7 @@ function f:SetInventory(inv, pnl, noanim)
 		local newslot = item:GetSlot()
 
 		if slots[newslot].Item ~= item then
-			local uid = item:GetUID()
+			local uid = item:GetNWID()
 
 			local prev_slot = uids[uid]
 			if IsValid(prev_slot) and prev_slot.Item == item then prev_slot:SetItem(nil) end
@@ -162,7 +170,7 @@ function f:SetInventory(inv, pnl, noanim)
 	end)
 
 	self:Emit("SwitchInventory", inv, p)
-	self:AppearInventory(p)
+	self:AppearInventory(p, noanim)
 
 	return p, true, true
 end
@@ -241,6 +249,14 @@ function f:AreaChanged(x, y, w, h)
 		self.AreaMovingX, self.AreaMovingY = nil, nil
 	end)
 
+end
+
+function f:ShrinkToFit()
+	local ip = self:GetInventoryPanel()
+	local h = ip:GetLinesHeight()
+	local l, t, r, b = ip:GetDockPadding()
+
+	self:SetTall(ip.Y + h + t + b)
 end
 
 function f:Attach(p, posfunc)

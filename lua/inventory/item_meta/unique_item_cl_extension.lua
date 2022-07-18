@@ -25,6 +25,8 @@ function uq:GenerateModifiersText(cloud, markup, needSep)
 end
 
 function uq:GenerateStatsText(cloud, markup)
+	if not self:GetStats() then return false end
+
 	local pnl = cloud:AddPanel(vgui.Create("ItemStats"))
 	pnl:SetItem(self)
 
@@ -113,13 +115,6 @@ function uq:GenerateText(cloud, markup)
 	self:GenerateRarityText(cloud, markup)
 	local needSep = self:GenerateStatsText(cloud, markup)
 	needSep = self:GenerateModifiersText(cloud, markup, needSep)
+
+	return needSep
 end
-
-
-uq:On("GenerateText", "Modifiers", function(self, cloud, markup)
-	self:GenerateText(cloud, markup)
-end)
-
-uq:On("PostGenerateText", "Recipe", function(self, cloud, markup)
-	self:PostGenerateText(cloud, markup)
-end)

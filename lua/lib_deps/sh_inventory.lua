@@ -11,7 +11,7 @@ local verybad = Color(210, 70, 70)
 
 function InventoryDefine()
 
-	-- this allows us to index
+	-- this allows us to get baseitems using either their name or number
 	local BaseItemsTable = setmetatable({}, {__index = function(self, key)
 		if isnumber(key) then
 
@@ -41,7 +41,7 @@ function InventoryDefine()
 
 		Panels = {},
 
-		Initted = (Inventory and Inventory.Initted) or false,
+		Initted = false,
 
 		Log = Logger(logName, logCol),
 
@@ -128,6 +128,8 @@ local function ContinueLoading()
 
 	-- loading items
 	include("inv_items/load.lua") --that will handle the loading itself
+
+	FInc.Recursive("inventory/deps/*", _SH, FInc.RealmResolver())
 end
 
 local LoadInventory --pre-definition
@@ -158,6 +160,12 @@ end
 
 Inventory.ReloadInventory = reload
 Inventory.Reload = reload
+
+
+function Inventory.DirtyReload()
+	Inventory = nil
+	include("lib_deps/sh_inventory.lua")
+end
 
 LibItUp.OnInitEntity(LoadInventory)
 

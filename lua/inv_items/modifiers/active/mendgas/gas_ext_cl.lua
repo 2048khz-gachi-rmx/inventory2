@@ -40,14 +40,6 @@ local function makePart(t)
 	}
 end
 
-local function emergency(st)
-	if SysTime() - st > 1 then
-		error("Holy shit nice infinite loop")
-		timer.Remove("mendgas_parts")
-		return
-	end
-end
-
 local function sorter(a, b)
 	return a[2] > b[2]
 end
@@ -81,19 +73,12 @@ timer.Create("mendgas_parts", 0.25, 0, function()
 	end
 end)
 
-local b = bench("aa", 600)
-
 local colAc = Color(240, 220, 105)
 local colInac = Color(150, 140, 15)
 local curCol = colAc:Copy()
 
 el --:SetIcon(Icon("https://i.imgur.com/OjieIw3.png", "beacon.png"):SetSize(64, 64))
 :SetPaint(function(base, fr, x, y, sz)
-	--[[if not handle.cached then
-		handle:CacheShadow(4, 8, 4)
-		handle.cached = true
-	end]]
-
 
 	local mod = base:GetModFromPlayer(LocalPlayer())
 	local allcd = mod and eval(base:GetCooldown(), base, mod, LocalPlayer()) or 1
@@ -107,62 +92,46 @@ el --:SetIcon(Icon("https://i.imgur.com/OjieIw3.png", "beacon.png"):SetSize(64, 
 	local acf = fr.SonarAcFr or 0
 	draw.LerpColor(acf, col, activeCol, inactiveCol)
 
-	--local icc = base:GetIconCopy()
-	--icc:SetColor(col)
-
-	--handle:Paint(x, y, sz, sz)
-
 	local fsz = sz * cdFrac
 	local mx = math.floor(x + sz / 2 - fsz / 2)
 
-	White()
-	--[[draw.BeginMask()
-	--draw.SetMaskDraw(true)
-		surface.DrawRect(mx, y, math.ceil(fsz), sz)
-	draw.DrawOp()]]
-	b:Open()
-		anim.size = anim.size or 0.5
+	anim.size = anim.size or 0.5
 
-		local szMult = math.max( Ease(Lerp(cdFrac, 0.5, 1), 4), anim.size )
-		local colFr = math.max(0, math.Remap(szMult, 0.8, 1, 0, 1))
-		curCol:Lerp(colFr, colInac, colAc)
+	local szMult = math.max( Ease(Lerp(cdFrac, 0.5, 1), 4), anim.size )
+	local colFr = math.max(0, math.Remap(szMult, 0.8, 1, 0, 1))
+	curCol:Lerp(colFr, colInac, colAc)
 
-		if cdFrac == 1 and anim.size < 1 then
-			anim:RemoveLerp("size")
-			anim.size = 1
-		end
+	if cdFrac == 1 and anim.size < 1 then
+		anim:RemoveLerp("size")
+		anim.size = 1
+	end
 
-		local st = SysTime()
-		for k,v in ipairs(particles) do
-			local maxA = 150
-			local a = math.min(maxA,
-				math.Remap(st, v[1], v[1] + v[3], 0, maxA),
-				math.Remap(st, v[2] - math.max(0.3, v[3]) * 2, v[2], maxA, 0)
-			)
-			if a < 0 then continue end
+	local st = SysTime()
+	for k,v in ipairs(particles) do
+		local maxA = 150
+		local a = math.min(maxA,
+			math.Remap(st, v[1], v[1] + v[3], 0, maxA),
+			math.Remap(st, v[2] - math.max(0.3, v[3]) * 2, v[2], maxA, 0)
+		)
+		if a < 0 then continue end
 
-			local pos, vel, ssz, mat, rotspeed = unpack(v, 4)
-			local sx, sy = pos[1], pos[2]
-			local sinceStart = st - v[1]
+		local pos, vel, ssz, mat, rotspeed = unpack(v, 4)
+		local sx, sy = pos[1], pos[2]
+		local sinceStart = st - v[1]
 
-			surface.SetMaterial(mat)
+		surface.SetMaterial(mat)
 
-			curCol.a = a
+		curCol.a = a
 
-			surface.SetDrawColor(curCol:Unpack())
-			surface.DrawTexturedRectRotated(
-				x + sz / 2 + sx * sz * szMult / 2,
-				y + sz / 2 + sz * sy * szMult / 2 - sinceStart * vel,
-				ssz * sz * szMult,
-				ssz * sz * szMult,
-				sinceStart * 60 * rotspeed
-			)
-		end
-	b:Close():print()
-	--draw.FinishMask()
-
-	
-	-- print(col, acf, mod)
+		surface.SetDrawColor(curCol:Unpack())
+		surface.DrawTexturedRectRotated(
+			x + sz / 2 + sx * sz * szMult / 2,
+			y + sz / 2 + sz * sy * szMult / 2 - sinceStart * vel,
+			ssz * sz * szMult,
+			ssz * sz * szMult,
+			sinceStart * 60 * rotspeed
+		)
+	end
 end)
 
 :SetOnActivate(function(base, me, mod)
@@ -203,9 +172,7 @@ function el:GenerateMarkup(it, mup, tier)
 	desc:SetColor(textCol)
 	desc:SetAlignment(1)
 
-	desc:AddText("NYI lol ")
-	--desc:AddText(dmgMult * 100 - 100 .. "% ").color = numCol
-	desc:AddText("brrt ")
+	desc:AddText("Deploy mending gas that heals everyone within its' radius for ")
 
 	for i=1, self:GetMaxTier() do
 		local tx2 = desc:AddText(tostring(self:GetTierStrength(i)))
@@ -217,20 +184,20 @@ function el:GenerateMarkup(it, mup, tier)
 		end
 	end
 
-	desc:AddText(" bwrwrrw")
+	desc:AddText(" HP.")
 end
 
-local mat = Material("overwatch/overlays/lowhealth")
+local mat = Material("grp/mendgas/mend")
 mat:SetVector("$color2", Vector(0, 1, 1))
 mat:SetVector("$color", Vector(1, 1, 0.4))
 mat:SetFloat("$pulsing_strength", 0)
 mat:SetFloat("$pulsing_speed_mul", 0)
 
-hdl.DownloadFile("http://vaati.net/Gachi/shared/mend_overlay.vtf",
+--[[hdl.DownloadFile("http://vaati.net/Gachi/shared/mend_overlay.vtf",
 "mend_overlay.vtf", function(fn)
 
 	mat:SetTexture("$basetexture", "../" .. fn:gsub("%.vtf$", ""))
-end)
+end)]]
 
 hook.Add("DrawOverlay", "MendOverlay", function()
 	local me = CachedLocalPlayer()

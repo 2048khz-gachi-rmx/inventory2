@@ -2,9 +2,10 @@ local PANEL = {}
 local iPan = Inventory.Panels
 
 function PANEL:Init()
+	self:EnableName(true)
+
 	local scr = vgui.Create("FScrollPanel", self)
 	scr:Dock(FILL)
-	scr:DockMargin(4, 32, 4, 4)
 
 	scr.GradBorder = true
 	scr:GetCanvas():AddDockPadding(0, 8, 0, 8)
@@ -17,6 +18,16 @@ function PANEL:Init()
 	self.Slots = {}
 	self.Items = {}
 	self.Inventory = nil
+end
+
+function PANEL:EnableName(b)
+	self._NameEnabled = b
+
+	if not b then
+		self:DockPadding(4, 4, 4, 4)
+	else
+		self:DockPadding(4, 32, 4, 4)
+	end
 end
 
 function PANEL:Think()
@@ -109,9 +120,8 @@ function PANEL:MoveItem(rec, drop, item)
 	Inventory.Networking.PerformAction(crossinv and INV_ACTION_CROSSINV_MOVE or INV_ACTION_MOVE, ns)]]
 end
 
-function PANEL:CreateSplitSelection(rec, drop, item)
+function PANEL:CreateSplitSelection(rec, drop, item, fake)
 	if IsValid(self.SplitCloud) then
-		self.SplitCloud.BoundTo:SetFakeItem(nil)
 		self.SplitCloud:Remove()
 	end
 
@@ -130,7 +140,10 @@ function PANEL:CreateSplitSelection(rec, drop, item)
 	end
 
 	function cl:OnRemove()
-		if IsValid(self.BoundTo) then self.BoundTo:SetFakeItem(nil) end
+		local f = self.BoundTo
+		if IsValid(f) and f:GetItem() == fake then
+			f:SetFakeItem(nil)
+		end
 		self.SplitCloud = nil
 	end
 
@@ -172,51 +185,58 @@ function PANEL:CreateSplitSelection(rec, drop, item)
 
 end
 
-function PANEL:SplitItem(rec, drop, item)
+function PANEL:SplitItem(rec, drop, item, amt)
+	local crossinv = rec:GetInventory() ~= item:GetInventory()
+	local act_enum = crossinv and INV_ACTION_CROSSINV_SPLIT or INV_ACTION_SPLIT
 
+	local ns = Inventory.Networking.Netstack()
+	ns:WriteInventory(item:GetInventory())
+	ns:WriteItem(item)
+
+	if crossinv then
+		ns:WriteInventory(rec:GetInventory())
+	end
+	ns:WriteUInt(rec:GetSlot(), 16)
+	ns:WriteUInt(amt, 32)
+
+	Inventory.Networking.PerformAction(act_enum, ns)
+end
+
+
+function PANEL:StartSplitItem(rec, drop, item)
 	local crossinv = rec:GetInventory() ~= item:GetInventory()
 	local act_enum = crossinv and INV_ACTION_CROSSINV_SPLIT or INV_ACTION_SPLIT
 	--if crossinv then print("cross-inv splitting is not supported yet :(") return end
 
 	local inv = self:GetInventory()
+	local ipnl = self
 
 	if self.IsWheelHeld then
 		local amt = math.floor(item:GetAmount() / 2)
 
-		local ns = Inventory.Networking.Netstack()
-		ns:WriteInventory(item:GetInventory())
-		ns:WriteItem(item)
-
-		if crossinv then
-			ns:WriteInventory(rec:GetInventory())
-		end
-		ns:WriteUInt(rec:GetSlot(), 16)
-		ns:WriteUInt(amt, 32)
-
-		Inventory.Networking.PerformAction(act_enum, ns)
+		self:SplitItem(rec, drop, item, amt)
 
 		return
 	end
 
 	if item:GetAmount() == 1 then return end --can't split 1 dude
 
-	local cl, sl, yes, no = self:CreateSplitSelection(rec, drop, item)
+	local iid = item:GetItemID()
+	local newitem = Inventory.NewItem(iid)
+
+	local cl, sl, yes, no = self:CreateSplitSelection(rec, drop, item, newitem)
 	yes.Font = "OSB18"
 	sl:SetMinMax(1, item:GetAmount() - 1)
 	sl:SetValue(math.floor(item:GetAmount() / 2))
 
-	yes.Label = ("%s -> %s / %s"):format(item:GetAmount(), item:GetAmount() - sl:GetValue(), sl:GetValue())
-	local iid = item:GetItemID()
-
-	local meta = Inventory.Util.GetMeta(iid)
-	local newitem = Inventory.NewItem(iid)
+	yes.Label = ("%s / %s"):format(item:GetAmount() - sl:GetValue(), sl:GetValue())
 
 	newitem:SetAmount(math.floor(item:GetAmount() / 2))
 	newitem:MoveToSlot(rec:GetSlot())
 	function sl:OnValueChanged(new)
 		new = math.floor(new)
 		newitem:SetAmount(new)
-		yes.Label = ("%s -> %s / %s"):format(item:GetAmount(), item:GetAmount() - new, new)
+		yes.Label = ("%s / %s"):format(item:GetAmount() - new, new)
 		inv:Emit("Change")
 	end
 
@@ -224,19 +244,9 @@ function PANEL:SplitItem(rec, drop, item)
 		cl:PopOut()
 		self.SplitCloud = nil
 
-		local ns = Inventory.Networking.Netstack()
-		ns:WriteInventory(item:GetInventory())
-		ns:WriteItem(item)
-
-		if crossinv then
-			ns:WriteInventory(rec:GetInventory())
-		end
-
-		ns:WriteUInt(rec:GetSlot(), 16)
 		local amt = math.floor(sl:GetValue())
-		ns:WriteUInt(amt, 32)
+		ipnl:SplitItem(rec, drop, item, amt)
 
-		Inventory.Networking.PerformAction(act_enum, ns)
 		rec:SetFakeItem(nil)
 		rec:SetItem(newitem)
 	end
@@ -244,15 +254,30 @@ function PANEL:SplitItem(rec, drop, item)
 	rec:SetFakeItem(newitem)
 
 	self:GetInventory():Emit("Change")
+
+	rec:On("InventoryUpdated", cl, function()
+		if rec:GetItem(true) then
+			print("boppnig out 1")
+			cl:PopOut()
+			cl:SetMouseInputEnabled(false)
+		end
+	end)
+
+	drop:On("InventoryUpdated", cl, function()
+		if drop:GetItem(true) ~= item then
+			print("boppnig out 2")
+			cl:PopOut()
+			cl:SetMouseInputEnabled(false)
+		end
+	end)
 end
 
 function PANEL:StackItem(rec, drop, item, amt)
 	local crossinv = rec:GetInventory() ~= item:GetInventory()
 	local act_enum = crossinv and INV_ACTION_CROSSINV_MERGE or INV_ACTION_MERGE
 
-	--if crossinv then print("cross-inv stacking is not supported yet :(") return end
-
 	if not input.IsControlDown() then
+		amt = self.IsWheelHeld and math.min(amt or math.huge, math.floor(item:GetAmount() / 2)) or amt
 		rec:GetInventory():RequestStack(item, rec:GetItem(), amt)
 		rec:GetInventory():Emit("Change")
 	else
@@ -266,11 +291,11 @@ function PANEL:StackItem(rec, drop, item, amt)
 		sl:SetValue(math.Round(max / 2))
 		sl:SetDecimals(0)
 		sl:UpdateNotches()
-		yes.Label = ("%s / %s -> %s / %s"):format(item:GetAmount(), rec:GetItem():GetAmount(), item:GetAmount() - sl:GetValue(), rec:GetItem():GetAmount() + sl:GetValue())
+		yes.Label = ("%s / %s"):format(item:GetAmount() - sl:GetValue(), rec:GetItem():GetAmount() + sl:GetValue())
 
 		function sl:OnValueChanged(new)
 			new = math.floor(new)
-			yes.Label = ("%s / %s -> %s / %s"):format(item:GetAmount(), rec:GetItem():GetAmount(), item:GetAmount() - new, rec:GetItem():GetAmount() + new)
+			yes.Label = ("%s / %s"):format(item:GetAmount() - new, rec:GetItem():GetAmount() + new)
 		end
 
 		function yes:DoClick()
@@ -302,7 +327,7 @@ function PANEL:ItemDrop(rec, drop, item, ...)
 		return
 	end
 
-	if sf:Emit("ItemDropOn", rec, drop, item) == false then
+	if sf and sf:Emit("ItemDropOn", rec, drop, item) == false then
 		return
 	end
 
@@ -311,7 +336,7 @@ function PANEL:ItemDrop(rec, drop, item, ...)
 	if action == "Move" then
 		self:MoveItem(rec, drop, item)
 	elseif action == "Split" then
-		self:SplitItem(rec, drop, item)
+		self:StartSplitItem(rec, drop, item)
 	elseif action == "Merge" then
 		self:StackItem(rec, drop, item)
 	end
@@ -321,10 +346,14 @@ end
 function PANEL.CheckCanDrop(slotTo, invpnl, slotFrom, itm)
 	-- HoverGradientColor
 
-	local can = Inventory.GUICanAction(
+	local can, why = Inventory.GUICanAction(
 		slotTo, invpnl:GetInventory(), itm,
 		slotFrom:GetInventoryPanel(), slotTo:GetInventoryPanel()
 	)
+
+	if not can and invpnl:GetInventory().VerbosePermissions then
+		print("CheckCanDrop - ", why or "no error")
+	end
 
 	if not can and not slotTo.HoverGradientColor then
 		slotTo.HoverGradientColor = Colors.DarkerRed
@@ -340,6 +369,27 @@ function PANEL.OnItemClick(itmpnl, invpnl, slot, itm)
 	invpnl:Emit("Click", itmpnl, slot, itm)
 end
 
+function PANEL.OnItemFastAction(itmpnl, invpnl, why)
+	invpnl:Emit("FastAction", itmpnl, why)
+end
+
+PANEL.XPadding = 8
+PANEL.YPadding = 8
+
+function PANEL:TrackItemSlot(it, sl)
+	self.Slots[sl] = it
+	it:SetInventoryPanel(self)
+	it:SetSlot(sl)
+	it:SetMainFrame(self:GetMainFrame())
+	it:On("ItemInserted", self, self.OnItemAddedIntoSlot, self)
+	it:On("ItemHover", self, self.CheckCanDrop, self)
+	it:On("Click", self, self.OnItemClick, self)
+	it:On("FastAction", self, self.OnItemFastAction, self)
+	it:On("Drop", "FrameItemDrop", function(...) self:ItemDrop(...) end)
+
+	it:BindInventory(self:GetInventory(), it:GetSlot())
+end
+
 function PANEL:AddItemSlot()
 	local i = #self.Slots
 
@@ -347,32 +397,28 @@ function PANEL:AddItemSlot()
 
 	local main = self:GetMainFrame()
 
-	local x = i % main.FitsItems
-	local y = math.floor(i / main.FitsItems)
+	if main then
+		local x = i % main.FitsItems
+		local y = math.floor(i / main.FitsItems)
 
-	it:SetPos( 	8 + x * (main.SlotSize + main.SlotPadding),
-				8 + y * (main.SlotSize + main.SlotPadding))
+		it:SetPos( 	self.XPadding + x * (main.SlotSize + main.SlotPadding),
+					self.YPadding + y * (main.SlotSize + main.SlotPadding))
 
-	self.Slots[i + 1] = it
-	it:SetInventoryPanel(self)
-	it:SetSlot(i + 1)
-	it:SetMainFrame(self:GetMainFrame())
-	it:On("ItemInserted", self, self.OnItemAddedIntoSlot, self)
-	it:On("ItemHover", self, self.CheckCanDrop, self)
-	it:On("Click", self, self.OnItemClick, self)
+		self.ItemLines = math.max(self.ItemLines or 0, y)
+	end
 
-	it:BindInventory(self:GetInventory(), it:GetSlot())
+	self:TrackItemSlot(it, i + 1)
 
-	--[[self:On("Change", it, function(self, inv, ...)
-		if inv:GetItemInSlot(it:GetSlot()) ~= it:GetItem(true) then
-			it:SetItem(inv:GetItemInSlot(it:GetSlot()))
-		end
-
-		it:OnInventoryUpdated()
-	end)]]
-
-	it:On("Drop", "FrameItemDrop", function(...) self:ItemDrop(...) end)
 	return it
+end
+
+function PANEL:GetItemLines()
+	return self.ItemLines + 1
+end
+
+function PANEL:GetLinesHeight()
+	local main = self:GetMainFrame()
+	return self.YPadding * 2 + (self:GetItemLines() * (main.SlotSize + main.SlotPadding) - main.SlotPadding)
 end
 
 function PANEL:GetItems()
@@ -389,10 +435,15 @@ end
 
 function PANEL:Draw(w, h)
 	if not self.Inventory then return end
-	if self.NoPaint then return end
+	if self.NoDraw or not self._NameEnabled then return end
 
 	local inv = self.Inventory
 	draw.SimpleText(inv:GetName(), "OS28", w/2, 16, color_white, 1, 1)
+end
+
+function PANEL:SetShouldPaint(b)
+	self.NoDraw = not b
+	self.Scroll.NoDraw = self.NoDraw
 end
 
 function PANEL:Paint(w, h)

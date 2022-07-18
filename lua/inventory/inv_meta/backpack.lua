@@ -41,6 +41,10 @@ function bp:__tostring()
 	)
 end
 
+function bp:IsValid()
+	return IsValid(self:GetOwner())
+end
+
 function bp:OnExtend(new_inv)
 	new_inv.SQLName = false 	--set these yourself!!
 	new_inv.NetworkID = false
@@ -96,8 +100,8 @@ function bp:_SetSlot(it, slot)
 	end
 
 	self.Slots[slot] = it
-	if it:GetUID() then
-		self.Items[it:GetUID()] = it
+	if it:GetNWID() then
+		self.Items[it:GetNWID()] = it
 	end
 
 	if it:GetKnown() then it:AddChange(INV_ITEM_MOVED) end --if the player doesn't know about the item, don't replace the change
@@ -108,7 +112,7 @@ end
 function bp:RemoveItem(it, noChange, suppresserror)
 	--just removes an item from itself and networks the change
 
-	local uid = ToUID(it)
+	local uid = ToNWID(it)
 
 	local its, slots = self:GetItems(), self:GetSlots()
 	local foundit
@@ -128,7 +132,10 @@ function bp:RemoveItem(it, noChange, suppresserror)
 		end
 	end
 
-	if not foundit and not suppresserror then errorf("Tried to remove an item which didn't exist in the inventory in the first place!\nInventory: %s\nItem: %s\n", self, it) return end
+	if not foundit and not suppresserror then
+		errorf("Tried to remove an item which didn't exist in the inventory in the first place!\nInventory: %s\nItem: %s\n", self, it)
+		return
+	end
 	if not foundit then return end
 
 	local slot = foundit:GetSlot()
@@ -146,7 +153,7 @@ function bp:RemoveItem(it, noChange, suppresserror)
 
 	foundit:SetInventory(nil)
 	foundit:SetSlot(nil)
-	its[foundit:GetUID()] = nil
+	its[foundit:GetNWID()] = nil
 
 	--if the player doesn't know about the item, don't even tell him about the deletion
 	if foundit:GetKnown() and not noChange then
@@ -156,9 +163,7 @@ function bp:RemoveItem(it, noChange, suppresserror)
 		self.Changes[foundit] = nil
 	end
 
-	if not self.ReadingNetwork then
-		self:Emit("Change")
-	end
+	self:NotifyChange()
 
 	self:Emit("RemovedItem", it, slot)
 	return foundit
@@ -166,11 +171,11 @@ end
 
 function bp:DeleteItem(it, suppresserror)
 	--actually completely deletes an item, both from the backpack and from MySQL completely
-	local uid = (isnumber(it) and it) or it:GetUID()
-
 	local it = self:RemoveItem(it, nil, suppresserror)
+	if it then
+		it:Delete()
+	end
 
-	if SERVER then Inventory.MySQL.DeleteItem(it) end
 	return it
 end
 
@@ -185,10 +190,11 @@ function bp:MoveItem(it, slot)	--this is a utility function which swaps slots if
 
 	if it == it2 or it:GetSlot() == slot then return false end
 
-	it:SetSlot(slot, false)
-	if it2 then it2:SetSlot(b4slot, false) end
+	it:SetSlot(slot)
+	if it2 then it2:SetSlot(b4slot) end
 
-	if SERVER then return Inventory.MySQL.SwitchSlots(it, it2) end
+	self:EmitHook("Moved", it, slot, it2, b4slot, ply)
+	self:NotifyChange()
 end
 
 function bp:GetItemInSlot(slot)
@@ -209,7 +215,7 @@ function bp:_CanAddItem(it, ignore_emitter, ignore_slot, ignore_inv)
 	end
 
 	if not ignore_emitter then
-		local can = self:Emit("CanAddItem", it, it:GetUID())
+		local can = self:Emit("CanAddItem", it, it:GetNWID())
 		if can == false then return false end
 	end
 
@@ -226,6 +232,12 @@ function bp:_CanAddItem(it, ignore_emitter, ignore_slot, ignore_inv)
 	return true
 end
 
+function bp:NotifyChange()
+	if not self.ReadingNetwork then
+		self:Emit("Change")
+	end
+end
+
 function bp:AddItem(it, ignore_emitter, nochange)
 	local can, why, fmts = self:_CanAddItem(it, ignore_emitter)
 
@@ -239,27 +251,16 @@ function bp:AddItem(it, ignore_emitter, nochange)
 
 	it:SetInventory(self)
 
-	if it:GetUID() then
-		self.Items[it:GetUID()] = it
-	else
-		it:On("AssignUID", "WriteWithUID", function()
-			if it:GetInventory() == self then
-				self.Items[it:GetUID()] = it
-			end
-		end)
-	end
-
+	self.Items[it:GetNWID()] = it
 	self.Slots[it:GetSlot()] = it
 
 	if not nochange then
 		it:AddChange(INV_ITEM_ADDED)
 	end
 
-	self:Emit("AddItem", it, it:GetUID())
+	self:Emit("AddItem", it, it:GetNWID())
 
-	if not self.ReadingNetwork then
-		self:Emit("Change")
-	end
+	self:NotifyChange()
 
 	return it:GetSlot()
 end
@@ -281,7 +282,7 @@ end
 
 function bp:HasItem(it)
 	if IsItem(it) then
-		return self:GetItem(it:GetUID()) == it
+		return self:GetItem(it:GetNWID()) == it
 	else
 		return self:GetItem(it)
 	end
@@ -297,16 +298,24 @@ function bp:vprint(...)
 	print(...)
 end
 
+function bp:EmitHook(ev, ...)
+	local ea, eb, ec, ed = self:Emit(ev, ...)
+	if ea ~= nil then return ea, eb, ec, ed end
+
+	local a, b, c, d = hook.Run(self.Name .. "_" .. ev, self, ...)
+	if a ~= nil then return a, b, c, d end
+end
+
 function bp:HasAccess(ply, action, ...)
-	if self.DisallowAllActions then return false end
+	if self.DisallowAllActions then return false, "all disallowed" end
 
 	-- step 1. can they interact at all?
 	local allow = self:Emit("AllowInteract", ply, action, ...)
-	if allow == false then self:vprint("caninteract gave no") return false end
+	if allow == false then self:vprint("caninteract gave no") return false, "interact disallowed" end
 
 	-- step 2.1. can they do this particular action? check via emitter
 	allow = self:Emit("Can" .. action, ply, ...)
-	if allow ~= nil then self:vprint("Can" .. action, "gave no") return allow end
+	if allow ~= nil then self:vprint("Can" .. action, "forced ", allow) return allow, "Can" .. action .. " forced " .. tostring(allow) end
 
 	-- step 2.2. same but check via ActionCan["action"] function or bool
 
@@ -318,7 +327,7 @@ function bp:HasAccess(ply, action, ...)
 		else
 			allow = self["ActionCan" .. action]
 		end
-		return allow
+		return allow, "ActionCan" .. action
 	end
 
 
@@ -331,8 +340,8 @@ function bp:HasAccess(ply, action, ...)
 		self:vprint("HasAccess every check failed -- ActionCanInteract said", allow)
 	end
 
-	if allow ~= nil then return allow end
-	return ply == self:GetOwner()
+	if allow ~= nil then return allow, "CanInteract" end
+	return ply == self:GetOwner(), "default owner check"
 end
 
 function bp:RemoveChange(it, what)

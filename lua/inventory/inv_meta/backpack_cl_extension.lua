@@ -11,31 +11,53 @@ function bp:CanCrossInventoryMove(it, inv2, slot)
 		return false
 	end
 
-	if not inv2:HasAccess(LocalPlayer(), "CrossInventoryTo", it, self) then return false end
-	if not self:HasAccess(LocalPlayer(), "CrossInventoryFrom", it, inv2) then return false end
+	if _FORCE_ALLOW_INV_ACTIONS then return true, "debug allowed" end
 
 	slot = slot or inv2:GetFreeSlot()
-	if not slot then
-		return false
-	end
+	if slot and inv2:IsSlotLegal(slot) == false then return false, "illegal slot " .. tostring(slot) end
 
-	if not inv2:IsSlotLegal(slot) then
-		return false
-	end
+	local can, why = inv2:HasAccess(CachedLocalPlayer(), "CrossInventoryTo", it, self)
+	if not can then return false, "no access to other inv: " .. why end
 
-	-- todo: is this necessary?
+	can, why = self:HasAccess(CachedLocalPlayer(), "CrossInventoryFrom", it, inv2)
+	if not can then return false, "no access to self: " .. why end
 
 	--check if inv2 can accept cross-inventory item
-	local can = inv2:Emit("CanMoveTo", it, self)
-	if can == false then print("cant 1") return false end
+	can = inv2:Emit("CanMoveTo", it, self)
+	if can == false then return false end
 
 	--check if inv1 can give out the item
 	can = self:Emit("CanMoveFrom", it, inv2)
 	if can == false then return false end
 
 	--check if inv2 can add an item to itself
-	can = inv2:Emit("CanAddItem", it, it:GetUID())
+	can = inv2:Emit("CanAddItem", it, it:GetNWID())
 	if can == false then return false end
+
+	return true
+end
+
+function bp:CanCrossInventoryMoveSwap(it, inv2, slot)
+	slot = slot or inv2:GetFreeSlot()
+	if not slot then
+		return false, "no slot " .. tostring(slot)
+	end
+
+	if not inv2:IsSlotLegal(slot) then
+		printf("Attempted to move item out of inventory bounds (%s > %s)", slot, inv2.MaxItems)
+		return false, "illegal slot " .. slot
+	end
+
+	local other_item = inv2:GetItemInSlot(slot)
+
+	if other_item then
+		local can, why = inv2:CanCrossInventoryMove(other_item, self, it:GetSlot())
+		self:vprint("other item allowed move to", self, can, why)
+		if not can then self:vprint(inv2, "#1 doesn't allow CIM", why) return false, why end
+	end
+
+	local can, why = self:CanCrossInventoryMove(it, inv2, nil)
+	if not can then self:vprint(self, "#2 doesn't allow CIM", why) return false, why end
 
 	return true
 end
@@ -52,11 +74,8 @@ end
 function bp:CrossInventoryMove(it, inv2, slot)
 	local other_item = inv2:GetItemInSlot(slot)
 
-	if other_item and not inv2:CanCrossInventoryMove(other_item, self, it:GetSlot()) then
-		return false
-	end
-
-	if not self:CanCrossInventoryMove(it, inv2, slot) then return false end
+	local ok, why = self:CanCrossInventoryMoveSwap(it, inv2, slot)
+	if not ok then return false, why end
 
 	if other_item then
 		ActuallyMove(inv2, self, other_item, it:GetSlot())

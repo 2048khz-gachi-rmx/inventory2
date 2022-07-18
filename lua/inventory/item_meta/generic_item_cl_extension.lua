@@ -27,6 +27,7 @@ function it:_CallTextGenerators(cloud)
 		--cloud.MinW =  64
 	else
 		mup:InvalidateLayout(true)
+		mup:Recalculate()
 	end
 
 	local len = #cloud.DoneText
@@ -45,16 +46,18 @@ function it:AddChange(k)
 end
 
 function it:SetData(k, v)
-	if istable(k) then
+	if istable(k) and v == nil then
 		for k2,v2 in pairs(k) do
 			self.Data[k2] = v2
 		end
-	elseif not k or not v then
+	elseif k == nil or v == nil then
 		errorf("it:SetData: expected table as arg #1 or key/value as #2 and #3: got %s, %s instead", type(k), type(v)) 
 		return
+	else
+		self.Data[k] = v
 	end
 
-	self.Data[k] = v
+	self:EmitChange()
 end
 
 function it:MoveToSlot(slot)
@@ -66,3 +69,22 @@ function it:MoveToInventory(inv, slot)
 	self._Commited.CrossInv[self:IncrementToken()] = ("%p:%s"):format(inv, slot)
 end
 
+
+function it:PostGenerateText(cloud, markup)
+
+end
+
+function it:GenerateText(cloud, markup)
+	return false -- separator required?
+end
+
+BaseItemAccessorFn(it, "AmountString", "AmountString")
+BaseItemAccessorFn(it, "AmountFormat", "AmountFormat")
+
+it:On("GenerateText", "Base", function(self, cloud, markup)
+	self:GenerateText(cloud, markup)
+end)
+
+it:On("PostGenerateText", "Base", function(self, cloud, markup)
+	self:PostGenerateText(cloud, markup)
+end)

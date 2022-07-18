@@ -15,12 +15,17 @@ function Inventory.IncludeClass(fold, name)
 	return included
 end
 
+-- TODO: this mixes all classes together; item meta and base meta named "generic_item" will conflict!!!
 function Inventory.GetClass(fold, name)
 	name = name:PatternSafe()
 
 	-- find a class that matches this name and, if it exists, return it
 	for k,v in pairs(Inventory.AllClasses) do
-		if v.FileName:match(name .. "[%.lua]*$") and (not v.FilePath or v.FilePath:match(fold .. "[/]*$")) then return v end
+		--print(v.FileName, v.FilePath, name, fold)
+		if v.FileName:match(name .. "%.lua$") and (not v.FilePath or v.FilePath:match(fold .. "/?$")) then
+			--print("	matched!", v.FilePath, v.FileName)
+			return v
+		end
 	end
 
 	-- we didn't find it, so include the file containing it
@@ -28,7 +33,7 @@ function Inventory.GetClass(fold, name)
 
 	--after inclusion, try searching again and return if found
 	for k,v in pairs(Inventory.AllClasses) do
-		if v.FileName:match(name .. "[%.lua]*$") then return v end
+		if v.FileName:match(name .. "[%.lua]*$") and (not v.FilePath or v.FilePath:match(fold .. "/?$")) then return v end
 	end
 
 	--either didn't file the inclusion file or it failed to register its' object
@@ -47,7 +52,7 @@ function Inventory.RegisterClass(name, obj, tbl, addstack)
 	if fold then fold = fold:match("(.+)/[^/]+$") end --fold will be nil for hotloaded stuff (luadev)
 	local fn = path:match("[^/]+$")
 
-	Inventory.AllClasses[fn] = obj
+	Inventory.AllClasses[fold .. fn] = obj
 
 	tbl[name] = obj
 	obj.FileName = fn

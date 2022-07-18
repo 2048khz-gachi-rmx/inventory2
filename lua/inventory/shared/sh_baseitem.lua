@@ -1,11 +1,15 @@
 
 
 function ToUID(it)
-
 	if isnumber(it) then return it
 	elseif IsItem(it) then return it:GetUID()
 	else errorf("ToUID: expected number or item as arg #1, got %s instead", type(it)) end
+end
 
+function ToNWID(it)
+	if isnumber(it) then return it
+	elseif IsItem(it) then return it:GetNWID()
+	else errorf("ToNWID: expected number or item as arg #1, got %s instead", type(it)) end
 end
 
 -- returns BaseItemMeta's name ( metas in base_items/*.lua )
@@ -20,10 +24,15 @@ function Inventory.Util.GetBaseMeta(iid)
 	return name and Inventory.BaseItemObjects[name]
 end
 
+function Inventory.Util.Amount(id, n)
+	local base = Inventory.Util.GetBase(id)
+
+	return base and base:GetAmountString(n) or "no?"
+end
 
 -- returns ItemMeta ( metas in item_meta/*.lua )
 function Inventory.Util.GetMeta(iid)
-	local base = Inventory.Util.GetBaseMeta(iid)
+	local base = Inventory.Util.GetBase(iid)
 	if not base then return false end
 
 	return Inventory.ItemObjects[base.ItemClass]
@@ -108,11 +117,11 @@ function BaseItemAccessor(it, varname, getname)
 end
 
 function BaseItemAccessorFn(it, varname, getname)
-	it["Get" .. getname] = function(self)
+	it["Get" .. getname] = function(self, ...)
 		local base = self:GetBaseItem()
 		if not base then errorf("Item %s didn't have a base item!", it) return end
 
-		return base["Get" .. varname] (base)
+		return base["Get" .. varname] (base, ...)
 	end
 end
 
@@ -147,16 +156,46 @@ function DataAccessor(it, varname, getname, setcallback, force_type)
 			return
 		end
 
-		if SERVER then
-			self:SetData(varname, v)
-		else
-			self.Data[varname] = v
-		end
+		self:SetData(varname, v)
 
 		if setcallback then
 			setcallback(self, v)
 		end
 
-		if SERVER then return Inventory.MySQL.ItemSetData(self, {[varname] = v}) end
+		--if SERVER then return Inventory.MySQL.ItemSetData(self, {[varname] = v}) end
+	end
+end
+
+function EphemDataAccessor(it, varname, getname, setcallback, force_type)
+	local forceFn
+
+	if isnumber(setcallback) then
+		force_type = setcallback
+		setcallback = nil
+	end
+
+	if force_type then
+		if isnumber(force_type) then
+			forceFn = checks[force_type] or errorf("unknown force enum: %s", force_type)
+		elseif isfunction(force_type) then
+			forceFn = force_type
+		end
+	end
+
+	it["Get" .. getname] = function(self)
+		return self.Data[varname]
+	end
+
+	it["Set" .. getname] = function(self, v)
+		if forceFn and not forceFn(v) then
+			errorf("bad #1 type to Set%s: %s (%s)", getname, v, type(v))
+			return
+		end
+
+		self:SetTempData(varname, v)
+
+		if setcallback then
+			setcallback(self, v)
+		end
 	end
 end
